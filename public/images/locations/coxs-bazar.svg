@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb37a"/><stop offset=".6" stop-color="#ffd6a5"/><stop offset="1" stop-color="#ffe9c9"/></linearGradient><linearGradient id="w" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2b8ac7"/><stop offset="1" stop-color="#145f91"/></linearGradient></defs>
+<rect width="400" height="300" fill="url(#s)"/>
+<circle cx="250" cy="150" r="42" fill="#ff7a45"/>
+<rect y="150" width="400" height="150" fill="url(#w)"/>
+<g fill="#ffcf99" opacity=".7"><rect x="215" y="160" width="70" height="4" rx="2"/><rect x="225" y="172" width="50" height="3" rx="1.5"/><rect x="235" y="183" width="30" height="3" rx="1.5"/></g>
+<path d="M0 205Q25 195 50 205T100 205T150 205T200 205T250 205T300 205T350 205T400 205" fill="none" stroke="#7cc4ee" stroke-width="4" stroke-linecap="round" opacity=".7"/>
+<path d="M0 240Q30 226 60 240T120 240T180 240T240 240T300 240T360 240T420 240V300H0Z" fill="#e8f6fd" opacity=".9"/>
+<path d="M0 255Q60 245 140 258T300 252T400 256V300H0Z" fill="#f2d4a2"/>
+<g fill="#5b3a29"><path d="M80 178h44l-6 10H86Z"/><rect x="100" y="150" width="2.5" height="28"/><path d="M103 152l18 22h-18Z" fill="#fff4e0"/></g>
+<g fill="none" stroke="#5b3a29" stroke-width="2" stroke-linecap="round"><path d="M50 60q6-6 12 0q6-6 12 0"/><path d="M90 45q5-5 10 0q5-5 10 0"/></g>
+</svg>

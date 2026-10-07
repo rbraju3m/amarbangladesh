@@ -1,0 +1,211 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/anek-bangla/wght.css';
+
+@source '../../storage/framework/views/*.php';
+
+/* Semantic tokens; components only use these, so dark mode is a token swap. */
+:root {
+    --paper: #fbf8f1;
+    --paper-2: #f3eee2;
+    --card: #ffffff;
+    --ink: #14211b;
+    --ink-2: #4b5a52;
+    --line: #e4ddcc;
+    --red: #e03a3e;
+    --green: #006a4e;
+    --green-text: #006a4e;
+    --accent: #2f7d4f;
+    color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+        --paper: #0f1613;
+        --paper-2: #17201c;
+        --card: #1b2621;
+        --ink: #f1ede3;
+        --ink-2: #a9b5ae;
+        --line: #2a3832;
+        --green-text: #5fd3a4;
+        color-scheme: dark;
+    }
+}
+
+:root[data-theme='dark'] {
+    --paper: #0f1613;
+    --paper-2: #17201c;
+    --card: #1b2621;
+    --ink: #f1ede3;
+    --ink-2: #a9b5ae;
+    --line: #2a3832;
+    color-scheme: dark;
+}
+
+@theme {
+    --font-sans: 'Anek Bangla Variable', 'Noto Sans Bengali', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+        'Segoe UI Emoji', 'Noto Color Emoji';
+    --color-paper: var(--paper);
+    --color-paper-2: var(--paper-2);
+    --color-card: var(--card);
+    --color-ink: var(--ink);
+    --color-ink-2: var(--ink-2);
+    --color-line: var(--line);
+    --color-flag-red: var(--red);
+    --color-flag-green: var(--green);
+    --color-green-text: var(--green-text);
+    --color-accent: var(--accent);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@layer base {
+    html {
+        -webkit-tap-highlight-color: transparent;
+        text-size-adjust: 100%;
+    }
+
+    body {
+        @apply bg-paper text-ink font-sans antialiased;
+        font-feature-settings: 'kern';
+    }
+
+    button {
+        cursor: pointer;
+    }
+
+    :focus-visible {
+        outline: 3px solid var(--accent);
+        outline-offset: 3px;
+        border-radius: 12px;
+    }
+
+    [x-cloak] {
+        display: none !important;
+    }
+}
+
+@layer components {
+    .screen {
+        @apply mx-auto flex min-h-dvh w-full max-w-md flex-col px-4;
+    }
+
+    .btn-primary {
+        @apply inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-flag-red px-6 text-lg font-semibold text-white shadow-[0_8px_24px_-8px_rgb(224_58_62/0.6)] transition duration-150 active:scale-[0.97];
+    }
+
+    .btn-ghost {
+        @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-line px-5 font-medium text-ink transition duration-150 active:scale-[0.97];
+    }
+
+    .chip {
+        @apply inline-flex items-center gap-1.5 rounded-full border border-line bg-card px-3 py-1.5 text-sm font-medium;
+    }
+
+    .option {
+        @apply relative flex min-h-24 flex-col items-center justify-center gap-1.5 rounded-3xl border-2 border-line bg-card p-3 text-center text-[1.05rem] leading-snug font-semibold transition duration-150 active:scale-[0.96];
+    }
+
+    .option[aria-pressed='true'] {
+        @apply border-accent bg-accent text-white;
+    }
+
+    .share-btn {
+        @apply flex flex-col items-center gap-1.5 text-xs font-medium text-ink-2;
+    }
+
+    .share-btn > span:first-child {
+        @apply flex size-13 items-center justify-center rounded-full text-white transition duration-150 active:scale-90;
+    }
+}
+
+/* River motif behind the landing hero. */
+.river {
+    stroke-dasharray: 6 10;
+    animation: flow 18s linear infinite;
+}
+
+@keyframes flow {
+    to {
+        stroke-dashoffset: -320;
+    }
+}
+
+@keyframes pop {
+    0% {
+        transform: scale(0.6);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes pulse-ring {
+    0% {
+        transform: scale(1);
+        opacity: 0.7;
+    }
+    100% {
+        transform: scale(3.2);
+        opacity: 0;
+    }
+}
+
+@keyframes rise {
+    from {
+        transform: translateY(14px);
+        opacity: 0;
+    }
+    to {
+        transform: none;
+        opacity: 1;
+    }
+}
+
+.animate-pop {
+    animation: pop 0.45s var(--ease-spring) both;
+}
+
+.animate-rise {
+    animation: rise 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.map-dot {
+    transform-box: fill-box;
+    transform-origin: center;
+    transition:
+        r 0.25s,
+        opacity 0.25s,
+        fill 0.25s;
+}
+
+.map-pulse {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: pulse-ring 1.2s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Admin form controls */
+@layer components {
+    .input {
+        @apply block min-h-10 w-full rounded-xl border border-line bg-card px-3 py-2 text-sm outline-none focus:border-accent;
+    }
+
+    .num {
+        @apply w-14 rounded-lg border border-line bg-card px-1 py-1 text-center text-sm tabular-nums outline-none focus:border-accent;
+    }
+
+    .stat {
+        @apply rounded-2xl border border-line bg-card p-4;
+    }
+}

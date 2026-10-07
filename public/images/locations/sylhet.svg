@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cfe3d6"/><stop offset="1" stop-color="#eef5e9"/></linearGradient><clipPath id="h1"><path d="M0 170Q90 120 200 150T400 140V300H0Z"/></clipPath><clipPath id="h2"><path d="M0 220Q120 180 250 205T400 200V300H0Z"/></clipPath></defs>
+<rect width="400" height="300" fill="url(#s)"/>
+<path d="M0 140Q70 95 140 120T280 100T400 110V300H0Z" fill="#9cc7a8" opacity=".6"/>
+<g clip-path="url(#h1)"><rect y="100" width="400" height="200" fill="#4f9a63"/><g fill="none" stroke="#3d8452" stroke-width="7" stroke-linecap="round"><path d="M-20 175Q90 130 200 160T420 150"/><path d="M-20 195Q90 150 200 180T420 170"/><path d="M-20 215Q90 170 200 200T420 190"/><path d="M-20 235Q90 190 200 220T420 210"/></g></g>
+<g clip-path="url(#h2)"><rect y="170" width="400" height="130" fill="#2f7d4f"/><g fill="none" stroke="#256a41" stroke-width="8" stroke-linecap="round"><path d="M-20 230Q120 190 250 215T420 210"/><path d="M-20 252Q120 212 250 237T420 232"/><path d="M-20 274Q120 234 250 259T420 254"/></g></g>
+<g fill="#1f4f33"><rect x="86" y="128" width="4" height="40"/><ellipse cx="88" cy="124" rx="26" ry="10"/><rect x="306" y="118" width="4" height="40"/><ellipse cx="308" cy="114" rx="30" ry="11"/></g>
+<g stroke="#7aa7c2" stroke-width="2" stroke-linecap="round" opacity=".55"><path d="M40 20l-8 22M90 40l-8 22M150 10l-8 22M210 35l-8 22M270 15l-8 22M330 45l-8 22M370 12l-8 22M120 70l-8 22M240 75l-8 22M60 85l-8 22M350 85l-8 22"/></g>
+</svg>

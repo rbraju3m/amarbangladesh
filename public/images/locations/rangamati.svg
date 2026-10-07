@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bfe6e3"/><stop offset="1" stop-color="#eaf7f4"/></linearGradient><linearGradient id="w" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3aa7a2"/><stop offset="1" stop-color="#0f7c78"/></linearGradient></defs>
+<rect width="400" height="300" fill="url(#s)"/>
+<path d="M0 150Q50 95 110 130Q160 80 220 125Q280 90 330 120Q370 100 400 125V170H0Z" fill="#6fb89a"/>
+<path d="M0 165Q70 125 140 155Q210 120 280 150Q340 130 400 150V175H0Z" fill="#3f9873"/>
+<rect y="168" width="400" height="132" fill="url(#w)"/>
+<path d="M0 168Q70 190 140 172Q210 192 280 174Q340 188 400 172V182Q300 205 200 185Q100 205 0 182Z" fill="#2a8a72" opacity=".5"/>
+<g stroke="#c0392b" stroke-width="3" fill="none"><path d="M40 150Q120 185 200 150"/><path d="M40 150V130M200 150V130" stroke-width="4"/></g>
+<g stroke="#c0392b" stroke-width="1.5"><path d="M60 136v22M80 136v29M100 136v33M120 136v35M140 136v35M160 136v32M180 136v27"/></g>
+<path d="M40 130Q120 165 200 130" fill="none" stroke="#c0392b" stroke-width="2"/>
+<g><path d="M230 232h80q-8 14-26 14h-34q-14 0-20-14Z" fill="#5b3a29"/><circle cx="268" cy="214" r="5" fill="#2c3e50"/><path d="M264 219h8l3 13h-14Z" fill="#e67e22"/><path d="M276 222l30 22" stroke="#3b2a1e" stroke-width="2"/></g>
+<g fill="none" stroke="#e6fffb" stroke-width="2" stroke-linecap="round" opacity=".6"><path d="M220 255h110M250 266h60M40 240h70M60 270h50"/></g>
+</svg>
