@@ -60,6 +60,26 @@ class ResultFlowTest extends TestCase
         $this->assertArrayNotHasKey('owner_token_hash', QuizResult::first()->toArray());
     }
 
+    public function test_result_ranks_traits_and_explains_every_place(): void
+    {
+        $result = $this->play(pick: 1)['result'];
+        $answers = $this->answers(1);
+
+        $pcts = array_column($result['traits'], 'pct');
+        $sorted = $pcts;
+        rsort($sorted);
+        $this->assertSame($sorted, $pcts, 'traits are listed strongest first');
+
+        $places = $result['places'];
+        $this->assertCount(count(QuizConfig::fromDatabase()->locations), $places);
+        $this->assertSame([$result['location']['slug'], $result['match_pct']], [$places[0]['slug'], $places[0]['pct']]);
+        foreach (array_slice($places, 1) as $place) {
+            $this->assertLessThanOrEqual($result['second']['pct'], $place['pct']);
+            $this->assertNotEmpty($place['answers']);
+            $this->assertEmpty(array_diff($place['answers'], $answers), 'only the player\'s own answers are quoted');
+        }
+    }
+
     public function test_invalid_answers_are_rejected(): void
     {
         $this->postJson('/api/results', ['answers' => [1, 2]])->assertStatus(422);

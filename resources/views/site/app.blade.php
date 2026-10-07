@@ -111,7 +111,7 @@
 
     {{-- ===================== QUESTIONS ===================== --}}
     <section x-show="screen === 'question'" x-cloak class="screen h-dvh pb-[max(1rem,env(safe-area-inset-bottom))] md:max-w-2xl lg:max-w-4xl lg:pb-12"
-        @keydown.window="screen === 'question' && onKey($event)">
+        @keydown.window="screen === 'question' && onKey($event)" @touchstart.passive="swipeStart($event)" @touchend.passive="swipeEnd($event)">
         <header class="flex items-center gap-3 py-4">
             <button type="button" @click="back()" class="flex size-11 shrink-0 items-center justify-center rounded-full border border-line" aria-label="আগের প্রশ্ন">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
@@ -126,13 +126,20 @@
 
         <template x-for="q in (screen === 'question' ? [question] : [])" :key="q.id">
             <div class="flex flex-1 flex-col lg:justify-center">
-                <div class="flex flex-1 flex-col items-center justify-center py-4 text-center lg:flex-none lg:pb-12">
-                    {{-- Floating answer emojis as the question's visual; image questions carry their own visuals. --}}
-                    <div x-show="q.kind !== 'image'" class="relative mb-6 size-40 rounded-full bg-flag-green/10 lg:size-48" aria-hidden="true">
+                <div class="flex flex-1 flex-col items-center justify-center py-4 text-center lg:flex-none lg:pb-12" :class="dir === 'back' ? 'animate-in-left' : 'animate-in-right'">
+                    {{-- Floating answer emojis as the question's visual; the one being pointed at or picked lights up.
+                         Image questions carry their own visuals. --}}
+                    <div x-show="q.kind !== 'image'" class="relative mb-6 size-40 rounded-full bg-flag-green/10 transition-colors duration-300 lg:size-48 [@media(min-height:760px)]:size-48"
+                        :class="(picked ?? hoverOpt) && 'bg-accent/15'" aria-hidden="true">
                         <template x-for="(o, i) in q.options" :key="o.id">
-                            <span class="animate-pop absolute text-5xl" :style="`${['top:6%;left:8%', 'top:12%;right:4%', 'bottom:6%;left:14%', 'bottom:10%;right:10%'][i]}; animation-delay: ${i * 70}ms`" x-text="o.emoji"></span>
+                            <span class="animate-pop absolute text-5xl [@media(min-height:760px)]:text-6xl" :style="`${['top:6%;left:8%', 'top:12%;right:4%', 'bottom:6%;left:14%', 'bottom:10%;right:10%'][i]}; animation-delay: ${i * 70}ms`">
+                                <span class="animate-bob block" :style="`animation-delay: ${i * -0.7}s`">
+                                    <span class="collage-emoji block" :class="{ 'is-lit': (picked ?? hoverOpt) === o.id, 'is-dim': (picked ?? hoverOpt) && (picked ?? hoverOpt) !== o.id }" x-text="o.emoji"></span>
+                                </span>
+                            </span>
                         </template>
                     </div>
+                    <p x-show="nudge" class="animate-pop mb-3 rounded-full bg-accent/10 px-3 py-1 text-sm font-semibold text-accent" x-text="nudge"></p>
                     <h2 class="animate-rise text-[1.9rem] leading-snug font-bold lg:text-[2.6rem]" x-text="q.prompt" :id="`q-${q.id}`"></h2>
                     <p x-show="q.subtitle" class="mt-2 text-ink-2" x-text="q.subtitle"></p>
                 </div>
@@ -147,6 +154,7 @@
                                 'scale-95 opacity-35': picked && picked !== o.id,
                             }"
                             :aria-pressed="(picked === o.id || answers[q.id] === o.id).toString()"
+                            @pointerdown="ripple($event)" @mouseenter="hoverOpt = o.id" @mouseleave="hoverOpt = null" @focus="hoverOpt = o.id" @blur="hoverOpt = null"
                             @click="choose(o)">
                             <template x-if="q.kind === 'image' && o.image">
                                 <img :src="o.image" alt="" class="absolute inset-0 size-full object-cover">
@@ -315,12 +323,27 @@
             {{-- Vibe traits --}}
             <div class="mt-8">
                 <h2 class="text-lg font-bold">তোমার ভাইব</h2>
-                <ul class="mt-3 space-y-3">
+                <p class="text-sm text-ink-2">যেকোনোটায় ট্যাপ করে দেখো কোন উত্তর থেকে এলো 👆</p>
+                <ul class="mt-3 space-y-1" x-init="observeBars($el)">
                     <template x-for="(t, i) in result.traits" :key="t.key">
                         <li>
-                            <div class="mb-1 flex justify-between text-sm font-semibold"><span x-text="`${t.emoji} ${t.label}`"></span><span class="tabular-nums" x-text="`${bn(t.pct)}%`"></span></div>
-                            <div class="h-3 overflow-hidden rounded-full bg-paper-2">
-                                <div class="h-full rounded-full bg-accent transition-[width] duration-700" :style="`width: ${barsIn ? t.pct : 0}%; transition-delay: ${i * 80}ms; opacity: ${1 - i * 0.12}`"></div>
+                            <button type="button" class="trait-row" @click="toggleTrait(t.key)" :aria-expanded="(openTrait === t.key).toString()">
+                                <span class="mb-1 flex justify-between text-sm font-semibold">
+                                    <span x-text="`${t.emoji} ${t.label}`"></span>
+                                    <span class="flex items-center gap-1.5 tabular-nums"><span x-text="`${bn(t.pct)}%`"></span><span class="text-ink-2 transition-transform duration-200" :class="openTrait === t.key && 'rotate-90'" aria-hidden="true">›</span></span>
+                                </span>
+                                <span class="block h-3 overflow-hidden rounded-full bg-paper-2">
+                                    <span class="block h-full rounded-full bg-accent transition-[width] duration-700" :style="`width: ${barsIn ? t.pct : 0}%; transition-delay: ${i * 80}ms; opacity: ${1 - i * 0.12}`"></span>
+                                </span>
+                            </button>
+                            <div x-show="openTrait === t.key" x-transition.opacity.duration.200ms class="px-1 pt-1 pb-2 text-sm">
+                                <template x-if="traitAnswers(t).length">
+                                    <div class="flex flex-wrap items-center gap-1.5">
+                                        <span class="text-ink-2">এসেছে এখান থেকে:</span>
+                                        <template x-for="o in traitAnswers(t)" :key="o.id"><span class="chip !py-1" x-text="`${o.emoji ?? ''} ${o.label}`"></span></template>
+                                    </div>
+                                </template>
+                                <p x-show="!traitAnswers(t).length" class="text-ink-2">তোমার উত্তরে এটা খুব একটা আসেনি 🙂</p>
                             </div>
                         </li>
                     </template>
@@ -329,25 +352,26 @@
 
             {{-- Runner-up --}}
             <template x-if="result.second">
-                <div class="mt-8 flex items-center justify-between rounded-3xl border border-line bg-card p-4">
+                <button type="button" @click="openPlace(result.second.slug)" class="group mt-8 flex w-full items-center justify-between rounded-3xl border border-line bg-card p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98]">
                     <div>
                         <p class="text-sm text-ink-2">তোমার দ্বিতীয় বাংলাদেশ</p>
                         <p class="text-xl font-bold" x-text="`${result.second.emoji} ${result.second.name_bn}`"></p>
                     </div>
-                    <span class="text-lg font-semibold text-ink-2" x-text="`${bn(result.second.pct)}%`"></span>
-                </div>
+                    <span class="flex items-center gap-2 text-lg font-semibold text-ink-2"><span x-text="`${bn(result.second.pct)}%`"></span><span class="text-2xl transition-transform group-hover:translate-x-1" aria-hidden="true">›</span></span>
+                </button>
             </template>
 
             {{-- All places --}}
             <div class="mt-8">
-                <h2 class="text-lg font-bold">বাকি বাংলাদেশগুলো</h2>
-                <p class="text-sm text-ink-2">বন্ধুরা কোনটা পায়? পাঠিয়ে দেখো 😄</p>
+                <h2 class="text-lg font-bold">সব বাংলাদেশ, তোমার সাথে কতটা মেলে</h2>
+                <p class="text-sm text-ink-2">ট্যাপ করে দেখো কোন উত্তর কোথায় টেনেছে 👆</p>
                 <div class="-mx-4 mt-3 flex gap-3 overflow-x-auto px-4 pt-1 pb-2 [scrollbar-width:none] md:mx-0 md:grid md:grid-cols-5 md:overflow-visible md:px-0">
-                    <template x-for="l in locations" :key="l.slug">
-                        <div class="place-card w-28 shrink-0 overflow-hidden rounded-2xl border bg-card md:w-auto" :class="l.slug === result.location.slug ? 'border-accent border-2' : 'border-line'">
+                    <template x-for="l in (places.length ? places : locations)" :key="l.slug">
+                        <button type="button" @click="places.length && openPlace(l.slug)" class="place-card relative w-28 shrink-0 overflow-hidden rounded-2xl border bg-card text-left md:w-auto" :class="l.slug === result.location.slug ? 'border-accent border-2' : 'border-line'">
                             <img :src="l.illustration" alt="" loading="lazy" class="h-20 w-full object-cover">
-                            <div class="px-2 py-1.5 text-sm font-semibold" x-text="`${l.emoji} ${l.name_bn}`"></div>
-                        </div>
+                            <span x-show="l.pct" class="pill absolute top-1.5 right-1.5 bg-card/90 text-ink shadow-sm tabular-nums" x-text="`${bn(l.pct)}%`"></span>
+                            <span class="block px-2 py-1.5 text-sm font-semibold" x-text="`${l.emoji} ${l.name_bn}`"></span>
+                        </button>
                     </template>
                 </div>
             </div>
@@ -441,6 +465,52 @@
                 <button type="button" class="share-btn" @click="saveCard()" :disabled="!cardUrl"><span class="bg-flag-green">@include('partials.icon', ['name' => 'download'])</span><span>সেভ</span></button>
             </div>
         </div>
+    </div>
+
+    {{-- ===================== PLACE SHEET ===================== --}}
+    <div x-show="placeView" x-cloak class="fixed inset-0 z-40 flex items-end justify-center md:items-center md:p-6" role="dialog" aria-modal="true" :aria-label="placeView?.name_bn"
+        @keydown.escape.window="placeSlug = null" @keydown.right.window="placeView && stepPlace(1)" @keydown.left.window="placeView && stepPlace(-1)">
+        <div class="absolute inset-0 bg-black/50" x-show="placeView" x-transition.opacity @click="placeSlug = null"></div>
+        <template x-if="placeView">
+            <div x-show="placeView" x-transition:enter="transition duration-300 ease-out" x-transition:enter-start="translate-y-full md:translate-y-8 md:opacity-0"
+                class="relative max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-t-[2rem] bg-paper pb-[max(1.25rem,env(safe-area-inset-bottom))] md:rounded-[2rem] md:shadow-2xl" :style="`--accent: ${placeView.accent}`">
+                <div class="relative h-44 overflow-hidden rounded-t-[2rem] md:h-52">
+                    <img :src="placeView.illustration" alt="" class="size-full object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent"></div>
+                    <button type="button" class="absolute top-3 right-3 flex size-9 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur" @click="placeSlug = null" aria-label="বন্ধ করো">✕</button>
+                    <span class="pill absolute top-3 left-3 bg-white/90 text-ink" x-text="placeView.isTop ? '🎉 এটাই তোমার বাংলাদেশ' : `তোমার তালিকায় ${bn(placeView.rank)} নম্বর`"></span>
+                    <div class="absolute inset-x-4 bottom-3 text-white">
+                        <p class="text-3xl font-bold" x-text="`${placeView.emoji} ${placeView.name_bn}`"></p>
+                        <p class="font-semibold opacity-90" x-text="placeView.title_bn"></p>
+                    </div>
+                </div>
+
+                <div class="px-5 pt-4">
+                    <div class="flex items-center justify-between text-sm font-semibold"><span>তোমার সাথে মিল</span><span class="text-lg tabular-nums text-accent" x-text="`${bn(placeView.pct)}%`"></span></div>
+                    <div class="mt-1.5 h-3 overflow-hidden rounded-full bg-paper-2">
+                        <div class="h-full rounded-full bg-accent transition-[width] duration-500" :style="`width: ${placeView.pct}%`"></div>
+                    </div>
+
+                    <template x-if="placeView.options.length">
+                        <div class="mt-4">
+                            <p class="text-sm font-semibold" x-text="placeView.isTop ? 'যে উত্তরগুলো তোমাকে এখানে আনলো' : 'তোমার যে উত্তরগুলো এদিকে টেনেছে'"></p>
+                            <div class="mt-2 flex flex-wrap gap-2">
+                                <template x-for="o in placeView.options" :key="o.id"><span class="chip border-accent/40" x-text="`${o.emoji ?? ''} ${o.label}`"></span></template>
+                            </div>
+                        </div>
+                    </template>
+
+                    <p x-show="placeView.tagline_bn" class="mt-4 font-semibold" x-text="placeView.tagline_bn"></p>
+                    <p x-show="placeView.description_bn" class="mt-1 leading-relaxed text-ink-2" x-text="placeView.description_bn"></p>
+
+                    <div class="mt-5 flex items-center gap-2">
+                        <button type="button" class="btn-ghost size-12 !px-0" @click="stepPlace(-1)" aria-label="আগের জায়গা">‹</button>
+                        <button type="button" class="btn-ghost flex-1" @click="placeSlug = null; openSheet()">বন্ধুকে পাঠাও 😄</button>
+                        <button type="button" class="btn-ghost size-12 !px-0" @click="stepPlace(1)" aria-label="পরের জায়গা">›</button>
+                    </div>
+                </div>
+            </div>
+        </template>
     </div>
 
     {{-- Toast --}}

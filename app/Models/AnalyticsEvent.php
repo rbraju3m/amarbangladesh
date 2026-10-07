@@ -17,7 +17,7 @@ class AnalyticsEvent extends Model
     /** Events the public client may send. Server-side events (quiz_completed) are recorded directly. */
     public const CLIENT_EVENTS = [
         'landing_view', 'share_page_view', 'quiz_started', 'question_answered', 'result_viewed',
-        'share_clicked', 'card_saved', 'link_copied', 'name_added', 'retake_clicked',
+        'share_clicked', 'card_saved', 'link_copied', 'name_added', 'retake_clicked', 'place_opened',
     ];
 
     /** Raw events are kept for 180 days (`php artisan model:prune`, scheduled daily). */

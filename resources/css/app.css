@@ -135,7 +135,43 @@
     }
 
     .option {
-        @apply relative flex min-h-24 flex-col items-center justify-center gap-1.5 rounded-3xl border-2 border-line bg-card p-3 text-center text-[1.05rem] leading-snug font-semibold transition duration-200 active:scale-[0.96];
+        @apply relative flex min-h-24 flex-col items-center justify-center gap-1.5 overflow-hidden rounded-3xl border-2 border-line bg-card p-3 text-center text-[1.05rem] leading-snug font-semibold transition duration-200 active:scale-[0.96];
+    }
+
+    /* Tap ripple, positioned by quiz.js ripple() via --rx/--ry. */
+    .option::after {
+        content: '';
+        position: absolute;
+        left: var(--rx, 50%);
+        top: var(--ry, 50%);
+        width: 12px;
+        height: 12px;
+        margin: -6px 0 0 -6px;
+        border-radius: 9999px;
+        background: var(--accent);
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .option.is-rippling::after {
+        animation: ripple 0.55s ease-out;
+    }
+
+    .collage-emoji {
+        transition:
+            transform 0.3s var(--ease-spring),
+            opacity 0.3s,
+            filter 0.3s;
+    }
+
+    .collage-emoji.is-lit {
+        transform: scale(1.35);
+        filter: drop-shadow(0 6px 10px rgb(0 0 0 / 0.18));
+    }
+
+    .collage-emoji.is-dim {
+        transform: scale(0.85);
+        opacity: 0.3;
     }
 
     .option[aria-pressed='true'] {
@@ -161,6 +197,17 @@
 
         .option:hover:not([aria-pressed='true']) {
             @apply -translate-y-0.5 border-accent/60 shadow-md;
+        }
+    }
+
+    /* A tappable trait bar on the result page. */
+    .trait-row {
+        @apply block w-full rounded-xl px-1 py-1.5 text-left transition active:scale-[0.99];
+    }
+
+    @media (hover: hover) {
+        .trait-row:hover {
+            @apply bg-paper-2;
         }
     }
 
@@ -243,6 +290,61 @@
         transform: none;
         opacity: 1;
     }
+}
+
+@keyframes ripple {
+    from {
+        transform: scale(1);
+        opacity: 0.28;
+    }
+    to {
+        transform: scale(40);
+        opacity: 0;
+    }
+}
+
+@keyframes bob {
+    0%,
+    100% {
+        transform: translateY(0) rotate(-3deg);
+    }
+    50% {
+        transform: translateY(-7px) rotate(3deg);
+    }
+}
+
+@keyframes in-right {
+    from {
+        transform: translateX(36px);
+        opacity: 0;
+    }
+    to {
+        transform: none;
+        opacity: 1;
+    }
+}
+
+@keyframes in-left {
+    from {
+        transform: translateX(-36px);
+        opacity: 0;
+    }
+    to {
+        transform: none;
+        opacity: 1;
+    }
+}
+
+.animate-bob {
+    animation: bob 3.2s ease-in-out infinite;
+}
+
+.animate-in-right {
+    animation: in-right 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.animate-in-left {
+    animation: in-left 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
 .animate-pop {

@@ -49,6 +49,8 @@ class QuizController extends Controller
             'locations' => Location::where('is_active', true)->orderBy('sort_order')->get()
                 ->map(fn (Location $l) => ResultPresenter::locationBrief($l) + [
                     'title_bn' => $l->title_bn,
+                    'tagline_bn' => $l->tagline_bn,
+                    'description_bn' => $l->description_bn,
                     'x' => $l->map_x,
                     'y' => $l->map_y,
                     'illustration' => $l->illustrationUrl(),

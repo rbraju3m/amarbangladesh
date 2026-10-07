@@ -150,21 +150,80 @@ final class Scorer
     }
 
     /**
+     * How a stored play relates to every place, for the result page's "explore" sheets: the
+     * display % and the (up to) two answers that pulled hardest toward each place, plus the
+     * answers that fed each trait most. Tolerates content edits: options no longer active are
+     * skipped, so the numbers are a live view, not part of the stored result.
+     *
+     * @param  list<int>  $optionIds
+     * @return array{places: array<string, array{pct:int, answers:list<int>}>, traits: array<string, list<int>>}
+     */
+    public function explore(array $optionIds): array
+    {
+        $chosen = [];
+        foreach ($this->config->questions as $options) {
+            foreach ($optionIds as $id) {
+                if (isset($options[$id])) {
+                    $chosen[$id] = $options[$id];
+                }
+            }
+        }
+
+        $vector = array_fill(0, count($this->config->traitKeys), 0.0);
+        $bonus = [];
+        foreach ($chosen as $option) {
+            foreach ($option['weights'] as $i => $w) {
+                $vector[$i] += $w;
+            }
+            foreach ($option['bonus'] as $slug => $points) {
+                $bonus[$slug] = ($bonus[$slug] ?? 0) + $points;
+            }
+        }
+
+        $places = [];
+        foreach ($this->rank($vector, $bonus) as $slug => $score) {
+            $pulls = [];
+            foreach ($chosen as $id => $option) {
+                $pulls[$id] = $this->pull($option, $slug);
+            }
+            arsort($pulls);
+            $places[$slug] = ['pct' => $this->displayPct($score), 'answers' => array_slice(array_keys($pulls), 0, 2)];
+        }
+
+        $traits = [];
+        foreach ($this->config->traitKeys as $i => $key) {
+            $weights = array_filter(array_map(fn ($o) => $o['weights'][$i] ?? 0, $chosen), fn ($w) => $w > 0);
+            arsort($weights);
+            $traits[$key] = array_slice(array_keys($weights), 0, 2);
+        }
+
+        return ['places' => $places, 'traits' => $traits];
+    }
+
+    /**
+     * How hard one answer pulls toward a location: its trait fit, favouring the location's own
+     * signature answers and discounting answers that are another place's signature.
+     */
+    private function pull(array $option, string $slug): float
+    {
+        $own = $option['bonus'][$slug] ?? 0;
+        $others = array_sum($option['bonus']) - $own;
+
+        return self::cosine($option['weights'], $this->config->locations[$slug]['profile']) + 0.5 * $own - 0.5 * $others;
+    }
+
+    /**
      * The two answers that pulled hardest toward the winning location.
      *
      * @return list<string>
      */
     private function reasons(array $answers, string $slug): array
     {
-        $profile = $this->config->locations[$slug]['profile'];
         $pulls = [];
 
         foreach ($answers as $questionId => $optionId) {
             $option = $this->config->questions[$questionId][$optionId];
-            // Favour this location's signature answers; avoid quoting answers that are another place's signature.
-            $own = $option['bonus'][$slug] ?? 0;
-            $others = array_sum($option['bonus']) - $own;
-            $pulls[$option['reason']] = self::cosine($option['weights'], $profile) + 0.5 * $own - 0.5 * $others;
+            $pulls[$option['reason']] = $this->pull($option, $slug);
         }
         arsort($pulls);
 

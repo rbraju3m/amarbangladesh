@@ -17,6 +17,7 @@ final class ResultPresenter
     {
         $result->loadMissing(['location', 'secondLocation', 'referrer.location']);
         $traits = self::traitMeta();
+        $explore = (new Scorer(QuizConfig::load()))->explore($result->answer_ids ?? []);
 
         $friend = null;
         if ($result->referrer && $result->friend_match_pct !== null) {
@@ -37,11 +38,14 @@ final class ResultPresenter
             'second' => $result->secondLocation && $result->second_location_id !== $result->location_id
                 ? self::locationBrief($result->secondLocation) + ['pct' => $result->second_match_pct]
                 : null,
+            // Sort here: MySQL JSON columns don't keep key order, so the stored ranking is lost.
             'traits' => collect($result->trait_scores)
                 ->filter(fn ($pct, $key) => isset($traits[$key]))
+                ->sortDesc()
                 ->take(5)
-                ->map(fn ($pct, $key) => $traits[$key] + ['key' => $key, 'pct' => $pct])
+                ->map(fn ($pct, $key) => $traits[$key] + ['key' => $key, 'pct' => $pct, 'answers' => $explore['traits'][$key] ?? []])
                 ->values()->all(),
+            'places' => self::places($result, $explore['places']),
             'reason' => $result->reason_bn,
             'friend' => $friend,
         ];
@@ -57,6 +61,34 @@ final class ResultPresenter
             'badges' => $location->badges,
             'illustration' => $location->illustrationUrl(),
         ];
+    }
+
+    /**
+     * Every place with this player's match % and the answers that pulled toward it, best first.
+     * The stored winner and runner-up keep their stored %, and live numbers for the rest are
+     * capped below them, so editing content never reorders what a shared result shows.
+     *
+     * @param  array<string, array{pct:int, answers:list<int>}>  $live
+     * @return list<array{slug:string, pct:int, answers:list<int>}>
+     */
+    private static function places(QuizResult $result, array $live): array
+    {
+        $top = $result->location->slug;
+        $second = $result->secondLocation?->slug;
+        $cap = ($result->second_match_pct ?? $result->match_pct) - 1;
+
+        $places = [];
+        foreach ($live as $slug => $place) {
+            $pct = match ($slug) {
+                $top => $result->match_pct,
+                $second => $result->second_match_pct,
+                default => min($place['pct'], $cap),
+            };
+            $places[] = ['slug' => $slug, 'pct' => $pct, 'answers' => $place['answers']];
+        }
+        usort($places, fn ($a, $b) => [$b['slug'] === $top, $b['pct']] <=> [$a['slug'] === $top, $a['pct']]);
+
+        return $places;
     }
 
     public static function locationBrief(Location $location): array

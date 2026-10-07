@@ -52,6 +52,11 @@ export default function quiz(boot) {
         barsIn: false,
 
         // reveal
+        placeSlug: null, // place open in the explore sheet
+        openTrait: null, // trait row expanded to show the answers behind it
+        dir: 'fwd', // which way the next question slides in
+        hoverOpt: null, // answer under the pointer/focus, lit up in the question's emoji picture
+        swipeX: null,
         revealSteps: REVEAL_STEPS,
         revealStep: -1,
         scanSlug: null,
@@ -82,6 +87,7 @@ export default function quiz(boot) {
         possessive,
 
         init() {
+            this.optionById = Object.fromEntries(this.questions.flatMap((q) => q.options.map((o) => [o.id, o])));
             const visitorId = store.get('bd.visitor') || uuid();
             store.set('bd.visitor', visitorId);
             setTrackingContext({ visitor_id: visitorId });
@@ -146,13 +152,50 @@ export default function quiz(boot) {
             this.locations.forEach((l) => (new Image().src = l.illustration));
         },
 
+        // A short line of encouragement at the halfway point and near the end.
+        get nudge() {
+            const left = this.questions.length - this.qIndex;
+            if (left === 1) return 'শেষ প্রশ্ন! 🎉';
+            if (left === 2) return 'আর মাত্র ২টা! 💪';
+            if (this.qIndex === Math.floor(this.questions.length / 2)) return 'অর্ধেক শেষ! 🔥';
+            return null;
+        },
+
+        // Ink ripple from the tap point on an answer card.
+        ripple(e) {
+            const el = e.currentTarget;
+            const box = el.getBoundingClientRect();
+            el.style.setProperty('--rx', `${e.clientX - box.left}px`);
+            el.style.setProperty('--ry', `${e.clientY - box.top}px`);
+            el.classList.remove('is-rippling');
+            void el.offsetWidth; // restart the animation
+            el.classList.add('is-rippling');
+        },
+
+        // Swipe right on a question to go back, like a phone's back gesture.
+        swipeStart(e) {
+            const t = e.changedTouches[0];
+            this.swipeX = { x: t.clientX, y: t.clientY };
+        },
+
+        swipeEnd(e) {
+            if (!this.swipeX || this.picked) return;
+            const t = e.changedTouches[0];
+            const dx = t.clientX - this.swipeX.x, dy = Math.abs(t.clientY - this.swipeX.y);
+            this.swipeX = null;
+            if (dx > 70 && dy < 50) this.back();
+        },
+
         async choose(option) {
             if (this.picked) return;
             this.picked = option.id;
+            this.dir = 'fwd';
+            navigator.vibrate?.(12);
             this.answers[this.question.id] = option.id;
             track('question_answered', { meta: { q: this.qIndex + 1 } });
             await wait(420);
             this.picked = null;
+            this.hoverOpt = null;
             if (this.qIndex < this.questions.length - 1) {
                 this.qIndex++;
             } else {
@@ -176,6 +219,8 @@ export default function quiz(boot) {
         },
 
         back() {
+            this.dir = 'back';
+            this.hoverOpt = null;
             if (this.qIndex === 0) {
                 this.screen = this.ref ? 'teaser' : 'landing';
                 return;
@@ -250,14 +295,60 @@ export default function quiz(boot) {
             window.scrollTo(0, 0);
         },
 
+        // Grow the trait bars once they scroll into view (on phones they start below the fold).
+        observeBars(el) {
+            if (!('IntersectionObserver' in window)) return (this.barsIn = true);
+            const io = new IntersectionObserver(
+                (entries) => {
+                    if (!entries.some((e) => e.isIntersecting)) return;
+                    this.barsIn = true;
+                    io.disconnect();
+                },
+                { threshold: 0.35 },
+            );
+            io.observe(el);
+        },
+
+        toggleTrait(key) {
+            this.openTrait = this.openTrait === key ? null : key;
+        },
+
+        traitAnswers(t) {
+            return (t.answers ?? []).map((id) => this.optionById[id]).filter(Boolean);
+        },
+
+        // The explore sheet: one place, how well it matches this player and which answers pulled toward it.
+        openPlace(slug) {
+            this.placeSlug = slug;
+            track('place_opened', { result: this.result?.code, meta: { place: slug } });
+        },
+
+        get places() {
+            const bySlug = Object.fromEntries(this.locations.map((l) => [l.slug, l]));
+            return (this.result?.places ?? []).map((p, i) => ({ ...bySlug[p.slug], ...p, rank: i + 1 })).filter((p) => p.name_bn);
+        },
+
+        get placeView() {
+            const p = this.places.find((x) => x.slug === this.placeSlug);
+            return p ? { ...p, options: p.answers.map((id) => this.optionById[id]).filter(Boolean), isTop: p.rank === 1 } : null;
+        },
+
+        stepPlace(delta) {
+            const list = this.places;
+            const i = list.findIndex((p) => p.slug === this.placeSlug);
+            if (i < 0) return;
+            this.placeSlug = list[(i + delta + list.length) % list.length].slug;
+        },
+
         // Count the match % up, grow the trait bars and, for a fresh result, burst confetti.
         animateResult(result, fresh) {
             this.barsIn = false;
+            this.openTrait = null;
+            this.placeSlug = null;
             this.shownPct = 0;
             const target = result.match_pct;
             requestAnimationFrame(() =>
                 requestAnimationFrame(() => {
-                    this.barsIn = true;
                     if (reducedMotion()) {
                         this.shownPct = target;
                         return;
