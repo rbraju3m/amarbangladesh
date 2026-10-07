@@ -5,9 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
     <title>@yield('title', 'Admin') · তোমার বাংলাদেশ কোথায়?</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     @vite(['resources/css/app.css'])
 </head>
 <body class="min-h-dvh">
+@hasSection('bare')
+    @yield('content')
+@else
     @auth
         <nav class="sticky top-0 z-10 border-b border-line bg-paper/90 backdrop-blur">
             <div class="mx-auto flex max-w-6xl items-center gap-1 overflow-x-auto px-4 py-2 text-sm font-medium">
@@ -16,6 +20,7 @@
                     <a href="{{ route($route) }}" @class(['rounded-xl px-3 py-2 whitespace-nowrap', 'bg-ink text-paper' => request()->routeIs(str_replace('.index', '.*', $route)), 'hover:bg-paper-2' => ! request()->routeIs(str_replace('.index', '.*', $route))])>{{ $label }}</a>
                 @endforeach
                 <a href="{{ route('home') }}" target="_blank" class="ml-auto rounded-xl px-3 py-2 whitespace-nowrap hover:bg-paper-2">View site ↗</a>
+                <a href="{{ route('admin.password.edit') }}" @class(['rounded-xl px-3 py-2 whitespace-nowrap', 'bg-ink text-paper' => request()->routeIs('admin.password.*'), 'hover:bg-paper-2' => ! request()->routeIs('admin.password.*')])>Password</a>
                 <form method="POST" action="{{ route('admin.logout') }}">@csrf<button class="rounded-xl px-3 py-2 hover:bg-paper-2">Log out</button></form>
             </div>
         </nav>
@@ -31,5 +36,6 @@
         @endif
         @yield('content')
     </main>
+@endif
 </body>
 </html>

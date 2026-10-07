@@ -15,6 +15,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
     Route::middleware('auth')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+        Route::get('/password', [AuthController::class, 'editPassword'])->name('password.edit');
+        Route::put('/password', [AuthController::class, 'updatePassword'])->middleware('throttle:6,1')->name('password.update');
         Route::get('/', DashboardController::class)->name('dashboard');
         Route::get('/balance', BalanceController::class)->name('balance');
 

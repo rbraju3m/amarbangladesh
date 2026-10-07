@@ -28,6 +28,24 @@ class AuthController extends Controller
         return redirect()->intended(route('admin.dashboard'));
     }
 
+    public function editPassword(): View
+    {
+        return view('admin.password');
+    }
+
+    public function updatePassword(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'current_password' => ['required', 'current_password'],
+            'password' => ['required', 'string', 'min:10', 'confirmed', 'different:current_password'],
+        ]);
+
+        $request->user()->update(['password' => $data['password']]);
+        $request->session()->regenerate();
+
+        return back()->with('status', 'Password updated.');
+    }
+
     public function logout(Request $request): RedirectResponse
     {
         Auth::logout();
