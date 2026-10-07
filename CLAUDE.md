@@ -10,7 +10,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```sh
 composer install && npm install
-php artisan migrate:fresh --seed     # schema + all quiz content + admin user (prints password unless ADMIN_PASSWORD set)
+php artisan migrate:fresh --seed     # schema + all quiz content + super admin (needs SUPER_ADMIN_PASSWORD in .env)
+php artisan admin:ensure-super-admin [--reset-password]   # create/repair the permanent super admin
+php artisan quiz:purge-plays         # delete all results + analytics (demo data) before going live / exporting
 npm run build                        # or `npm run dev` with `php artisan serve`
 php artisan test                     # MySQL test DB `amarbangladesh_test` (see phpunit.xml); no sqlite driver on this machine
 php artisan test --filter=ScoringTest
@@ -23,7 +25,7 @@ php artisan quiz:og-images           # re-render public/images/og/*.png (needs g
 
 **Single-page quiz.** `/` and `/r/{code}` both render `resources/views/site/app.blade.php`, which embeds all questions/locations as JSON (`#boot`) and runs one Alpine component (`resources/js/quiz.js`) with screens `landing | teaser | question | reveal | result`. Only one API call happens per play (`POST /api/results`). After it, the URL is `pushState`d to `/r/{code}` — the result URL *is* the share URL. On `/r/{code}` the client decides owner vs visitor: owners have the code in `localStorage['bd.mine']` (with their owner token); everyone else sees the teaser, and their own play is sent with `ref` so they get a friend-match %.
 
-**Public routes are cookieless and sessionless** (`routes/web.php` strips session/cookie/CSRF middleware). That's what makes pages CDN-cacheable and is the privacy model. Don't add `session()`, `csrf_token()`, `$errors` or auth checks to public views. The only write needing ownership (`PATCH /api/results/{code}/name`) uses a per-result owner token (stored hashed). Admin (`routes/admin.php`) uses normal session auth; every user is an admin, there is no registration.
+**Public routes are cookieless and sessionless** (`routes/web.php` strips session/cookie/CSRF middleware). That's what makes pages CDN-cacheable and is the privacy model. Don't add `session()`, `csrf_token()`, `$errors` or auth checks to public views. The only write needing ownership (`PATCH /api/results/{code}/name`) uses a per-result owner token (stored hashed). Admin (`routes/admin.php`) uses normal session auth; every user is an admin, there is no registration. One permanent **super admin** (`config/admin.php`, same identity as the hospital-management project) is guaranteed by `App\Support\SuperAdmin\SuperAdminProvisioner`: after every `migrate` (listener), in `DatabaseSeeder`, via `admin:ensure-super-admin`, and throttled on boot. Its password comes only from `SUPER_ADMIN_PASSWORD` (never commit one: the repo is public); `User` refuses to delete, demote or re-address it, and `is_super_admin` is not fillable.
 
 **Scoring** (`app/Quiz/`) is deterministic and server-only:
 - 8 trait dimensions (`traits` table). Each answer has `trait_weights`; each location has a 0–10 `profile`.

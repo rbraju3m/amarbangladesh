@@ -9,7 +9,7 @@ A one-minute Bangla personality quiz that matches you with a place in Bangladesh
 ```sh
 composer install && npm install
 cp .env.example .env && php artisan key:generate   # set DB_* (MySQL) and APP_URL
-php artisan migrate --seed                         # prints the admin password unless ADMIN_PASSWORD is set
+php artisan migrate --seed                         # quiz content + super admin (set SUPER_ADMIN_PASSWORD in .env first)
 npm run build
 php artisan quiz:og-images                         # link-preview images (needs google-chrome)
 ```
@@ -31,16 +31,16 @@ Files are in `deploy/`: `nginx.conf`, `env.production.example`, `deploy.sh`, `cr
 
 ```sh
 git clone git@github.com:rbraju3m/amarbangladesh.git /var/www/amarbangladesh && cd /var/www/amarbangladesh
-cp deploy/env.production.example .env        # fill APP_URL, DB_*, ADMIN_EMAIL, ADMIN_PASSWORD
+cp deploy/env.production.example .env        # fill APP_URL, DB_*, SUPER_ADMIN_PASSWORD
 composer install --no-dev --optimize-autoloader
 php artisan key:generate
 npm ci && npm run build
-php artisan migrate --force --seed            # seed ONCE: quiz content + admin user
+php artisan migrate --force --seed            # seed ONCE: quiz content (migrate also creates the super admin)
 php artisan optimize
 sudo chown -R www-data:www-data storage bootstrap/cache
 ```
 
-Then remove `ADMIN_PASSWORD` from `.env`, install `deploy/nginx.conf`, and add `deploy/crontab` with `crontab -e` (scheduler + daily DB backup).
+Before going live, `php artisan quiz:purge-plays` removes test plays and analytics (content and admins stay). Then install `deploy/nginx.conf`, and add `deploy/crontab` with `crontab -e` (scheduler + daily DB backup).
 
 **Updates:** `deploy/deploy.sh` (maintenance mode → pull → build → migrate → cache → up).
 

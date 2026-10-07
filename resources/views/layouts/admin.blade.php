@@ -40,6 +40,7 @@
                     <a href="{{ route('home') }}" target="_blank" class="nav-link">{!! $icon('M14 4h6v6M20 4l-9 9M18 14v6H4V6h6') !!}View site</a>
                     <form method="POST" action="{{ route('admin.logout') }}">@csrf<button class="nav-link w-full">{!! $icon('M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10') !!}Log out</button></form>
                     <p class="truncate px-3 pt-2 text-xs text-ink-2" title="{{ auth()->user()->email }}">{{ auth()->user()->email }}</p>
+                    @if (auth()->user()->is_super_admin)<p class="px-3 pt-1"><span class="pill bg-flag-green/10 text-green-text">★ Super admin</span></p>@endif
                 </div>
             </aside>
 

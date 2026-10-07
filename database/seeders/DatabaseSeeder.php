@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
+use App\Support\SuperAdmin\SuperAdminPasswordMissing;
+use App\Support\SuperAdmin\SuperAdminProvisioner;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
 {
@@ -15,12 +15,13 @@ class DatabaseSeeder extends Seeder
     {
         $this->call(QuizContentSeeder::class);
 
-        // Every user is an admin; there is no public registration.
-        $email = env('ADMIN_EMAIL', 'admin@example.com');
-        if (! User::where('email', $email)->exists()) {
-            $password = env('ADMIN_PASSWORD') ?: Str::password(16);
-            User::create(['name' => 'Admin', 'email' => $email, 'password' => $password]);
-            $this->command?->info("Admin user: {$email} / {$password}");
+        // Every user is an admin; there is no public registration. The super administrator
+        // (config/admin.php, password from SUPER_ADMIN_PASSWORD) is the first one.
+        try {
+            $user = (new SuperAdminProvisioner)->ensure();
+            $this->command?->info("Super administrator: {$user?->email}");
+        } catch (SuperAdminPasswordMissing $e) {
+            $this->command?->warn($e->getMessage());
         }
     }
 }

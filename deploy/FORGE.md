@@ -29,8 +29,9 @@ APP_TIMEZONE=Asia/Dhaka
 DB_TIMEZONE=+06:00
 TRUSTED_PROXIES=cloudflare
 DB_DATABASE=…   DB_USERNAME=…   DB_PASSWORD=…   # from Forge's database
-ADMIN_EMAIL=you@example.com
-ADMIN_PASSWORD=…                                # first deploy only, then remove
+SUPER_ADMIN_NAME=Raju
+SUPER_ADMIN_EMAIL=rbraju3m@gmail.com
+SUPER_ADMIN_PASSWORD=…                          # same as hospital-management; 10+ chars, letters + digits
 ```
 
 `APP_KEY` must be set: run `php artisan key:generate --show` once and paste the value in.
@@ -53,8 +54,23 @@ $FORGE_PHP artisan cache:clear   # drops the cached quiz content so new content/
 After the first successful deploy, run once (Site → Commands):
 
 ```sh
-php artisan db:seed --force      # quiz content + admin user (uses ADMIN_EMAIL / ADMIN_PASSWORD)
+php artisan db:seed --force      # quiz content (+ makes sure the super administrator exists)
 ```
 
-Then remove `ADMIN_PASSWORD` from the environment, and add the scheduler
+The super administrator is created by the deploy's `migrate` already (and re-checked hourly), so
+you can log in at `/admin` with the SUPER_ADMIN_* credentials. If you change the password on the
+admin Password page it is kept; `php artisan admin:ensure-super-admin --reset-password` sets it
+back to SUPER_ADMIN_PASSWORD. Then add the scheduler
 (`php artisan schedule:run` every minute) so old analytics events are pruned.
+
+## Going live / exporting the database
+
+Test plays and analytics events from development should not go live. Before exporting:
+
+```sh
+php artisan quiz:purge-plays     # deletes all results + analytics events; asks first (--force skips)
+mysqldump --single-transaction amarbangladesh > amarbangladesh.sql
+```
+
+Quiz content (questions, places, traits) and admin accounts are kept. Shared result links from the
+deleted plays stop working, which is what you want for demo data.
