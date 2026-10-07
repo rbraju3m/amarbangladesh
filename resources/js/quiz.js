@@ -1,5 +1,6 @@
 import { bnDigits, possessive } from './bn';
 import { canvasToBlob, renderCard } from './card';
+import { confetti } from './confetti';
 import { canShareFile, copyText, isInAppBrowser, isMobile, shareLinks } from './share';
 import { setTrackingContext, track } from './track';
 
@@ -25,6 +26,8 @@ const uuid = () =>
 const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 const wait = (ms) => new Promise((r) => setTimeout(r, reducedMotion() ? 0 : ms));
 
+const BN_DIGITS = '০১২৩৪৫৬৭৮৯';
+
 const REVEAL_STEPS = ['ঘোরাঘুরির ভাইব', 'খাবারের রুচি', 'আড্ডার এনার্জি', 'তোমার বাংলাদেশ'];
 
 export default function quiz(boot) {
@@ -40,6 +43,13 @@ export default function quiz(boot) {
         ref: null,
         ownerToken: null,
         error: null,
+
+        // landing: place focused by hovering/tapping a map dot or card
+        focusSlug: null,
+
+        // result entrance animation
+        shownPct: 0,
+        barsIn: false,
 
         // reveal
         revealSteps: REVEAL_STEPS,
@@ -94,6 +104,10 @@ export default function quiz(boot) {
             return ((this.qIndex + (this.picked ? 1 : 0)) / this.questions.length) * 100;
         },
 
+        get focusPlace() {
+            return this.locations.find((l) => l.slug === this.focusSlug) ?? null;
+        },
+
         get accent() {
             return (this.result ?? this.shared)?.location.accent ?? '#2f7d4f';
         },
@@ -115,12 +129,27 @@ export default function quiz(boot) {
             this.picked = option.id;
             this.answers[this.question.id] = option.id;
             track('question_answered', { meta: { q: this.qIndex + 1 } });
-            await wait(260);
+            await wait(420);
             this.picked = null;
             if (this.qIndex < this.questions.length - 1) {
                 this.qIndex++;
             } else {
                 this.submit();
+            }
+        },
+
+        // Desktop shortcuts: 1–4 (or ১–৪) pick an answer, ← goes back.
+        onKey(e) {
+            if (e.ctrlKey || e.metaKey || e.altKey || this.picked) return;
+            if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                return this.back();
+            }
+            const n = BN_DIGITS.includes(e.key) ? BN_DIGITS.indexOf(e.key) : Number.parseInt(e.key, 10);
+            const option = this.question?.options[n - 1];
+            if (option) {
+                e.preventDefault();
+                this.choose(option);
             }
         },
 
@@ -187,9 +216,34 @@ export default function quiz(boot) {
                 history.pushState({}, '', `/r/${result.code}`);
                 navigator.vibrate?.(30);
             }
+            this.animateResult(result, fresh);
             document.title = `${result.location.emoji} ${result.location.name_bn} — তোমার বাংলাদেশ কোথায়?`;
             track('result_viewed', { result: result.code, meta: { fresh: fresh ? 1 : 0 } });
             window.scrollTo(0, 0);
+        },
+
+        // Count the match % up, grow the trait bars and, for a fresh result, burst confetti.
+        animateResult(result, fresh) {
+            this.barsIn = false;
+            this.shownPct = 0;
+            const target = result.match_pct;
+            requestAnimationFrame(() =>
+                requestAnimationFrame(() => {
+                    this.barsIn = true;
+                    if (reducedMotion()) {
+                        this.shownPct = target;
+                        return;
+                    }
+                    const start = performance.now();
+                    const tick = (now) => {
+                        const t = Math.min(1, (now - start) / 1100);
+                        this.shownPct = Math.round(target * (1 - (1 - t) ** 3));
+                        if (t < 1) requestAnimationFrame(tick);
+                    };
+                    requestAnimationFrame(tick);
+                }),
+            );
+            if (fresh) setTimeout(() => confetti([result.location.accent, '#e03a3e', '#006a4e', '#f4b400', '#ffffff']), 250);
         },
 
         retake() {

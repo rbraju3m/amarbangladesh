@@ -13,48 +13,69 @@
 <main x-data="quiz(JSON.parse(document.getElementById('boot').textContent))" :style="`--accent: ${accent}`" class="relative overflow-x-clip">
 
     {{-- ===================== LANDING ===================== --}}
-    <section x-show="screen === 'landing'" @if ($isShared) x-cloak @endif class="screen pb-10">
+    <section x-show="screen === 'landing'" @if ($isShared) x-cloak @endif class="screen pb-10 md:max-w-2xl lg:max-w-6xl lg:px-8"
+        @click="$event.target.closest('[data-place]') || (focusSlug = null)">
         <header class="flex items-center justify-between py-4">
             <span class="text-sm font-semibold tracking-wide">🇧🇩 আমার বাংলাদেশ</span>
         </header>
 
-        <div class="relative mx-auto -mb-4 w-[68%] max-w-64">
-            @include('partials.bd-map', ['mode' => 'hero', 'class' => 'w-full drop-shadow-[0_18px_30px_rgb(0_106_78/0.25)]', 'locations' => $boot['locations']])
-            <span class="animate-pop absolute top-[18%] -left-6 rounded-full bg-card px-3 py-1 text-sm font-semibold shadow-lg [animation-delay:.2s]">🌿 সিলেট?</span>
-            <span class="animate-pop absolute top-[52%] -right-8 rounded-full bg-card px-3 py-1 text-sm font-semibold shadow-lg [animation-delay:.45s]">🌊 কক্সবাজার?</span>
-            <span class="animate-pop absolute bottom-[14%] -left-4 rounded-full bg-card px-3 py-1 text-sm font-semibold shadow-lg [animation-delay:.7s]">🐅 সুন্দরবন?</span>
-        </div>
+        <div class="lg:grid lg:flex-1 lg:grid-cols-2 lg:items-center lg:gap-16 lg:py-6">
+            <div class="relative mx-auto -mb-4 w-[68%] max-w-64 lg:mb-0 lg:w-[78%] lg:max-w-sm">
+                @include('partials.bd-map', ['mode' => 'hero', 'class' => 'w-full drop-shadow-[0_18px_30px_rgb(0_106_78/0.25)]', 'locations' => $boot['locations']])
+                <div class="transition-opacity duration-200" :class="focusSlug && 'opacity-0'" aria-hidden="true">
+                    <span class="animate-pop absolute top-[18%] -left-6 rounded-full bg-card px-3 py-1 text-sm font-semibold shadow-lg [animation-delay:.2s]">🌿 সিলেট?</span>
+                    <span class="animate-pop absolute top-[52%] -right-8 rounded-full bg-card px-3 py-1 text-sm font-semibold shadow-lg [animation-delay:.45s]">🌊 কক্সবাজার?</span>
+                    <span class="animate-pop absolute bottom-[14%] -left-4 rounded-full bg-card px-3 py-1 text-sm font-semibold shadow-lg [animation-delay:.7s]">🐅 সুন্দরবন?</span>
+                </div>
+                {{-- Tooltip for the focused map dot / place card --}}
+                <template x-if="focusPlace">
+                    <div class="animate-pop pointer-events-none absolute z-20 -translate-x-1/2 -translate-y-[calc(100%+16px)] rounded-2xl bg-card px-3 py-2 text-center whitespace-nowrap shadow-xl"
+                        :style="`left: ${focusPlace.x}%; top: ${focusPlace.y}%`">
+                        <div class="font-bold" x-text="`${focusPlace.emoji} ${focusPlace.name_bn}`"></div>
+                        <div class="text-xs text-ink-2" x-text="focusPlace.title_bn"></div>
+                    </div>
+                </template>
+            </div>
 
-        <div class="relative z-10 text-center">
-            <h1 class="text-[2.6rem] leading-[1.15] font-bold tracking-tight">
-                তোমার <span class="text-green-text">বাংলাদেশ</span><br>কোথায়?
-            </h1>
-            <p class="mx-auto mt-3 max-w-xs text-lg leading-relaxed text-ink-2">
-                বাংলাদেশের কোন জায়গাটা তোমার personality-র সাথে সবচেয়ে বেশি মেলে?
-            </p>
+            <div class="relative z-10 text-center lg:text-left">
+                <h1 class="text-[2.6rem] leading-[1.15] font-bold tracking-tight lg:text-[4.2rem]">
+                    তোমার <span class="text-green-text">বাংলাদেশ</span><br>কোথায়?
+                </h1>
+                <p class="mx-auto mt-3 max-w-xs text-lg leading-relaxed text-ink-2 lg:mx-0 lg:mt-5 lg:max-w-md lg:text-xl">
+                    বাংলাদেশের কোন জায়গাটা তোমার personality-র সাথে সবচেয়ে বেশি মেলে?
+                </p>
 
-            <button type="button" class="btn-primary mt-7" @click="start()">
-                আমার বাংলাদেশ খুঁজে দেখি <span aria-hidden="true">→</span>
-            </button>
+                <button type="button" class="btn-primary group mt-7 lg:w-auto lg:px-10" @click="start()">
+                    আমার বাংলাদেশ খুঁজে দেখি <span aria-hidden="true" class="transition-transform duration-200 group-hover:translate-x-1">→</span>
+                </button>
 
-            <ul class="mt-5 flex flex-wrap justify-center gap-2" aria-label="কুইজের তথ্য">
-                <li class="chip">⏱️ মাত্র ১ মিনিট</li>
-                <li class="chip">✨ {{ \App\Support\Bangla::digits(count($boot['questions'])) }}টি প্রশ্ন</li>
-                <li class="chip">🇧🇩 {{ \App\Support\Bangla::digits(count($boot['locations'])) }}টি বাংলাদেশ</li>
-            </ul>
+                <ul class="mt-5 flex flex-wrap justify-center gap-2 lg:justify-start" aria-label="কুইজের তথ্য">
+                    <li class="chip">⏱️ মাত্র ১ মিনিট</li>
+                    <li class="chip">✨ {{ \App\Support\Bangla::digits(count($boot['questions'])) }}টি প্রশ্ন</li>
+                    <li class="chip">🇧🇩 {{ \App\Support\Bangla::digits(count($boot['locations'])) }}টি বাংলাদেশ</li>
+                </ul>
+                <p class="mt-6 hidden text-sm text-ink-2 lg:block">👈 ম্যাপের বিন্দুগুলোতে মাউস রাখো</p>
+            </div>
         </div>
 
         <div class="mt-12">
             <h2 class="mb-3 text-center text-sm font-semibold text-ink-2">এদের মধ্যে একটা তুমি 👇</h2>
-            <div class="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none]">
+            <div class="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pt-2 pb-3 [scrollbar-width:none] md:mx-0 md:grid md:grid-cols-3 md:overflow-visible md:px-0 lg:grid-cols-9">
                 @foreach ($boot['locations'] as $loc)
-                    <div class="w-36 shrink-0 snap-start overflow-hidden rounded-2xl border border-line bg-card">
-                        <img src="{{ $loc['illustration'] }}" alt="" loading="lazy" width="144" height="96" class="h-24 w-full object-cover">
-                        <div class="px-3 py-2">
-                            <div class="font-semibold">{{ $loc['emoji'] }} {{ $loc['name_bn'] }}</div>
-                            <div class="truncate text-xs text-ink-2">{{ $loc['title_bn'] }}</div>
-                        </div>
-                    </div>
+                    <button type="button" data-place class="place-card w-36 shrink-0 snap-start overflow-hidden rounded-2xl border border-line bg-card text-left md:w-auto"
+                        :class="focusSlug === '{{ $loc['slug'] }}' && 'is-focus'"
+                        @pointerenter="$event.pointerType === 'mouse' && (focusSlug = '{{ $loc['slug'] }}')"
+                        @pointerleave="$event.pointerType === 'mouse' && (focusSlug = null)"
+                        @click="focusSlug = '{{ $loc['slug'] }}'">
+                        <span class="relative block">
+                            <img src="{{ $loc['illustration'] }}" alt="" loading="lazy" width="144" height="96" class="h-24 w-full object-cover md:h-auto md:aspect-[4/3]">
+                            <span class="absolute bottom-1.5 left-1.5 flex size-8 items-center justify-center rounded-full bg-card/90 text-base shadow" aria-hidden="true">{{ $loc['emoji'] }}</span>
+                        </span>
+                        <span class="block px-3 py-2 lg:px-2.5">
+                            <span class="block font-semibold whitespace-nowrap">{{ $loc['name_bn'] }}</span>
+                            <span class="block text-xs text-ink-2" :class="focusSlug === '{{ $loc['slug'] }}' ? 'whitespace-normal' : 'truncate'">{{ $loc['title_bn'] }}</span>
+                        </span>
+                    </button>
                 @endforeach
             </div>
         </div>
@@ -67,7 +88,7 @@
     {{-- ===================== TEASER (someone shared their result) ===================== --}}
     @if ($isShared)
         @php($s = $boot['shared'])
-        <section x-show="screen === 'teaser'" class="screen justify-center py-8 text-center" style="--accent: {{ $s['location']['accent'] }}">
+        <section x-show="screen === 'teaser'" class="screen justify-center py-8 text-center md:max-w-lg" style="--accent: {{ $s['location']['accent'] }}">
             <p class="text-lg text-ink-2">
                 {{ $s['name'] ? \App\Support\Bangla::possessive($s['name']) : 'তোমার বন্ধুর' }} বাংলাদেশ
             </p>
@@ -89,53 +110,63 @@
     @endif
 
     {{-- ===================== QUESTIONS ===================== --}}
-    <section x-show="screen === 'question'" x-cloak class="screen h-dvh pb-[max(1rem,env(safe-area-inset-bottom))]">
+    <section x-show="screen === 'question'" x-cloak class="screen h-dvh pb-[max(1rem,env(safe-area-inset-bottom))] md:max-w-2xl lg:max-w-4xl lg:pb-12"
+        @keydown.window="screen === 'question' && onKey($event)">
         <header class="flex items-center gap-3 py-4">
             <button type="button" @click="back()" class="flex size-11 shrink-0 items-center justify-center rounded-full border border-line" aria-label="আগের প্রশ্ন">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
             </button>
             <div class="flex flex-1 gap-1.5" role="progressbar" aria-label="অগ্রগতি" :aria-valuenow="qIndex + 1" aria-valuemin="1" :aria-valuemax="questions.length">
                 <template x-for="(q, i) in questions" :key="q.id">
-                    <span class="h-1.5 flex-1 rounded-full transition-colors duration-300" :class="i <= qIndex ? 'bg-flag-red' : 'bg-line'"></span>
+                    <span class="h-1.5 flex-1 overflow-hidden rounded-full bg-line"><span class="block h-full rounded-full bg-flag-red transition-[width] duration-300 ease-out" :style="`width: ${i < qIndex || (i === qIndex && picked) ? 100 : (i === qIndex ? 35 : 0)}%`"></span></span>
                 </template>
             </div>
             <span class="w-10 text-right text-sm font-semibold tabular-nums text-ink-2" x-text="`${bn(qIndex + 1)}/${bn(questions.length)}`"></span>
         </header>
 
         <template x-for="q in (screen === 'question' ? [question] : [])" :key="q.id">
-            <div class="flex flex-1 flex-col">
-                <div class="flex flex-1 flex-col items-center justify-center py-4 text-center">
+            <div class="flex flex-1 flex-col lg:justify-center">
+                <div class="flex flex-1 flex-col items-center justify-center py-4 text-center lg:flex-none lg:pb-12">
                     {{-- Floating answer emojis as the question's visual; image questions carry their own visuals. --}}
-                    <div x-show="q.kind !== 'image'" class="relative mb-6 size-40 rounded-full bg-flag-green/10" aria-hidden="true">
+                    <div x-show="q.kind !== 'image'" class="relative mb-6 size-40 rounded-full bg-flag-green/10 lg:size-48" aria-hidden="true">
                         <template x-for="(o, i) in q.options" :key="o.id">
                             <span class="animate-pop absolute text-5xl" :style="`${['top:6%;left:8%', 'top:12%;right:4%', 'bottom:6%;left:14%', 'bottom:10%;right:10%'][i]}; animation-delay: ${i * 70}ms`" x-text="o.emoji"></span>
                         </template>
                     </div>
-                    <h2 class="animate-rise text-[1.9rem] leading-snug font-bold" x-text="q.prompt" :id="`q-${q.id}`"></h2>
+                    <h2 class="animate-rise text-[1.9rem] leading-snug font-bold lg:text-[2.6rem]" x-text="q.prompt" :id="`q-${q.id}`"></h2>
                     <p x-show="q.subtitle" class="mt-2 text-ink-2" x-text="q.subtitle"></p>
                 </div>
 
-                <div class="grid grid-cols-2 gap-3" role="group" :aria-labelledby="`q-${q.id}`">
+                <div class="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4" role="group" :aria-labelledby="`q-${q.id}`">
                     <template x-for="(o, i) in q.options" :key="o.id">
                         <button type="button" class="option animate-rise" :style="`animation-delay: ${80 + i * 50}ms`"
-                            :class="q.kind === 'image' && 'overflow-hidden !p-0 min-h-36 justify-end'"
+                            :class="{
+                                'overflow-hidden !p-0 min-h-36 justify-end lg:min-h-48': q.kind === 'image',
+                                'lg:min-h-36': q.kind !== 'image',
+                                'scale-[1.04] shadow-xl': picked === o.id,
+                                'scale-95 opacity-35': picked && picked !== o.id,
+                            }"
                             :aria-pressed="(picked === o.id || answers[q.id] === o.id).toString()"
                             @click="choose(o)">
                             <template x-if="q.kind === 'image' && o.image">
                                 <img :src="o.image" alt="" class="absolute inset-0 size-full object-cover">
                             </template>
-                            <span x-show="q.kind !== 'image'" class="text-4xl leading-none" aria-hidden="true" x-text="o.emoji"></span>
+                            <span class="absolute top-2.5 left-3 hidden size-6 items-center justify-center rounded-lg border border-current/25 text-xs opacity-60 [@media(hover:hover)]:lg:flex"
+                                :class="q.kind === 'image' && 'z-10 bg-black/40 text-white'" aria-hidden="true" x-text="bn(i + 1)"></span>
+                            <span x-show="picked === o.id" class="animate-pop absolute top-2 right-2 z-10 flex size-7 items-center justify-center rounded-full bg-white text-sm font-bold text-accent shadow" aria-hidden="true">✓</span>
+                            <span x-show="q.kind !== 'image'" class="text-4xl leading-none lg:text-5xl" aria-hidden="true" x-text="o.emoji"></span>
                             <span :class="q.kind === 'image' && 'relative w-full bg-gradient-to-t from-black/75 to-transparent px-2 pt-6 pb-2.5 text-white text-[0.95rem]'" x-text="o.label"></span>
                         </button>
                     </template>
                 </div>
+                <p class="mt-5 hidden text-center text-sm text-ink-2 [@media(hover:hover)]:lg:block">কীবোর্ডে ১–৪ চেপেও উত্তর দিতে পারো · ← আগের প্রশ্ন</p>
             </div>
         </template>
     </section>
 
     {{-- ===================== REVEAL ===================== --}}
     <section x-show="screen === 'reveal'" x-cloak class="screen h-dvh items-center justify-center text-center" aria-live="polite">
-        <div class="relative w-[62%] max-w-60">
+        <div class="relative w-[62%] max-w-60 md:max-w-72">
             @include('partials.bd-map', ['mode' => 'reveal', 'class' => 'w-full', 'locations' => $boot['locations']])
         </div>
 
@@ -162,9 +193,9 @@
 
     {{-- ===================== RESULT ===================== --}}
     <template x-if="screen === 'result' && result">
-        <section class="screen pb-12">
-            {{-- Hero --}}
-            <div class="relative -mx-4 overflow-hidden rounded-b-[2.5rem] bg-accent">
+        <section class="screen pb-12 md:max-w-2xl lg:grid lg:max-w-6xl lg:grid-cols-[5fr_6fr] lg:items-start lg:gap-12 lg:px-8">
+            {{-- Hero (sticky beside the details on desktop) --}}
+            <div class="relative -mx-4 overflow-hidden rounded-b-[2.5rem] bg-accent lg:sticky lg:top-8 lg:mx-0 lg:mt-8 lg:rounded-[2.5rem] lg:shadow-2xl">
                 <img :src="result.location.illustration" :alt="`${result.location.name_bn}-এর ছবি`" width="400" height="300" class="aspect-[4/3] w-full object-cover">
                 <div class="absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-black/80 via-black/45 to-transparent"></div>
                 <div class="absolute bottom-5 left-5 text-white">
@@ -173,20 +204,21 @@
                 </div>
             </div>
 
+            <div class="lg:pt-8">
             {{-- Title + match --}}
-            <div class="mt-6 flex items-center gap-4">
+            <div class="mt-6 flex items-center gap-4 lg:mt-0">
                 <div class="flex-1">
-                    <p class="text-2xl leading-snug font-bold text-accent" x-text="result.location.title_bn"></p>
+                    <p class="text-2xl leading-snug font-bold text-accent lg:text-3xl" x-text="result.location.title_bn"></p>
                     <p class="mt-1 text-ink-2" x-text="result.location.tagline_bn"></p>
                 </div>
                 <div class="relative size-24 shrink-0" role="img" :aria-label="`ভাইব ম্যাচ ${result.match_pct} শতাংশ`">
                     <svg viewBox="0 0 100 100" class="size-full -rotate-90">
                         <circle cx="50" cy="50" r="42" fill="none" stroke="var(--line)" stroke-width="9" />
                         <circle cx="50" cy="50" r="42" fill="none" stroke="var(--red)" stroke-width="9" stroke-linecap="round"
-                            stroke-dasharray="263.9" :stroke-dashoffset="263.9 * (1 - result.match_pct / 100)" class="transition-[stroke-dashoffset] duration-1000" />
+                            stroke-dasharray="263.9" :stroke-dashoffset="263.9 * (1 - shownPct / 100)" />
                     </svg>
                     <div class="absolute inset-0 flex flex-col items-center justify-center">
-                        <span class="text-2xl leading-none font-bold" x-text="`${bn(result.match_pct)}%`"></span>
+                        <span class="text-2xl leading-none font-bold tabular-nums" x-text="`${bn(shownPct)}%`"></span>
                         <span class="text-[0.7rem] text-ink-2">ভাইব ম্যাচ</span>
                     </div>
                 </div>
@@ -236,7 +268,7 @@
                         <li>
                             <div class="mb-1 flex justify-between text-sm font-semibold"><span x-text="`${t.emoji} ${t.label}`"></span><span class="tabular-nums" x-text="`${bn(t.pct)}%`"></span></div>
                             <div class="h-3 overflow-hidden rounded-full bg-paper-2">
-                                <div class="h-full rounded-full bg-accent transition-[width] duration-700" :style="`width: ${t.pct}%; transition-delay: ${i * 80}ms; opacity: ${1 - i * 0.12}`"></div>
+                                <div class="h-full rounded-full bg-accent transition-[width] duration-700" :style="`width: ${barsIn ? t.pct : 0}%; transition-delay: ${i * 80}ms; opacity: ${1 - i * 0.12}`"></div>
                             </div>
                         </li>
                     </template>
@@ -258,9 +290,9 @@
             <div class="mt-8">
                 <h2 class="text-lg font-bold">বাকি বাংলাদেশগুলো</h2>
                 <p class="text-sm text-ink-2">বন্ধুরা কোনটা পায়? পাঠিয়ে দেখো 😄</p>
-                <div class="-mx-4 mt-3 flex gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none]">
+                <div class="-mx-4 mt-3 flex gap-3 overflow-x-auto px-4 pt-1 pb-2 [scrollbar-width:none] md:mx-0 md:grid md:grid-cols-5 md:overflow-visible md:px-0">
                     <template x-for="l in locations" :key="l.slug">
-                        <div class="w-28 shrink-0 overflow-hidden rounded-2xl border bg-card" :class="l.slug === result.location.slug ? 'border-accent border-2' : 'border-line'">
+                        <div class="place-card w-28 shrink-0 overflow-hidden rounded-2xl border bg-card md:w-auto" :class="l.slug === result.location.slug ? 'border-accent border-2' : 'border-line'">
                             <img :src="l.illustration" alt="" loading="lazy" class="h-20 w-full object-cover">
                             <div class="px-2 py-1.5 text-sm font-semibold" x-text="`${l.emoji} ${l.name_bn}`"></div>
                         </div>
@@ -270,15 +302,17 @@
 
             <button type="button" class="btn-ghost mt-8 w-full" @click="retake()">🔁 আবার খেলি</button>
             <p class="mt-6 text-center text-xs leading-relaxed text-ink-2">এটা মজার একটা ভাইব-ম্যাচ, বৈজ্ঞানিক পরীক্ষা না 🙂</p>
+            </div>
         </section>
     </template>
 
     {{-- ===================== SHARE SHEET ===================== --}}
-    <div x-show="sheetOpen" x-cloak class="fixed inset-0 z-40" role="dialog" aria-modal="true" aria-label="শেয়ার করো" @keydown.escape.window="sheetOpen = false">
+    <div x-show="sheetOpen" x-cloak class="fixed inset-0 z-40 flex items-end justify-center md:items-center md:p-6" role="dialog" aria-modal="true" aria-label="শেয়ার করো" @keydown.escape.window="sheetOpen = false">
         <div class="absolute inset-0 bg-black/50" x-show="sheetOpen" x-transition.opacity @click="sheetOpen = false"></div>
-        <div x-show="sheetOpen" x-transition:enter="transition duration-300 ease-out" x-transition:enter-start="translate-y-full" x-transition:leave="transition duration-200" x-transition:leave-end="translate-y-full"
-            class="absolute inset-x-0 bottom-0 mx-auto max-h-[94dvh] max-w-md overflow-y-auto rounded-t-[2rem] bg-paper px-4 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
-            <div class="mx-auto mb-3 h-1.5 w-12 rounded-full bg-line"></div>
+        <div x-show="sheetOpen" x-transition:enter="transition duration-300 ease-out" x-transition:enter-start="translate-y-full md:translate-y-8 md:opacity-0" x-transition:leave="transition duration-200" x-transition:leave-end="translate-y-full md:translate-y-8 md:opacity-0"
+            class="relative max-h-[94dvh] w-full max-w-md overflow-y-auto rounded-t-[2rem] bg-paper px-4 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] md:max-w-lg md:rounded-[2rem] md:px-6 md:pt-6 md:pb-6 md:shadow-2xl">
+            <div class="mx-auto mb-3 h-1.5 w-12 rounded-full bg-line md:hidden"></div>
+            <button type="button" class="absolute top-4 right-4 hidden size-9 items-center justify-center rounded-full border border-line text-ink-2 md:flex" @click="sheetOpen = false" aria-label="বন্ধ করো">✕</button>
 
             <div class="mx-auto flex aspect-[9/16] max-h-[44dvh] items-center justify-center overflow-hidden rounded-2xl bg-paper-2 shadow-inner">
                 <template x-if="cardUrl"><img :src="cardUrl" alt="তোমার শেয়ার কার্ড" class="h-full w-auto"></template>

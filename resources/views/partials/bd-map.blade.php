@@ -27,7 +27,17 @@
                 :fill="lockedSlug === '{{ $loc['slug'] }}' || scanSlug === '{{ $loc['slug'] }}' ? 'var(--red)' : '#ffffff'"
                 :opacity="lockedSlug && lockedSlug !== '{{ $loc['slug'] }}' ? .3 : 1" />
         @else
-            <circle class="map-dot" cx="{{ $cx }}" cy="{{ $cy }}" r="7" fill="#ffffff" stroke="#14211b" stroke-width="2" />
+            {{-- Hover (mouse) or tap focuses a place; the landing page shows a tooltip and highlights its card. --}}
+            <g data-place class="cursor-pointer" role="button" aria-label="{{ $loc['name_bn'] }}"
+                @pointerenter="$event.pointerType === 'mouse' && (focusSlug = '{{ $loc['slug'] }}')"
+                @pointerleave="$event.pointerType === 'mouse' && (focusSlug = null)"
+                @click="focusSlug = '{{ $loc['slug'] }}'">
+                <circle x-show="focusSlug === '{{ $loc['slug'] }}'" class="map-pulse" cx="{{ $cx }}" cy="{{ $cy }}" r="10" fill="var(--red)" />
+                <circle cx="{{ $cx }}" cy="{{ $cy }}" r="20" fill="transparent" />
+                <circle class="map-dot" cx="{{ $cx }}" cy="{{ $cy }}" r="7" fill="#ffffff" stroke="#14211b" stroke-width="2"
+                    :r="focusSlug === '{{ $loc['slug'] }}' ? 12 : 7"
+                    :fill="focusSlug === '{{ $loc['slug'] }}' ? 'var(--red)' : '#ffffff'" />
+            </g>
         @endif
     @endforeach
 </svg>

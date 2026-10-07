@@ -121,11 +121,33 @@
     }
 
     .option {
-        @apply relative flex min-h-24 flex-col items-center justify-center gap-1.5 rounded-3xl border-2 border-line bg-card p-3 text-center text-[1.05rem] leading-snug font-semibold transition duration-150 active:scale-[0.96];
+        @apply relative flex min-h-24 flex-col items-center justify-center gap-1.5 rounded-3xl border-2 border-line bg-card p-3 text-center text-[1.05rem] leading-snug font-semibold transition duration-200 active:scale-[0.96];
     }
 
     .option[aria-pressed='true'] {
         @apply border-accent bg-accent text-white;
+    }
+
+    .place-card {
+        @apply transition duration-200 ease-out;
+    }
+
+    .place-card.is-focus {
+        @apply -translate-y-1 border-accent shadow-lg;
+    }
+
+    @media (hover: hover) {
+        .place-card:hover {
+            @apply -translate-y-1.5 -rotate-2 shadow-lg;
+        }
+
+        .place-card:nth-child(even):hover {
+            @apply rotate-2;
+        }
+
+        .option:hover:not([aria-pressed='true']) {
+            @apply -translate-y-0.5 border-accent/60 shadow-md;
+        }
     }
 
     .share-btn {
