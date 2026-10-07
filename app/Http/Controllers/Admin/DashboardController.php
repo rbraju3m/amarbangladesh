@@ -33,6 +33,8 @@ class DashboardController extends Controller
             'templates' => $funnel->cardTemplates(),
             'themes' => $funnel->cardThemes(),
             'formats' => $funnel->cardFormats(),
+            'opens' => $funnel->placeOpens(),
+            'recent' => $funnel->recentPlays(),
         ]);
     }
 }

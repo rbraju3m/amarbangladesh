@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\BalanceController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\ExportController;
 use App\Http\Controllers\Admin\LocationController;
 use App\Http\Controllers\Admin\QuestionController;
 use Illuminate\Support\Facades\Route;
@@ -19,7 +20,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::put('/password', [AuthController::class, 'updatePassword'])->middleware('throttle:6,1')->name('password.update');
         Route::get('/', DashboardController::class)->name('dashboard');
         Route::get('/balance', BalanceController::class)->name('balance');
+        Route::get('/export/{type}.csv', ExportController::class)->whereIn('type', ['results', 'daily'])->name('export');
 
+        Route::post('/questions/reorder', [QuestionController::class, 'reorder'])->name('questions.reorder');
         Route::resource('questions', QuestionController::class)->except('show');
         Route::post('/questions/{question}/move/{direction}', [QuestionController::class, 'move'])
             ->whereIn('direction', ['up', 'down'])->name('questions.move');

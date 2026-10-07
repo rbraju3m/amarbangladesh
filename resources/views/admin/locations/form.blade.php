@@ -45,8 +45,24 @@
         </div>
 
         <aside class="space-y-4">
-            <div class="panel overflow-hidden !p-0">
-                <img src="{{ $location->illustrationUrl() }}" alt="" class="aspect-[4/3] w-full object-cover" style="background: {{ $location->accent_color }}">
+            {{-- Result preview: server-rendered, kept live by admin.js (data-bind). --}}
+            <div class="panel overflow-hidden !p-0" data-loc-preview style="--accent: {{ $location->accent_color }}">
+                <p class="flex items-center justify-between px-4 py-2.5 text-xs font-semibold text-ink-2"><span>Result preview</span><span class="pill bg-paper-2">as players see it</span></p>
+                <div class="relative aspect-[4/3]" style="background: var(--accent)">
+                    <img data-bind-img data-default="{{ $location->illustrationUrl() }}" src="{{ $location->illustrationUrl() }}" alt="" class="size-full object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/5 to-transparent"></div>
+                    <div class="absolute inset-x-4 bottom-3 text-white">
+                        <p class="text-xs opacity-85">তোমার বাংলাদেশ</p>
+                        <p class="text-3xl leading-tight font-bold"><span data-bind="emoji">{{ $location->emoji }}</span> <span data-bind="name_bn">{{ $location->name_bn }}</span></p>
+                    </div>
+                </div>
+                <div class="p-4">
+                    <p class="text-lg leading-snug font-bold" style="color: var(--accent)" data-bind="title_bn">{{ $location->title_bn }}</p>
+                    <p class="mt-0.5 text-sm text-ink-2" data-bind="tagline_bn">{{ $location->tagline_bn }}</p>
+                    <div class="mt-3 flex flex-wrap gap-1.5" data-bind-badges>
+                        @foreach ($location->badges ?? [] as $badge)<span class="chip !py-1 text-xs">{{ $badge }}</span>@endforeach
+                    </div>
+                </div>
             </div>
             <section class="panel">
                 <h2 class="font-bold">Trait profile</h2>

@@ -4,7 +4,9 @@ namespace Tests\Feature;
 
 use App\Models\Location;
 use App\Models\Question;
+use App\Models\QuizResult;
 use App\Models\User;
+use App\Quiz\QuizConfig;
 use Database\Seeders\QuizContentSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -95,6 +97,48 @@ class AdminTest extends TestCase
         ])->assertRedirect('/admin/password')->assertSessionHas('status');
 
         $this->assertTrue(Hash::check('brand-new-pass', $user->fresh()->password));
+    }
+
+    public function test_questions_can_be_reordered_by_dragging(): void
+    {
+        $user = User::factory()->create();
+        $ids = Question::orderBy('sort_order')->pluck('id')->all();
+        $new = array_reverse($ids);
+
+        $this->actingAs($user)->postJson(route('admin.questions.reorder'), ['ids' => $new])->assertOk();
+        $this->assertSame($new, Question::orderBy('sort_order')->pluck('id')->all());
+        $this->assertSame($new[0], array_key_first(QuizConfig::load()->questions), 'the live quiz uses the new order');
+
+        // Partial or duplicated lists are refused and change nothing.
+        $this->postJson(route('admin.questions.reorder'), ['ids' => array_slice($ids, 1)])->assertStatus(422);
+        $this->postJson(route('admin.questions.reorder'), ['ids' => [$ids[0], ...array_slice($ids, 0, -1)]])->assertStatus(422);
+        $this->assertSame($new, Question::orderBy('sort_order')->pluck('id')->all());
+    }
+
+    public function test_dashboard_lists_recent_plays_and_exports_csv(): void
+    {
+        $answers = array_map(fn ($o) => array_key_first($o), array_values(QuizConfig::fromDatabase()->questions));
+        $code = $this->postJson('/api/results', ['answers' => $answers])->assertCreated()->json('result.code');
+        $place = QuizResult::first()->location;
+        $this->postJson('/api/events', ['events' => [['name' => 'place_opened', 'result' => $code, 'meta' => ['place' => $place->slug]]]])->assertNoContent();
+
+        $user = User::factory()->create();
+        $this->actingAs($user)->get('/admin')->assertOk()
+            ->assertSeeInOrder(['Recent plays', '/r/'.$code, $place->name_bn])
+            ->assertSeeInOrder(['Places explored', $place->name_bn, '1']);
+
+        $csv = $this->get(route('admin.export', ['type' => 'results', 'days' => 30]))->assertOk()->streamedContent();
+        $this->assertStringStartsWith("\xEF\xBB\xBFtime,code,url,place,match_pct", $csv);
+        $this->assertStringContainsString($code, $csv);
+        $this->assertStringContainsString($place->name_en, $csv);
+
+        $daily = $this->get(route('admin.export', ['type' => 'daily']))->assertOk()->streamedContent();
+        $this->assertStringContainsString('date,visitors,completed,shared', $daily);
+        $this->assertStringContainsString(now()->toDateString().',', $daily);
+
+        $this->get('/admin/export/secrets.csv')->assertNotFound();
+        auth()->logout();
+        $this->get(route('admin.export', ['type' => 'results']))->assertRedirect(route('admin.login'));
     }
 
     public function test_editors_embed_the_live_balance_preview(): void

@@ -27,11 +27,21 @@
         <h1 class="text-2xl font-bold md:text-3xl">Growth funnel</h1>
         <p class="mt-1 text-sm text-ink-2">How people move from opening the site to sharing their result. Arrows compare with the previous {{ strtolower($ranges[$days]) === 'today' ? 'day' : 'period' }}.</p>
     </div>
-    <nav class="flex gap-1 rounded-xl border border-line bg-card p-1 text-sm font-semibold" aria-label="Date range">
-        @foreach ($ranges as $key => $label)
-            <a href="?days={{ $key }}" @class(['rounded-lg px-3 py-1.5 transition', 'bg-ink text-paper' => $days == $key, 'text-ink-2 hover:text-ink' => $days != $key]) @if ($days == $key) aria-current="page" @endif>{{ $label }}</a>
-        @endforeach
-    </nav>
+    <div class="flex flex-wrap items-center gap-2">
+        <nav class="flex gap-1 rounded-xl border border-line bg-card p-1 text-sm font-semibold" aria-label="Date range">
+            @foreach ($ranges as $key => $label)
+                <a href="?days={{ $key }}" @class(['rounded-lg px-3 py-1.5 transition', 'bg-ink text-paper' => $days == $key, 'text-ink-2 hover:text-ink' => $days != $key]) @if ($days == $key) aria-current="page" @endif>{{ $label }}</a>
+            @endforeach
+        </nav>
+        <details class="relative">
+            <summary class="btn-outline cursor-pointer list-none !min-h-10 text-sm [&::-webkit-details-marker]:hidden">⬇ Export</summary>
+            <div class="absolute right-0 z-20 mt-1 w-56 rounded-xl border border-line bg-card p-1 text-sm shadow-xl">
+                <a href="{{ route('admin.export', ['type' => 'results', 'days' => $days]) }}" class="block rounded-lg px-3 py-2 hover:bg-paper-2"><b>Plays</b> <span class="text-ink-2">· one row per result</span></a>
+                <a href="{{ route('admin.export', ['type' => 'daily', 'days' => $days]) }}" class="block rounded-lg px-3 py-2 hover:bg-paper-2"><b>Daily funnel</b> <span class="text-ink-2">· visitors, completed, shared</span></a>
+                <p class="px-3 pt-1 pb-2 text-xs text-ink-2">CSV for {{ strtolower($ranges[$days]) }}, opens in Excel or Sheets.</p>
+            </div>
+        </details>
+    </div>
 </header>
 
 {{-- The funnel as connected steps --}}
@@ -50,7 +60,7 @@
                 <div class="mt-2 text-3xl font-bold tabular-nums md:text-4xl">{{ $fmt($s[$step['key']]) }}</div>
                 <div class="mt-1 text-xs text-ink-2">
                     {{ $step['hint'] }}@isset($step['rate']) <span class="md:hidden">· {{ $step['rate'] }}%</span>@endisset
-                    @if ($step['key'] === 'completed') · {{ $fmt($s['plays']) }} plays @endif
+                    @if ($step['key'] === 'completed') · {{ $fmt($s['plays']) }} {{ \Illuminate\Support\Str::plural('play', $s['plays']) }} @endif
                 </div>
             </li>
         @endforeach
@@ -71,7 +81,7 @@
 
 <div class="mt-4 grid gap-4 lg:grid-cols-3">
     <section class="panel">
-        <h2 class="panel-title">Result distribution <small>{{ $fmt(array_sum(array_column($distribution, 'count'))) }} results</small></h2>
+        <h2 class="panel-title">Result distribution <small>@php($n = array_sum(array_column($distribution, 'count'))){{ $fmt($n) }} {{ \Illuminate\Support\Str::plural('result', $n) }}</small></h2>
         <ul class="space-y-3 text-sm">
             @foreach ($distribution as $row)
                 <li>
@@ -135,5 +145,38 @@
         </ul>
     </section>
 </div>
+<div class="mt-6 grid gap-6 lg:grid-cols-[2fr_1fr]">
+    <section class="panel">
+        <h2 class="panel-title">Recent plays <small>newest first · tap to open the shared page</small></h2>
+        <ul class="divide-y divide-line text-sm">
+            @forelse ($recent as $play)
+                <li>
+                    <a href="{{ route('results.show', $play['code']) }}" target="_blank" rel="noopener" class="-mx-2 flex items-center gap-3 rounded-lg px-2 py-2.5 transition hover:bg-paper-2">
+                        <span class="grid size-9 shrink-0 place-items-center rounded-xl bg-paper-2 text-lg">{{ $play['emoji'] }}</span>
+                        <span class="min-w-0 flex-1">
+                            <span class="block truncate font-semibold">{{ $play['place'] }} <span class="font-normal text-ink-2">· {{ $play['pct'] }}%</span></span>
+                            <span class="block truncate text-xs text-ink-2">{{ $play['name'] ?: 'No name' }}@if ($play['friend']) · <span class="text-green-text">via a friend's link</span>@endif</span>
+                        </span>
+                        <time class="shrink-0 text-xs text-ink-2" datetime="{{ $play['at']->toIso8601String() }}" title="{{ $play['at']->format('j M Y, g:i a') }}">{{ $play['at']->locale('en')->diffForHumans(short: true) }}</time>
+                    </a>
+                </li>
+            @empty
+                <li class="py-2 text-ink-2">No plays in this period yet.</li>
+            @endforelse
+        </ul>
+    </section>
+
+    <section class="panel">
+        <h2 class="panel-title">Places explored <small>opened from results</small></h2>
+        <ul class="divide-y divide-line text-sm">
+            @forelse ($opens as $o)
+                <li class="flex justify-between py-2.5"><span>{{ $o['emoji'] }} {{ $o['name'] }}</span><b class="tabular-nums">{{ $fmt($o['count']) }}</b></li>
+            @empty
+                <li class="py-2 text-ink-2">No data yet. Players open places by tapping them on their result page.</li>
+            @endforelse
+        </ul>
+    </section>
+</div>
+
 <p class="mt-6 text-xs text-ink-2">Visitors are anonymous browser ids; no cookies, IPs or personal data are stored. Funnel steps count people; "plays" counts every saved result.</p>
 @endsection

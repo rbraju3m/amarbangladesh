@@ -328,13 +328,27 @@ export default function quiz(boot) {
             return (this.result?.places ?? []).map((p, i) => ({ ...bySlug[p.slug], ...p, rank: i + 1 })).filter((p) => p.name_bn);
         },
 
+        // On the result page the sheet shows this player's match; elsewhere (landing) it's a plain preview.
+        get placeList() {
+            return this.screen === 'result' && this.places.length ? this.places : this.locations;
+        },
+
         get placeView() {
-            const p = this.places.find((x) => x.slug === this.placeSlug);
-            return p ? { ...p, options: p.answers.map((id) => this.optionById[id]).filter(Boolean), isTop: p.rank === 1 } : null;
+            if (!this.placeSlug) return null;
+            const p = this.placeList.find((x) => x.slug === this.placeSlug);
+            if (!p) return null;
+            if (!p.answers) return { ...p, preview: true, options: [], isTop: false };
+            return { ...p, options: p.answers.map((id) => this.optionById[id]).filter(Boolean), isTop: p.rank === 1 };
+        },
+
+        // Map dots: the first tap shows the tooltip, a second tap on the same dot opens the sheet.
+        tapDot(slug) {
+            if (this.focusSlug === slug) return this.openPlace(slug);
+            this.focusSlug = slug;
         },
 
         stepPlace(delta) {
-            const list = this.places;
+            const list = this.placeList;
             const i = list.findIndex((p) => p.slug === this.placeSlug);
             if (i < 0) return;
             this.placeSlug = list[(i + delta + list.length) % list.length].slug;

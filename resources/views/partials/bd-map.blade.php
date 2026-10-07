@@ -31,7 +31,7 @@
             <g data-place class="cursor-pointer" role="button" aria-label="{{ $loc['name_bn'] }}"
                 @pointerenter="$event.pointerType === 'mouse' && (focusSlug = '{{ $loc['slug'] }}')"
                 @pointerleave="$event.pointerType === 'mouse' && (focusSlug = null)"
-                @click="focusSlug = '{{ $loc['slug'] }}'">
+                @click="tapDot('{{ $loc['slug'] }}')">
                 <circle x-show="focusSlug === '{{ $loc['slug'] }}'" class="map-pulse" cx="{{ $cx }}" cy="{{ $cy }}" r="10" fill="var(--red)" />
                 <circle cx="{{ $cx }}" cy="{{ $cy }}" r="20" fill="transparent" />
                 <circle class="map-dot" cx="{{ $cx }}" cy="{{ $cy }}" r="7" fill="#ffffff" stroke="#14211b" stroke-width="2"

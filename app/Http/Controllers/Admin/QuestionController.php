@@ -7,6 +7,7 @@ use App\Models\Location;
 use App\Models\PersonalityTrait;
 use App\Models\Question;
 use App\Quiz\QuizConfig;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -80,6 +81,23 @@ class QuestionController extends Controller
         }
 
         return back();
+    }
+
+    /** Drag-and-drop reordering: the full list of question ids in their new order. */
+    public function reorder(Request $request): JsonResponse|RedirectResponse
+    {
+        $ids = $request->validate(['ids' => ['required', 'array'], 'ids.*' => ['integer', 'distinct']])['ids'];
+        $ids = array_map('intval', $ids);
+
+        $all = Question::pluck('id')->all();
+        abort_unless(count($ids) === count($all) && ! array_diff($all, $ids), 422, 'The list must contain every question exactly once.');
+
+        DB::transaction(fn () => collect($ids)->each(fn ($id, $n) => Question::whereKey($id)->update(['sort_order' => $n + 1])));
+        QuizConfig::forget();
+
+        return $request->expectsJson()
+            ? response()->json(['ok' => true])
+            : back()->with('status', 'Question order saved.');
     }
 
     private function formData(Question $question): array

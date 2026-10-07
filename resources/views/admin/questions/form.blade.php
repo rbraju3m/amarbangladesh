@@ -23,6 +23,8 @@
         <p class="mt-1 text-sm text-ink-2">Changes apply to new plays only; results already shared keep their outcome.</p>
     </header>
 
+    <div class="xl:grid xl:grid-cols-[minmax(0,1fr)_17rem] xl:items-start xl:gap-6">
+    <div class="min-w-0">
     <section class="panel grid gap-4 md:grid-cols-[2fr_1.3fr_9rem]">
         <label><span class="field-label">Question (Bangla)</span><input name="prompt_bn" value="{{ old('prompt_bn', $question->prompt_bn) }}" required class="input text-base"></label>
         <label><span class="field-label">Subtitle <span class="normal-case">(optional)</span></span><input name="subtitle_bn" value="{{ old('subtitle_bn', $question->subtitle_bn) }}" class="input"></label>
@@ -49,6 +51,16 @@
         <button type="button" class="btn-outline mt-3 w-full border-dashed" data-add-answer="#answers" data-max="6">+ Add answer</button>
         <template id="answer-template">@include('admin.partials.answer', ['i' => '__INDEX__', 'o' => ['is_active' => true], 'open' => true])</template>
     </section>
+    </div>
+
+    {{-- Phone preview, drawn by admin.js from the form (hidden without JS). Beside the form on wide screens, collapsible above the answers otherwise. --}}
+    <details data-q-preview hidden class="group mt-6 xl:sticky xl:top-6 xl:order-last xl:mt-0" open>
+        <summary class="cursor-pointer list-none text-sm font-semibold text-ink-2 xl:pointer-events-none [&::-webkit-details-marker]:hidden"><span class="xl:hidden">▸ </span>Phone preview <span class="font-normal">· live</span></summary>
+        <div class="mt-3 flex justify-center">
+            <div class="flex h-[32rem] w-64 flex-col overflow-hidden rounded-[2.2rem] border-[7px] border-ink bg-paper px-3 pt-4 pb-3 text-center shadow-xl" data-q-phone></div>
+        </div>
+    </details>
+    </div>
 
     <div class="mt-6">@include('admin.partials.balance-preview')</div>
 

@@ -54,19 +54,20 @@
                     <li class="chip">✨ {{ \App\Support\Bangla::digits(count($boot['questions'])) }}টি প্রশ্ন</li>
                     <li class="chip">🇧🇩 {{ \App\Support\Bangla::digits(count($boot['locations'])) }}টি বাংলাদেশ</li>
                 </ul>
-                <p class="mt-6 hidden text-sm text-ink-2 lg:block">👈 ম্যাপের বিন্দুগুলোতে মাউস রাখো</p>
+                <p class="mt-6 hidden text-sm text-ink-2 lg:block">👈 ম্যাপের বিন্দুগুলোতে মাউস রাখো, ক্লিক করলে বিস্তারিত</p>
             </div>
         </div>
 
         <div class="mt-12">
-            <h2 class="mb-3 text-center text-sm font-semibold text-ink-2">এদের মধ্যে একটা তুমি 👇</h2>
+            <h2 class="text-center text-sm font-semibold text-ink-2">এদের মধ্যে একটা তুমি 👇</h2>
+            <p class="mb-3 text-center text-xs text-ink-2">যেকোনোটায় ট্যাপ করে দেখো</p>
             <div class="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pt-2 pb-3 [scrollbar-width:none] md:mx-0 md:grid md:grid-cols-3 md:overflow-visible md:px-0 lg:grid-cols-9">
                 @foreach ($boot['locations'] as $loc)
                     <button type="button" data-place class="place-card w-36 shrink-0 snap-start overflow-hidden rounded-2xl border border-line bg-card text-left md:w-auto"
                         :class="focusSlug === '{{ $loc['slug'] }}' && 'is-focus'"
                         @pointerenter="$event.pointerType === 'mouse' && (focusSlug = '{{ $loc['slug'] }}')"
                         @pointerleave="$event.pointerType === 'mouse' && (focusSlug = null)"
-                        @click="focusSlug = '{{ $loc['slug'] }}'">
+                        @click="focusSlug = '{{ $loc['slug'] }}'; openPlace('{{ $loc['slug'] }}')">
                         <span class="relative block">
                             <img src="{{ $loc['illustration'] }}" alt="" loading="lazy" width="144" height="96" class="h-24 w-full object-cover md:h-auto md:aspect-[4/3]">
                             <span class="absolute bottom-1.5 left-1.5 flex size-8 items-center justify-center rounded-full bg-card/90 text-base shadow" aria-hidden="true">{{ $loc['emoji'] }}</span>
@@ -478,7 +479,7 @@
                     <img :src="placeView.illustration" alt="" class="size-full object-cover">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent"></div>
                     <button type="button" class="absolute top-3 right-3 flex size-9 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur" @click="placeSlug = null" aria-label="বন্ধ করো">✕</button>
-                    <span class="pill absolute top-3 left-3 bg-white/90 text-ink" x-text="placeView.isTop ? '🎉 এটাই তোমার বাংলাদেশ' : `তোমার তালিকায় ${bn(placeView.rank)} নম্বর`"></span>
+                    <span x-show="!placeView.preview" class="pill absolute top-3 left-3 bg-white/90 text-ink" x-text="placeView.isTop ? '🎉 এটাই তোমার বাংলাদেশ' : `তোমার তালিকায় ${bn(placeView.rank)} নম্বর`"></span>
                     <div class="absolute inset-x-4 bottom-3 text-white">
                         <p class="text-3xl font-bold" x-text="`${placeView.emoji} ${placeView.name_bn}`"></p>
                         <p class="font-semibold opacity-90" x-text="placeView.title_bn"></p>
@@ -486,10 +487,14 @@
                 </div>
 
                 <div class="px-5 pt-4">
-                    <div class="flex items-center justify-between text-sm font-semibold"><span>তোমার সাথে মিল</span><span class="text-lg tabular-nums text-accent" x-text="`${bn(placeView.pct)}%`"></span></div>
-                    <div class="mt-1.5 h-3 overflow-hidden rounded-full bg-paper-2">
-                        <div class="h-full rounded-full bg-accent transition-[width] duration-500" :style="`width: ${placeView.pct}%`"></div>
-                    </div>
+                    <template x-if="!placeView.preview">
+                        <div>
+                            <div class="flex items-center justify-between text-sm font-semibold"><span>তোমার সাথে মিল</span><span class="text-lg tabular-nums text-accent" x-text="`${bn(placeView.pct)}%`"></span></div>
+                            <div class="mt-1.5 h-3 overflow-hidden rounded-full bg-paper-2">
+                                <div class="h-full rounded-full bg-accent transition-[width] duration-500" :style="`width: ${placeView.pct}%`"></div>
+                            </div>
+                        </div>
+                    </template>
 
                     <template x-if="placeView.options.length">
                         <div class="mt-4">
@@ -505,7 +510,8 @@
 
                     <div class="mt-5 flex items-center gap-2">
                         <button type="button" class="btn-ghost size-12 !px-0" @click="stepPlace(-1)" aria-label="আগের জায়গা">‹</button>
-                        <button type="button" class="btn-ghost flex-1" @click="placeSlug = null; openSheet()">বন্ধুকে পাঠাও 😄</button>
+                        <button x-show="!placeView.preview" type="button" class="btn-ghost flex-1" @click="placeSlug = null; openSheet()">বন্ধুকে পাঠাও 😄</button>
+                        <button x-show="placeView.preview" type="button" class="btn-primary !min-h-12 flex-1 !text-base" @click="placeSlug = null; start()">এটা কি তুমি? খেলে দেখো →</button>
                         <button type="button" class="btn-ghost size-12 !px-0" @click="stepPlace(1)" aria-label="পরের জায়গা">›</button>
                     </div>
                 </div>

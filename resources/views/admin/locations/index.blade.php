@@ -11,7 +11,7 @@
         <a href="{{ route('admin.locations.edit', $l) }}" @class(['group panel overflow-hidden !p-0 transition hover:-translate-y-0.5 hover:shadow-lg', 'opacity-60' => ! $l->is_active])>
             <div class="relative aspect-[16/9] overflow-hidden" style="background: {{ $l->accent_color }}">
                 <img src="{{ $l->illustrationUrl() }}" alt="" class="size-full object-cover transition duration-300 group-hover:scale-105">
-                <span class="pill absolute top-3 right-3 bg-card/90 text-ink shadow-sm">{{ number_format($l->results_count) }} results</span>
+                <span class="pill absolute top-3 right-3 bg-card/90 text-ink shadow-sm">{{ number_format($l->results_count) }} {{ \Illuminate\Support\Str::plural('result', $l->results_count) }}</span>
                 @unless ($l->is_active)<span class="pill absolute top-3 left-3 bg-flag-red text-white">Off</span>@endunless
             </div>
             <div class="flex items-center gap-3 p-4">

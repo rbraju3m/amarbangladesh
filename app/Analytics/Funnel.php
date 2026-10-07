@@ -7,6 +7,7 @@ use App\Models\Location;
 use App\Models\QuizResult;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -126,6 +127,38 @@ final class Funnel
     public function cardThemes(): array
     {
         return $this->cardChoice('theme', 'place');
+    }
+
+    /**
+     * Places opened from the result page's explore sheets, most opened first.
+     *
+     * @return list<array{name:string, emoji:string, count:int}>
+     */
+    public function placeOpens(): array
+    {
+        $counts = $this->events()->where('name', 'place_opened')
+            ->selectRaw("JSON_UNQUOTE(JSON_EXTRACT(meta, '$.place')) as slug, COUNT(*) as total")
+            ->groupBy('slug')->pluck('total', 'slug');
+
+        return Location::orderBy('sort_order')->get()
+            ->filter(fn ($l) => isset($counts[$l->slug]))
+            ->map(fn ($l) => ['name' => $l->name_bn, 'emoji' => $l->emoji, 'count' => (int) $counts[$l->slug]])
+            ->sortByDesc('count')->values()->all();
+    }
+
+    /**
+     * The latest plays in the period, newest first.
+     *
+     * @return list<array{code:string, at:Carbon, name:?string, emoji:string, place:string, pct:int, friend:bool}>
+     */
+    public function recentPlays(int $limit = 8): array
+    {
+        return $this->results()->with('location')->latest('id')->limit($limit)->get()
+            ->map(fn (QuizResult $r) => [
+                'code' => $r->code, 'at' => $r->created_at, 'name' => $r->display_name,
+                'emoji' => $r->location?->emoji ?? '', 'place' => $r->location?->name_bn ?? '?',
+                'pct' => $r->match_pct, 'friend' => (bool) $r->referrer_result_id,
+            ])->all();
     }
 
     /** Which share-card size (story or square) was saved or shared natively. */
