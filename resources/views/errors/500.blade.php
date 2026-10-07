@@ -1,0 +1,5 @@
+@extends('errors.layout')
+@section('title', 'সমস্যা হয়েছে')
+@section('code', '৫০০')
+@section('heading', 'আমাদের দিকে একটা গোলমাল হয়েছে')
+@section('message', 'দুঃখিত! একটু পরে আবার চেষ্টা করো।')

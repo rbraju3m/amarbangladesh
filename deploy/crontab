@@ -1,0 +1,6 @@
+# Laravel scheduler (prunes analytics events older than 180 days). Install with `crontab -e`
+# as the user that owns the app (e.g. www-data or your deploy user); adjust the path.
+* * * * * cd /var/www/amarbangladesh && php artisan schedule:run >> /dev/null 2>&1
+
+# Daily database backup, kept 14 days. Put credentials in ~/.my.cnf ([mysqldump] user=… password=…).
+30 3 * * * mkdir -p ~/backups && mysqldump --single-transaction amarbangladesh | gzip > ~/backups/amarbangladesh-$(date +\%F).sql.gz && find ~/backups -name 'amarbangladesh-*.sql.gz' -mtime +14 -delete

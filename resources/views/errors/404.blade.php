@@ -1,0 +1,5 @@
+@extends('errors.layout')
+@section('title', 'পাওয়া যায়নি')
+@section('code', '৪০৪')
+@section('heading', 'এই লিংকে কিছু নেই 🧭')
+@section('message', 'লিংকটা হয়তো ভুল কপি হয়েছে। তবে নিজের বাংলাদেশ খুঁজে নিতে মাত্র ১ মিনিট লাগে!')

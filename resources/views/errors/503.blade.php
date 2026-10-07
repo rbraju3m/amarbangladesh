@@ -1,0 +1,6 @@
+@extends('errors.layout')
+@section('title', 'একটু পরে আসো')
+@section('code', '')
+@section('heading', 'একটু সাজিয়ে নিচ্ছি 🛠️')
+@section('message', 'কয়েক মিনিটের মধ্যেই ফিরে আসছি। একটু পরে আবার দেখো।')
+@section('noLink', true)
