@@ -7,6 +7,7 @@ use App\Models\Location;
 use App\Models\Question;
 use App\Models\QuizResult;
 use App\Quiz\ResultPresenter;
+use App\Support\PublicUrl;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
@@ -42,7 +43,7 @@ class QuizController extends Controller
                         'id' => $o->id,
                         'label' => $o->label_bn,
                         'emoji' => $o->emoji,
-                        'image' => $o->image ? asset($o->image) : null,
+                        'image' => $o->image ? PublicUrl::path($o->image) : null,
                     ])->all(),
                 ])->filter(fn ($q) => count($q['options']) > 0)->values()->all(),
             'locations' => Location::where('is_active', true)->orderBy('sort_order')->get()

@@ -36,6 +36,17 @@ class ResultFlowTest extends TestCase
         $response->assertSee('og:image', false);
     }
 
+    public function test_cached_quiz_content_does_not_bake_in_the_host(): void
+    {
+        $this->get('/')->assertOk();
+        config(['app.url' => 'https://other.example']);
+        url()->forceRootUrl('https://other.example');
+
+        $this->get('/')->assertOk()
+            ->assertSee('"illustration":"/images/locations/', false)
+            ->assertDontSee('localhost', false);
+    }
+
     public function test_completing_the_quiz_stores_a_result_and_returns_it(): void
     {
         $data = $this->play();

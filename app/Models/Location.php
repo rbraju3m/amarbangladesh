@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\PublicUrl;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -35,7 +36,7 @@ class Location extends Model
 
     public function illustrationUrl(): string
     {
-        return asset($this->illustration ?: "images/locations/{$this->slug}.svg");
+        return PublicUrl::path($this->illustration ?: "images/locations/{$this->slug}.svg");
     }
 
     public function ogImageUrl(): string
