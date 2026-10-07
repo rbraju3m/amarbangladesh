@@ -25,7 +25,7 @@
                 <label class="sm:col-span-2"><span class="field-label">Tagline</span><input name="tagline_bn" value="{{ old('tagline_bn', $location->tagline_bn) }}" required class="input"></label>
                 <label class="sm:col-span-2"><span class="field-label">Description</span><textarea name="description_bn" rows="4" required class="input">{{ old('description_bn', $location->description_bn) }}</textarea></label>
                 <label class="sm:col-span-2"><span class="field-label">"Why" ending</span><input name="reason_tail_bn" value="{{ old('reason_tail_bn', $location->reason_tail_bn) }}" required class="input">
-                    <span class="mt-1 block text-xs text-ink-2">Follows the player's two answers, e.g. "… — এই combination সিলেট ছাড়া আর কোথায় মেলে?"</span></label>
+                    <span class="mt-1 block text-xs text-ink-2">Follows the player's two answers, e.g. "… — এমন মিশেল সিলেট ছাড়া আর কোথায় মেলে?"</span></label>
                 <label class="sm:col-span-2"><span class="field-label">Badges <span class="normal-case">one per line, 3–4</span></span><textarea name="badges" rows="4" required class="input">{{ old('badges', implode("\n", $location->badges ?? [])) }}</textarea></label>
             </section>
 

@@ -1,5 +1,5 @@
 @extends('errors.layout')
 @section('title', 'আবার চেষ্টা করো')
 @section('code', '৪১৯')
-@section('heading', 'পেজটা পুরনো হয়ে গেছে')
+@section('heading', 'পেজটা পুরোনো হয়ে গেছে')
 @section('message', 'অনেকক্ষণ খোলা ছিল। পেজটা রিফ্রেশ করে আবার চেষ্টা করো।')
