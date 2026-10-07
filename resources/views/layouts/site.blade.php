@@ -32,6 +32,7 @@
     <meta name="twitter:description" content="{{ $ogDescription }}">
     <meta name="twitter:image" content="{{ $ogImage }}">
 
+    <link rel="preload" href="{{ Vite::asset('resources/fonts/anek-bangla-bengali-500-700.woff2') }}" as="font" type="font/woff2" crossorigin>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body>
