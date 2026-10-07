@@ -61,7 +61,9 @@ export default function quiz(boot) {
         // share sheet
         sheetOpen: false,
         nameInput: '',
+        nameEditing: false,
         savingName: false,
+        cardName: null,
         cardUrl: null,
         cardBlob: null,
         cardBusy: false,
@@ -91,6 +93,13 @@ export default function quiz(boot) {
                 track('landing_view');
             }
 
+            // Re-draw the share card shortly after typing stops, so the preview shows the name live.
+            let redraw;
+            this.$watch('nameInput', () => {
+                clearTimeout(redraw);
+                if (this.sheetOpen) redraw = setTimeout(() => this.buildCard(), 350);
+            });
+
             addEventListener('popstate', () => {
                 if (location.pathname === '/' && this.screen === 'result') this.screen = 'landing';
             });
@@ -106,6 +115,10 @@ export default function quiz(boot) {
 
         get focusPlace() {
             return this.locations.find((l) => l.slug === this.focusSlug) ?? null;
+        },
+
+        get liveName() {
+            return this.nameInput.trim();
         },
 
         get accent() {
@@ -207,7 +220,9 @@ export default function quiz(boot) {
             this.result = result;
             this.ownerToken = token;
             this.nameInput = result.name || '';
+            this.nameEditing = false;
             this.cardUrl = null;
+            this.cardName = null;
             this.screen = 'result';
             if (fresh) {
                 const mine = store.get('bd.mine', {});
@@ -262,13 +277,18 @@ export default function quiz(boot) {
         async openSheet() {
             this.sheetOpen = true;
             track('share_clicked', { result: this.result.code, meta: { channel: 'sheet' } });
-            if (!this.cardUrl) await this.buildCard();
+            // Invite a name: focus the empty field on desktop (on phones it would pop the keyboard over the card).
+            if (!this.liveName && matchMedia('(hover: hover)').matches) this.$nextTick(() => this.$refs.sheetName?.focus());
+            if (!this.cardUrl || this.cardName !== this.liveName) await this.buildCard();
         },
 
         async buildCard() {
             this.cardBusy = true;
+            const name = this.liveName;
             try {
-                const canvas = await renderCard(this.result);
+                const canvas = await renderCard({ ...this.result, name: name || null });
+                if (name !== this.liveName) return; // typing moved on; a newer render is queued
+                this.cardName = name;
                 this.cardBlob = await canvasToBlob(canvas);
                 if (this.cardUrl) URL.revokeObjectURL(this.cardUrl);
                 this.cardUrl = URL.createObjectURL(this.cardBlob);
@@ -284,6 +304,7 @@ export default function quiz(boot) {
             try {
                 const res = await fetch(`/api/results/${this.result.code}/name`, {
                     method: 'PATCH',
+                    keepalive: true,
                     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
                     body: JSON.stringify({ owner_token: this.ownerToken, name }),
                 });
@@ -291,13 +312,24 @@ export default function quiz(boot) {
                     this.result = (await res.json()).result;
                     this.nameInput = this.result.name || '';
                     if (name) track('name_added', { result: this.result.code });
-                    await this.buildCard();
+                    if (this.cardUrl && this.cardName !== this.liveName) await this.buildCard();
                 } else {
                     this.flash('নামটা সেভ করা গেলো না।');
                 }
             } finally {
                 this.savingName = false;
             }
+        },
+
+        async submitName() {
+            await this.saveName();
+            this.nameEditing = false;
+        },
+
+        // A typed but unsaved name is saved whenever the player shares, without delaying the share
+        // itself (popup and share APIs must run straight from the tap).
+        persistName() {
+            if (!this.savingName && this.liveName !== (this.result.name || '')) this.saveName();
         },
 
         cardFile() {
@@ -309,6 +341,7 @@ export default function quiz(boot) {
         },
 
         async shareNative() {
+            this.persistName();
             track('share_clicked', { result: this.result.code, meta: { channel: 'native' } });
             try {
                 await navigator.share({ files: [this.cardFile()], text: `${this.shareText} ${this.result.url}` });
@@ -316,6 +349,7 @@ export default function quiz(boot) {
         },
 
         shareTo(channel) {
+            this.persistName();
             track('share_clicked', { result: this.result.code, meta: { channel } });
             if (channel === 'messenger' && !isMobile()) {
                 return this.copyLink();
@@ -329,12 +363,14 @@ export default function quiz(boot) {
         },
 
         async copyLink() {
+            this.persistName();
             const ok = await copyText(`${this.shareText} ${this.result.url}`);
             track('link_copied', { result: this.result.code });
             this.flash(ok ? 'লিংক কপি হয়েছে! এখন যেকোনো জায়গায় পেস্ট করো ✨' : 'কপি করা গেলো না।');
         },
 
         saveCard() {
+            this.persistName();
             track('card_saved', { result: this.result.code, meta: { inapp: this.inApp ? 1 : 0 } });
             if (this.inApp) {
                 this.flash('ছবিটার ওপর চেপে ধরে রাখো, তারপর "Save image" চাপো');

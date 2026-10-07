@@ -199,7 +199,7 @@
                 <img :src="result.location.illustration" :alt="`${result.location.name_bn}-এর ছবি`" width="400" height="300" class="aspect-[4/3] w-full object-cover">
                 <div class="absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-black/80 via-black/45 to-transparent"></div>
                 <div class="absolute bottom-5 left-5 text-white">
-                    <p class="text-sm font-medium opacity-90" x-text="result.name ? `${possessive(result.name)} বাংলাদেশ` : 'তোমার বাংলাদেশ'"></p>
+                    <p class="transition-all" :class="liveName ? 'text-xl font-bold' : 'text-sm font-medium opacity-90'" x-text="liveName ? `${possessive(liveName)} বাংলাদেশ` : 'তোমার বাংলাদেশ'"></p>
                     <h1 class="animate-pop text-5xl leading-tight font-bold" x-text="`${result.location.emoji} ${result.location.name_bn}`"></h1>
                 </div>
             </div>
@@ -224,8 +224,31 @@
                 </div>
             </div>
 
+            {{-- Name for the card: prominent until set, then a one-line confirmation --}}
+            <div class="mt-6 rounded-3xl border-2 p-4 transition-colors" :class="result.name && !nameEditing ? 'border-line bg-card' : 'border-accent bg-accent/5'">
+                <template x-if="!result.name || nameEditing">
+                    <form @submit.prevent="submitName()">
+                        <label for="result-name" class="block text-lg font-bold">✍️ কার্ডে তোমার নাম বসাও</label>
+                        <p class="mt-0.5 text-sm text-ink-2">নাম দিলে বন্ধুরা কার্ডটা বেশি খোলে</p>
+                        <div class="mt-3 flex gap-2">
+                            <input id="result-name" x-model="nameInput" maxlength="20" autocomplete="given-name" enterkeyhint="done" placeholder="তোমার নাম"
+                                class="min-h-14 min-w-0 flex-1 rounded-2xl border-2 border-line bg-card px-4 text-lg outline-none focus:border-accent">
+                            <button type="submit" class="min-h-14 shrink-0 rounded-2xl bg-accent px-5 font-semibold text-white transition active:scale-95 disabled:opacity-50"
+                                :disabled="savingName" x-text="savingName ? '…' : 'বসাও ✓'"></button>
+                        </div>
+                    </form>
+                </template>
+                <template x-if="result.name && !nameEditing">
+                    <div class="flex items-center justify-between gap-3">
+                        <p class="font-semibold"><span class="text-accent">✓</span> <span x-text="`${possessive(result.name)} বাংলাদেশ`"></span></p>
+                        <button type="button" class="shrink-0 rounded-full px-2 py-1 text-sm font-semibold text-ink-2 hover:text-ink"
+                            @click="nameEditing = true; $nextTick(() => document.getElementById('result-name')?.focus())">✏️ বদলাও</button>
+                    </div>
+                </template>
+            </div>
+
             {{-- Share block, deliberately above the fold --}}
-            <div class="mt-6 rounded-3xl border border-line bg-card p-4">
+            <div class="mt-4 rounded-3xl border border-line bg-card p-4">
                 <button type="button" class="btn-primary" @click="openSheet()">
                     কার্ডটা শেয়ার করো <span aria-hidden="true">✨</span>
                 </button>
@@ -312,6 +335,17 @@
         <div x-show="sheetOpen" x-transition:enter="transition duration-300 ease-out" x-transition:enter-start="translate-y-full md:translate-y-8 md:opacity-0" x-transition:leave="transition duration-200" x-transition:leave-end="translate-y-full md:translate-y-8 md:opacity-0"
             class="relative max-h-[94dvh] w-full max-w-md overflow-y-auto rounded-t-[2rem] bg-paper px-4 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] md:max-w-lg md:rounded-[2rem] md:px-6 md:pt-6 md:pb-6 md:shadow-2xl">
             <div class="mx-auto mb-3 h-1.5 w-12 rounded-full bg-line md:hidden"></div>
+
+            <form class="mb-4 md:pr-10" @submit.prevent="saveName()">
+                <label for="card-name" class="mb-1.5 block font-bold">✍️ কার্ডে তোমার নাম</label>
+                <div class="flex gap-2">
+                    <input id="card-name" x-ref="sheetName" x-model="nameInput" maxlength="20" autocomplete="given-name" enterkeyhint="done" placeholder="তোমার নাম লেখো"
+                        class="min-h-14 min-w-0 flex-1 rounded-2xl border-2 bg-card px-4 text-lg outline-none transition focus:border-accent"
+                        :class="liveName ? 'border-line' : 'border-accent ring-4 ring-accent/20'">
+                    <button type="submit" class="min-h-14 shrink-0 rounded-2xl bg-accent px-5 font-semibold text-white transition active:scale-95 disabled:opacity-50"
+                        :disabled="savingName || liveName === (result?.name || '')" x-text="savingName ? '…' : (liveName && liveName === result?.name ? '✓' : 'বসাও')"></button>
+                </div>
+            </form>
             <button type="button" class="absolute top-4 right-4 hidden size-9 items-center justify-center rounded-full border border-line text-ink-2 md:flex" @click="sheetOpen = false" aria-label="বন্ধ করো">✕</button>
 
             <div class="mx-auto flex aspect-[9/16] max-h-[44dvh] items-center justify-center overflow-hidden rounded-2xl bg-paper-2 shadow-inner">
@@ -320,12 +354,6 @@
             </div>
             <p x-show="inApp && cardUrl" class="mt-2 text-center text-xs text-ink-2">👆 ছবিটার ওপর চেপে ধরে রাখো, তারপর "Save image"</p>
 
-            <form class="mt-4 flex gap-2" @submit.prevent="saveName()">
-                <label class="sr-only" for="card-name">কার্ডে তোমার নাম</label>
-                <input id="card-name" x-model="nameInput" maxlength="20" autocomplete="given-name" placeholder="কার্ডে তোমার নাম (ঐচ্ছিক)"
-                    class="min-h-12 flex-1 rounded-2xl border border-line bg-card px-4 text-base outline-none focus:border-accent">
-                <button type="submit" class="btn-ghost" :disabled="savingName" x-text="savingName ? '…' : 'বসাও'"></button>
-            </form>
 
             <button type="button" x-show="canNativeShare" class="btn-primary mt-4" @click="shareNative()">📲 স্টোরি / স্ট্যাটাসে দাও</button>
 

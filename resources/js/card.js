@@ -80,15 +80,16 @@ export async function renderCard(result, { host = location.host } = {}) {
     ctx.fill();
     ctx.restore();
 
-    // Illustration window.
+    // Illustration window (shorter when a name needs room for its headline).
+    const ih = result.name ? 560 : 640;
     const img = await loadImage(loc.illustration);
     ctx.save();
-    roundRect(ctx, px + 30, py + 30, pw - 60, 640, 32);
+    roundRect(ctx, px + 30, py + 30, pw - 60, ih, 32);
     ctx.clip();
     ctx.fillStyle = accent;
-    ctx.fillRect(px + 30, py + 30, pw - 60, 640);
+    ctx.fillRect(px + 30, py + 30, pw - 60, ih);
     if (img) {
-        const iw = pw - 60, ih = 640, scale = Math.max(iw / 400, ih / 300);
+        const iw = pw - 60, scale = Math.max(iw / 400, ih / 300);
         ctx.drawImage(img, px + 30 + (iw - 400 * scale) / 2, py + 30 + (ih - 300 * scale) / 2, 400 * scale, 300 * scale);
     }
     ctx.restore();
@@ -102,16 +103,38 @@ export async function renderCard(result, { host = location.host } = {}) {
     ctx.textBaseline = 'middle';
     ctx.fillText('🇧🇩  বাংলাদেশ ভাইব পাসপোর্ট', px + 88, py + 94);
 
-    // Owner line.
-    let y = py + 760;
+    // Owner line: a named card leads with the name as a highlighted headline.
+    let y;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'alphabetic';
-    ctx.fillStyle = '#4b5a52';
-    ctx.font = `500 46px ${FONT}`;
-    ctx.fillText(result.name ? `${possessive(result.name)} বাংলাদেশ` : 'আমার বাংলাদেশ', W / 2, y);
+    if (result.name) {
+        const who = possessive(result.name);
+        y = py + 710;
+        fitText(ctx, who, pw - 180, 120, 700);
+        const w = ctx.measureText(who).width;
+        ctx.save();
+        ctx.translate(W / 2, y);
+        ctx.rotate(-0.02);
+        ctx.fillStyle = accent + '38';
+        roundRect(ctx, -w / 2 - 28, -46, w + 56, 60, 22);
+        ctx.fill();
+        ctx.restore();
+        ctx.fillStyle = '#14211b';
+        ctx.fillText(who, W / 2, y);
+        y += 66;
+        ctx.fillStyle = '#4b5a52';
+        ctx.font = `500 42px ${FONT}`;
+        ctx.fillText('বাংলাদেশ হলো', W / 2, y);
+        y += 160;
+    } else {
+        y = py + 760;
+        ctx.fillStyle = '#4b5a52';
+        ctx.font = `500 46px ${FONT}`;
+        ctx.fillText('আমার বাংলাদেশ', W / 2, y);
+        y += 170;
+    }
 
     // Location name.
-    y += 170;
     ctx.fillStyle = accent;
     fitText(ctx, `${loc.name_bn} ${loc.emoji}`, pw - 120, 168, 700);
     ctx.fillText(`${loc.name_bn} ${loc.emoji}`, W / 2, y);
