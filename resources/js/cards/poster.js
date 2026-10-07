@@ -1,5 +1,5 @@
 import { bnDigits, possessive } from '../bn';
-import { drawCover, fitText, font, H, roundRect, shadow, W } from './common';
+import { drawCover, fitText, font, footerSquare, H, roundRect, S, shadow, W } from './common';
 
 /** Full-bleed illustration fading into the place colour, with big white type. */
 export default function poster(ctx, result, { img, host, t }) {
@@ -108,4 +108,66 @@ export default function poster(ctx, result, { img, host, t }) {
     ctx.fillStyle = 'rgba(255,255,255,.75)';
     font(ctx, 500, 36);
     ctx.fillText(host, W / 2, H - 58);
+}
+
+/** Square feed version: the art across the top, the headline over its fade. */
+export function square(ctx, result, { img, host, t }) {
+    const loc = result.location;
+    const accent = t.dark ? t.bg[1] : t.accent;
+
+    ctx.fillStyle = accent;
+    ctx.fillRect(0, 0, S, S);
+    drawCover(ctx, img, 0, 0, S, 720, accent);
+    const fade = ctx.createLinearGradient(0, 300, 0, 700);
+    fade.addColorStop(0, accent + '00');
+    fade.addColorStop(1, accent);
+    ctx.fillStyle = fade;
+    ctx.fillRect(0, 300, S, 420);
+    const shade = ctx.createLinearGradient(0, 560, 0, S);
+    shade.addColorStop(0, 'rgba(0,0,0,0)');
+    shade.addColorStop(1, 'rgba(0,0,0,.45)');
+    ctx.fillStyle = shade;
+    ctx.fillRect(0, 560, S, S - 560);
+
+    // Match % chip, top right.
+    const pct = `${bnDigits(result.match_pct)}% ম্যাচ`;
+    font(ctx, 700, 34);
+    const pw = ctx.measureText(pct).width + 60;
+    ctx.fillStyle = t.cardInk;
+    roundRect(ctx, S - 56 - pw, 56, pw, 68, 34);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(pct, S - 56 - pw / 2, 91);
+
+    // Headline, bottom-up from the footer.
+    const x0 = 60;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = '#fff';
+    let y = 920;
+    fitText(ctx, `${loc.emoji} ${loc.title_bn}`, S - 2 * x0, 50, 600);
+    ctx.fillText(`${loc.emoji} ${loc.title_bn}`, x0, y);
+
+    shadow(ctx, 'rgba(0,0,0,.25)', 24);
+    y -= 92;
+    fitText(ctx, loc.name_bn, S - 2 * x0, 170, 700);
+    ctx.fillText(loc.name_bn, x0, y);
+
+    y -= 186;
+    ctx.fillStyle = 'rgba(255,255,255,.88)';
+    if (result.name) {
+        font(ctx, 500, 40);
+        ctx.fillText('বাংলাদেশ হলো', x0, y);
+        ctx.fillStyle = '#fff';
+        fitText(ctx, possessive(result.name), S - 2 * x0, 84, 700);
+        ctx.fillText(possessive(result.name), x0, y - 58);
+    } else {
+        font(ctx, 500, 46);
+        ctx.fillText('আমার বাংলাদেশ হলো', x0, y);
+    }
+    ctx.shadowBlur = 0;
+
+    footerSquare(ctx, host, { color: '#fff', muted: 'rgba(255,255,255,.75)' });
 }

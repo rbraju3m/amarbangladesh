@@ -1,6 +1,8 @@
 /** Shared canvas helpers for the 1080×1920 story cards (see ../card.js). */
 export const W = 1080;
 export const H = 1920;
+/** Side of the square 1080×1080 feed card. */
+export const S = 1080;
 export const FONT = '"Anek Bangla Variable", "Noto Sans Bengali", sans-serif';
 export const INK = '#14211b';
 export const INK_2 = '#4b5a52';
@@ -90,6 +92,19 @@ export function footer(ctx, host, { color = INK, muted = INK_2 } = {}) {
     ctx.fillStyle = muted;
     font(ctx, 500, 36);
     ctx.fillText(host, W / 2, H - 58);
+}
+
+/** Square-card footer: the question on the left, site host on the right, along the bottom edge. */
+export function footerSquare(ctx, host, { color = INK, muted = INK_2 } = {}) {
+    ctx.textBaseline = 'alphabetic';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = color;
+    font(ctx, 700, 38);
+    ctx.fillText('তোমার বাংলাদেশ কোথায়?', 60, S - 44);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = muted;
+    font(ctx, 500, 30);
+    ctx.fillText(host, S - 60, S - 44);
 }
 
 /** Small deterministic hash, so decorative bits (seat, barcode) are stable per result. */

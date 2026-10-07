@@ -212,7 +212,8 @@
             </div>
 
             <aside class="hidden lg:sticky lg:top-6 lg:block">
-                <button type="button" @click="openSheet()" class="group relative mx-auto block aspect-[9/16] h-[min(78dvh,40rem)] overflow-hidden rounded-[2rem] bg-paper-2 shadow-2xl ring-1 ring-line transition hover:-translate-y-1" aria-label="কার্ডটা শেয়ার করো">
+                <button type="button" @click="openSheet()" class="group relative mx-auto block overflow-hidden rounded-[2rem] bg-paper-2 shadow-2xl ring-1 ring-line transition hover:-translate-y-1"
+                    :class="cardSquare ? 'aspect-square w-full' : 'aspect-[9/16] h-[min(78dvh,40rem)]'" aria-label="কার্ডটা শেয়ার করো">
                     <template x-if="cardUrl"><img :src="cardUrl" alt="তোমার শেয়ার কার্ড" class="size-full object-cover transition-opacity" :class="cardBusy && 'opacity-70'"></template>
                     <span x-show="!cardUrl" class="absolute inset-0 animate-pulse bg-gradient-to-b from-paper-2 to-line"></span>
                     <span class="absolute inset-x-4 bottom-4 rounded-2xl bg-ink/85 px-4 py-3 text-center text-sm font-semibold text-paper opacity-0 backdrop-blur transition group-hover:opacity-100">🎨 ডিজাইন ও রং বদলাও · শেয়ার করো</span>
@@ -249,7 +250,7 @@
             {{-- Your card: name + share in one block --}}
             <div class="mt-6 rounded-3xl border border-line bg-card p-4 shadow-[0_8px_30px_-12px_rgb(20_33_27/0.18)]">
                 <div class="flex gap-4">
-                    <button type="button" @click="openSheet()" class="relative aspect-[9/16] w-20 shrink-0 overflow-hidden rounded-xl bg-paper-2 shadow-md ring-1 ring-line transition active:scale-95 lg:hidden" aria-label="কার্ডটা দেখো">
+                    <button type="button" @click="openSheet()" :class="cardSquare ? 'aspect-square' : 'aspect-[9/16]'" class="relative w-20 shrink-0 self-start overflow-hidden rounded-xl bg-paper-2 shadow-md ring-1 ring-line transition active:scale-95 lg:hidden" aria-label="কার্ডটা দেখো">
                         <template x-if="cardUrl"><img :src="cardUrl" alt="" class="size-full object-cover"></template>
                         <span x-show="!cardUrl" class="absolute inset-0 animate-pulse bg-line"></span>
                     </button>
@@ -381,8 +382,9 @@
 
             {{-- Big card preview with the colour picker beside it --}}
             <div class="flex items-center justify-center gap-4">
-                <div class="flex aspect-[9/16] h-[40dvh] max-h-96 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-paper-2 shadow-inner">
-                    <template x-if="cardUrl"><img :src="cardUrl" alt="তোমার শেয়ার কার্ড" class="h-full w-auto transition-opacity" :class="cardBusy && 'opacity-60'"></template>
+                <div class="flex shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-paper-2 shadow-inner"
+                    :class="cardSquare ? 'aspect-square w-[min(15rem,58vw)]' : 'aspect-[9/16] h-[40dvh] max-h-96'">
+                    <template x-if="cardUrl"><img :src="cardUrl" alt="তোমার শেয়ার কার্ড" class="size-full object-contain transition-opacity" :class="cardBusy && 'opacity-60'"></template>
                     <span x-show="!cardUrl" class="text-sm text-ink-2">কার্ড বানাচ্ছি…</span>
                 </div>
 
@@ -401,12 +403,25 @@
             <p x-show="inApp && cardUrl" class="mt-2 text-center text-xs text-ink-2">👆 ছবিটার ওপর চেপে ধরে রাখো, তারপর "Save image"</p>
 
             {{-- Card design + colour pickers: live previews of the player's own card --}}
+            <div class="mt-4 flex items-center gap-2" role="radiogroup" aria-label="কার্ডের সাইজ">
+                <p class="text-xs font-semibold text-ink-2">📐 সাইজ</p>
+                <div class="flex flex-1 rounded-full bg-paper-2 p-1">
+                    <template x-for="f in cardFormats" :key="f.key">
+                        <button type="button" role="radio" :aria-checked="cardFormat === f.key" @click="pickFormat(f.key)"
+                            class="flex-1 rounded-full px-3 py-1.5 text-xs font-semibold transition active:scale-95"
+                            :class="cardFormat === f.key ? 'bg-card text-accent shadow-sm' : 'text-ink-2'">
+                            <span x-text="f.key === 'square' ? `⬜ ${f.label} · ফিড পোস্ট` : `📱 ${f.label} · স্ট্যাটাস`"></span>
+                        </button>
+                    </template>
+                </div>
+            </div>
+
             <div class="mt-4" role="radiogroup" aria-label="কার্ডের ডিজাইন">
                 <p class="mb-1.5 text-xs font-semibold text-ink-2">🎨 ডিজাইন বেছে নাও</p>
                 <div class="grid grid-cols-4 gap-2">
                     <template x-for="t in cardTemplates" :key="t.key">
                         <button type="button" role="radio" :aria-checked="cardTemplate === t.key" :aria-label="t.label" @click="pickTemplate(t.key)" class="group flex flex-col items-center gap-1 transition active:scale-95">
-                            <span class="card-thumb" :class="cardTemplate === t.key ? 'is-on' : ''">
+                            <span class="card-thumb" :class="[cardTemplate === t.key ? 'is-on' : '', cardSquare ? 'is-square' : '']">
                                 <img x-show="thumb(t.key, cardTheme)" :src="thumb(t.key, cardTheme)" alt="" class="size-full object-cover">
                                 <span x-show="!thumb(t.key, cardTheme)" x-text="t.icon" class="text-xl" aria-hidden="true"></span>
                             </span>
@@ -416,7 +431,7 @@
                 </div>
             </div>
 
-            <button type="button" x-show="canNativeShare" class="btn-primary mt-4" @click="shareNative()">📲 স্টোরি / স্ট্যাটাসে দাও</button>
+            <button type="button" x-show="canNativeShare" class="btn-primary mt-4" @click="shareNative()" x-text="cardSquare ? '📲 পোস্টে দাও' : '📲 স্টোরি / স্ট্যাটাসে দাও'"></button>
 
             <div class="mt-4 grid grid-cols-5 gap-1">
                 <button type="button" class="share-btn" @click="shareTo('whatsapp')"><span class="bg-[#25D366]">@include('partials.icon', ['name' => 'whatsapp'])</span><span>WhatsApp</span></button>

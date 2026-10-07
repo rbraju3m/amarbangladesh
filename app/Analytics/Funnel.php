@@ -128,6 +128,12 @@ final class Funnel
         return $this->cardChoice('theme', 'place');
     }
 
+    /** Which share-card size (story or square) was saved or shared natively. */
+    public function cardFormats(): array
+    {
+        return $this->cardChoice('format', 'story');
+    }
+
     /** Counts of a card meta field (older events without it count as $default). */
     private function cardChoice(string $field, string $default): array
     {

@@ -118,11 +118,14 @@
                 <li class="py-2 text-ink-2">No data yet.</li>
             @endforelse
         </ul>
+        @if ($formats)
+            <p class="mt-3 border-t border-line pt-3 text-xs text-ink-2">Size: @foreach ($formats as $format => $n){{ ['story' => '📱 Story', 'square' => '⬜ Square'][$format] ?? $format }} <b class="tabular-nums text-ink">{{ $fmt($n) }}</b>@if (! $loop->last) · @endif @endforeach</p>
+        @endif
     </section>
 
     <section class="panel">
         <h2 class="panel-title">Card colours <small>saved + native shares</small></h2>
-        @php($swatch = ['place' => '#2f7d4f', 'cream' => '#e9e0cd', 'sunset' => '#e63971', 'ocean' => '#2356e8', 'night' => '#191835', 'emerald' => '#0c5a42'])
+        @php($swatch = ['place' => '#2f7d4f', 'cream' => '#b4532a', 'sunset' => '#e63971', 'ocean' => '#2356e8', 'night' => '#191835', 'emerald' => '#0c5a42'])
         <ul class="divide-y divide-line text-sm">
             @forelse ($themes as $theme => $n)
                 <li class="flex justify-between py-2.5"><span class="flex items-center gap-2"><i class="inline-block size-3 rounded-full border border-line" style="background: {{ $swatch[$theme] ?? '#999' }}"></i>{{ ['place' => 'Place colour', 'cream' => 'Cream', 'sunset' => 'Sunset', 'ocean' => 'Ocean', 'night' => 'Night', 'emerald' => 'Emerald'][$theme] ?? $theme }}</span><b class="tabular-nums">{{ $fmt($n) }}</b></li>

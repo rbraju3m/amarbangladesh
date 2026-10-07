@@ -100,14 +100,14 @@ class AdminTest extends TestCase
     public function test_dashboard_counts_card_designs(): void
     {
         $this->postJson('/api/events', ['events' => [
-            ['name' => 'card_saved', 'meta' => ['template' => 'boarding', 'theme' => 'night']],
-            ['name' => 'card_saved', 'meta' => ['template' => 'boarding', 'theme' => 'night']],
+            ['name' => 'card_saved', 'meta' => ['template' => 'boarding', 'theme' => 'night', 'format' => 'square']],
+            ['name' => 'card_saved', 'meta' => ['template' => 'boarding', 'theme' => 'night', 'format' => 'square']],
             ['name' => 'share_clicked', 'meta' => ['channel' => 'native', 'template' => 'poster']],
             ['name' => 'share_clicked', 'meta' => ['channel' => 'whatsapp']],
         ]])->assertNoContent();
 
         $this->actingAs(User::factory()->create())->get('/admin')->assertOk()
-            ->assertSeeInOrder(['Card designs', 'Boarding pass', '2', 'Poster', '1'])
+            ->assertSeeInOrder(['Card designs', 'Boarding pass', '2', 'Poster', '1', 'Square', '2', 'Story', '1'])
             ->assertSeeInOrder(['Card colours', 'Night', '2', 'Place colour', '1']);
     }
 }

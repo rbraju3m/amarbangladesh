@@ -1,5 +1,5 @@
 import { bnDigits, possessive } from './bn';
-import { canvasToBlob, renderCard, TEMPLATES, templateKeys, THEMES, themeKeys } from './card';
+import { canvasToBlob, FORMATS, formatKeys, renderCard, TEMPLATES, templateKeys, THEMES, themeKeys } from './card';
 import { confetti } from './confetti';
 import { canShareFile, copyText, isInAppBrowser, isMobile, shareLinks } from './share';
 import { setTrackingContext, track } from './track';
@@ -69,7 +69,9 @@ export default function quiz(boot) {
         cardTemplates: TEMPLATES.map(({ key, label, icon }) => ({ key, label, icon })),
         cardTheme: themeKeys.includes(store.get('bd.theme')) ? store.get('bd.theme') : themeKeys[0],
         cardThemes: THEMES.map(({ key, label, bg, accent }) => ({ key, label, bg, accent })),
-        thumbs: {}, // `${template}|${theme}|${name}` → small JPEG data URL for the picker previews
+        cardFormat: formatKeys.includes(store.get('bd.format')) ? store.get('bd.format') : formatKeys[0],
+        cardFormats: FORMATS.map(({ key, label }) => ({ key, label })),
+        thumbs: {}, // `${template}|${theme}|${format}|${name}` → small JPEG data URL for the picker previews
         cardUrl: null,
         cardBlob: null,
         cardBusy: false,
@@ -308,18 +310,29 @@ export default function quiz(boot) {
             await this.buildCard();
         },
 
+        async pickFormat(key) {
+            if (key === this.cardFormat) return;
+            this.cardFormat = key;
+            store.set('bd.format', key);
+            await this.buildCard();
+        },
+
+        get cardSquare() {
+            return this.cardFormat === 'square';
+        },
+
         thumb(template, theme) {
-            return this.thumbs[`${template}|${theme}|${this.cardName ?? ''}`] ?? null;
+            return this.thumbs[`${template}|${theme}|${this.cardFormat}|${this.cardName ?? ''}`] ?? null;
         },
 
         async buildCard() {
             this.cardBusy = true;
             const name = this.liveName;
-            const { cardTemplate: template, cardTheme: theme } = this;
-            const key = `${template}|${theme}|${name}`;
+            const { cardTemplate: template, cardTheme: theme, cardFormat: format } = this;
+            const key = `${template}|${theme}|${format}|${name}`;
             this.cardKey = key;
             try {
-                const canvas = await renderCard({ ...this.result, name: name || null }, { template, theme });
+                const canvas = await renderCard({ ...this.result, name: name || null }, { template, theme, format });
                 if (this.cardKey !== key) return; // typing or the design moved on; a newer render is under way
                 if (this.cardName !== name) this.thumbs = {};
                 this.cardName = name;
@@ -344,13 +357,14 @@ export default function quiz(boot) {
         // after the main card, so the big preview is never held up.
         async buildThumbs(key) {
             const name = this.cardName;
+            const format = this.cardFormat;
             const jobs = templateKeys.map((t) => [t, this.cardTheme]).filter(([t, th]) => !this.thumb(t, th));
             for (const [template, theme] of jobs) {
                 await new Promise(requestAnimationFrame);
                 if (this.cardKey !== key || !this.sheetOpen) return;
-                const k = `${template}|${theme}|${name}`;
+                const k = `${template}|${theme}|${format}|${name}`;
                 if (this.thumbs[k]) continue;
-                const canvas = await renderCard({ ...this.result, name: name || null }, { template, theme, scale: 0.2 });
+                const canvas = await renderCard({ ...this.result, name: name || null }, { template, theme, format, scale: 0.2 });
                 if (this.cardName === name) this.thumbs = { ...this.thumbs, [k]: canvas.toDataURL('image/jpeg', 0.85) };
             }
         },
@@ -391,7 +405,7 @@ export default function quiz(boot) {
         },
 
         cardFile() {
-            return new File([this.cardBlob], `amar-bangladesh-${this.result.location.slug}-${this.cardTemplate}-${this.cardTheme}.png`, { type: 'image/png' });
+            return new File([this.cardBlob], `amar-bangladesh-${this.result.location.slug}-${this.cardTemplate}-${this.cardTheme}-${this.cardFormat}.png`, { type: 'image/png' });
         },
 
         get canNativeShare() {
@@ -400,7 +414,7 @@ export default function quiz(boot) {
 
         async shareNative() {
             this.persistName();
-            track('share_clicked', { result: this.result.code, meta: { channel: 'native', template: this.cardTemplate, theme: this.cardTheme } });
+            track('share_clicked', { result: this.result.code, meta: { channel: 'native', template: this.cardTemplate, theme: this.cardTheme, format: this.cardFormat } });
             try {
                 await navigator.share({ files: [this.cardFile()], text: `${this.shareText} ${this.result.url}` });
             } catch {}
@@ -429,7 +443,7 @@ export default function quiz(boot) {
 
         saveCard() {
             this.persistName();
-            track('card_saved', { result: this.result.code, meta: { inapp: this.inApp ? 1 : 0, template: this.cardTemplate, theme: this.cardTheme } });
+            track('card_saved', { result: this.result.code, meta: { inapp: this.inApp ? 1 : 0, template: this.cardTemplate, theme: this.cardTheme, format: this.cardFormat } });
             if (this.inApp) {
                 this.flash('ছবিটার ওপর চেপে ধরে রাখো, তারপর "Save image" চাপো');
                 return;

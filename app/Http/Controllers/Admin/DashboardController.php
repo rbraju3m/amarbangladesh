@@ -32,6 +32,7 @@ class DashboardController extends Controller
             'channels' => $funnel->shareChannels(),
             'templates' => $funnel->cardTemplates(),
             'themes' => $funnel->cardThemes(),
+            'formats' => $funnel->cardFormats(),
         ]);
     }
 }

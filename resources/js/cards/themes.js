@@ -9,7 +9,7 @@ import { INK, INK_2, PAPER } from './common';
  */
 export const THEMES = [
     { key: 'place', label: 'জায়গার রং' },
-    { key: 'cream', label: 'ক্রিম', bg: ['#f6f2ea', '#e9e0cd'], ink: '#17201c', ink2: '#6b716d', accent: '#0f6b4f' },
+    { key: 'cream', label: 'ক্রিম', bg: ['#fbf3e4', '#f0dcbc'], ink: '#2b1d14', ink2: '#7a6352', accent: '#b4532a' },
     { key: 'sunset', label: 'গোধূলি', bg: ['#fff5ee', '#ffdcc7'], ink: '#3b1f23', ink2: '#8f5c55', accent: '#e63971' },
     { key: 'ocean', label: 'সাগর', bg: ['#eef5fb', '#d3e6f7'], ink: '#0f1d33', ink2: '#4b6584', accent: '#2356e8' },
     { key: 'night', label: 'রাত', dark: true, bg: ['#191835', '#2c2a63'], ink: '#ffffff', ink2: '#c9c8f5', accent: '#9d9bff', cardAccent: '#5b59e6' },

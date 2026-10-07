@@ -1,5 +1,5 @@
 import { bnDigits } from '../bn';
-import { drawCover, fitText, font, footer, H, hash, RED, roundRect, shadow, W } from './common';
+import { drawCover, fitText, font, footer, footerSquare, H, hash, RED, roundRect, S, shadow, W } from './common';
 
 /** An airline boarding pass: "মন → {place}", with seat, gate and a barcode stub. */
 export default function boarding(ctx, result, { img, host, t }) {
@@ -158,4 +158,154 @@ export default function boarding(ctx, result, { img, host, t }) {
     ctx.fillText(result.code ? `#${result.code}` : '', W / 2, by + bh + 50);
 
     footer(ctx, host, { color: '#fff', muted: 'rgba(255,255,255,.7)' });
+}
+
+/** Square feed version: the ticket on its side, with the barcode stub on the right. */
+export function square(ctx, result, { img, host, t }) {
+    const loc = result.location;
+    const accent = t.cardAccent;
+    const INK = t.cardInk, INK_2 = t.cardInk2;
+    const h = hash(result.code || loc.slug);
+
+    ctx.fillStyle = t.dark ? t.bg[0] : t.ink;
+    ctx.fillRect(0, 0, S, S);
+    const glow = ctx.createRadialGradient(S / 2, 300, 50, S / 2, 300, 900);
+    glow.addColorStop(0, accent + 'cc');
+    glow.addColorStop(1, accent + '00');
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, S, S);
+
+    // Ticket with notches top and bottom of the vertical tear line.
+    const tx = 50, ty = 50, tw = S - 100, th = 900, tear = tx + tw - 230;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 0, S, S);
+    for (const cy of [ty, ty + th]) {
+        ctx.moveTo(tear + 32, cy);
+        ctx.arc(tear, cy, 32, 0, Math.PI * 2);
+    }
+    ctx.clip('evenodd');
+    shadow(ctx, 'rgba(0,0,0,.35)', 50, 18);
+    ctx.fillStyle = '#fff';
+    roundRect(ctx, tx, ty, tw, th, 40);
+    ctx.fill();
+    ctx.restore();
+
+    // Header band over the main part.
+    ctx.save();
+    roundRect(ctx, tx, ty, tear - 32 - tx, 96, [40, 0, 0, 0]);
+    ctx.clip();
+    ctx.fillStyle = accent;
+    ctx.fillRect(tx, ty, tear - tx, 96);
+    ctx.restore();
+    ctx.fillStyle = '#fff';
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    font(ctx, 700, 34);
+    ctx.fillText('✈  বাংলাদেশ ভাইব এয়ার', tx + 40, ty + 50);
+
+    const mw = tear - tx; // width of the main part
+    const iy = ty + 120;
+    ctx.save();
+    roundRect(ctx, tx + 36, iy, mw - 72, 230, 24);
+    ctx.clip();
+    drawCover(ctx, img, tx + 36, iy, mw - 72, 230, accent);
+    ctx.restore();
+
+    const label = (text, x, y, align = 'left') => {
+        ctx.textAlign = align;
+        ctx.textBaseline = 'alphabetic';
+        ctx.fillStyle = INK_2;
+        font(ctx, 500, 26);
+        ctx.fillText(text, x, y);
+    };
+    const L = tx + 40, R = tear - 40;
+
+    // Route.
+    let y = iy + 280;
+    label('থেকে', L, y);
+    label('গন্তব্য', R, y, 'right');
+    y += 80;
+    ctx.fillStyle = INK;
+    ctx.textAlign = 'left';
+    font(ctx, 700, 78);
+    ctx.fillText('মন', L, y);
+    const fromW = ctx.measureText('মন').width;
+    ctx.textAlign = 'right';
+    ctx.fillStyle = accent;
+    fitText(ctx, loc.name_bn, R - L - fromW - 160, 78, 700);
+    const toW = ctx.measureText(loc.name_bn).width;
+    ctx.fillText(loc.name_bn, R, y);
+    const ax = L + fromW + 24, bx = R - toW - 24, ay = y - 26;
+    ctx.strokeStyle = INK_2;
+    ctx.lineWidth = 3;
+    ctx.setLineDash([9, 9]);
+    ctx.beginPath();
+    ctx.moveTo(ax, ay);
+    ctx.lineTo(bx, ay);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    font(ctx, 500, 40);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect((ax + bx) / 2 - 28, ay - 26, 56, 52);
+    ctx.fillStyle = INK;
+    ctx.fillText('✈', (ax + bx) / 2, ay + 2);
+
+    // Passenger and match / seat.
+    y += 70;
+    label('যাত্রী', L, y);
+    y += 70;
+    ctx.textAlign = 'left';
+    ctx.fillStyle = INK;
+    fitText(ctx, result.name || 'তুমি', R - L, 66, 700);
+    ctx.fillText(result.name || 'তুমি', L, y);
+
+    y += 64;
+    const col = (R - L) / 3;
+    const seat = `${bnDigits(1 + (h % 32))}${'ABCDEF'[h % 6]}`;
+    [['ভাইব ম্যাচ', `${bnDigits(result.match_pct)}%`], ['আসন', seat], ['গেট', loc.emoji]].forEach(([k, v], i) => {
+        const x = L + col * i;
+        label(k, x, y);
+        ctx.fillStyle = i === 0 ? RED : INK;
+        ctx.textAlign = 'left';
+        font(ctx, 700, 56);
+        ctx.fillText(v, x, y + 64);
+    });
+
+    // Tear line.
+    ctx.strokeStyle = '#d9d2c2';
+    ctx.lineWidth = 4;
+    ctx.setLineDash([14, 12]);
+    ctx.beginPath();
+    ctx.moveTo(tear, ty + 50);
+    ctx.lineTo(tear, ty + th - 50);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Stub: class, then a sideways barcode.
+    const sx = tear + 36, sw = tx + tw - 36 - sx;
+    label('ক্লাস', sx, ty + 90);
+    ctx.fillStyle = INK;
+    ctx.textAlign = 'left';
+    fitText(ctx, loc.title_bn, sw, 34, 600);
+    ctx.fillText(loc.title_bn, sx, ty + 134);
+
+    let by = ty + 190, seed = h;
+    const end = ty + th - 110;
+    ctx.fillStyle = INK;
+    while (by < end) {
+        seed = Math.imul(seed ^ (seed >>> 15), 2246822519) >>> 0;
+        const bar = 3 + (seed % 4) * 3;
+        if (by + bar > end) break;
+        if (seed & 16) ctx.fillRect(sx + 10, by, sw - 20, bar);
+        by += bar + 4;
+    }
+    ctx.textAlign = 'center';
+    ctx.fillStyle = INK_2;
+    font(ctx, 500, 26);
+    ctx.fillText(result.code ? `#${result.code}` : '', sx + sw / 2, ty + th - 56);
+
+    footerSquare(ctx, host, { color: '#fff', muted: 'rgba(255,255,255,.7)' });
 }
