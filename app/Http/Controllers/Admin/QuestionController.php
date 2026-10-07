@@ -88,6 +88,7 @@ class QuestionController extends Controller
             'question' => $question,
             'traits' => PersonalityTrait::orderBy('sort_order')->get(),
             'locations' => Location::orderBy('sort_order')->get(),
+            'balance' => BalanceController::previewData(['kind' => 'question', 'id' => $question->id]),
         ];
     }
 

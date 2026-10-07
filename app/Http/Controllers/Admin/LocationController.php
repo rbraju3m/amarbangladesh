@@ -28,6 +28,7 @@ class LocationController extends Controller
         return view('admin.locations.form', [
             'location' => $location,
             'traits' => PersonalityTrait::orderBy('sort_order')->get(),
+            'balance' => BalanceController::previewData(['kind' => 'location', 'slug' => $location->slug]),
         ]);
     }
 

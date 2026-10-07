@@ -50,11 +50,14 @@
         <template id="answer-template">@include('admin.partials.answer', ['i' => '__INDEX__', 'o' => ['is_active' => true], 'open' => true])</template>
     </section>
 
+    <div class="mt-6">@include('admin.partials.balance-preview')</div>
+
     {{-- Sticky save bar --}}
     <div class="sticky bottom-0 z-10 -mx-4 mt-8 border-t border-line bg-paper/95 px-4 py-3 backdrop-blur md:-mx-8 md:px-8">
         <div class="flex flex-wrap items-center gap-3">
             <button class="btn !bg-flag-red !text-white">Save question</button>
             <a href="{{ route('admin.balance') }}" class="btn-outline">Check balance</a>
+            <span data-balance-chip hidden></span>
             <span data-dirty-hint hidden class="pill bg-[#eda100]/15 text-[#8a5a00]">● Unsaved changes</span>
         </div>
     </div>

@@ -44,7 +44,7 @@
             </section>
         </div>
 
-        <aside class="space-y-4 lg:sticky lg:top-6 lg:self-start">
+        <aside class="space-y-4">
             <div class="panel overflow-hidden !p-0">
                 <img src="{{ $location->illustrationUrl() }}" alt="" class="aspect-[4/3] w-full object-cover" style="background: {{ $location->accent_color }}">
             </div>
@@ -61,6 +61,7 @@
                     @endforeach
                 </div>
             </section>
+            @include('admin.partials.balance-preview')
         </aside>
     </div>
 
@@ -68,6 +69,7 @@
         <div class="flex flex-wrap items-center gap-3">
             <button class="btn !bg-flag-red !text-white">Save location</button>
             <a href="{{ route('admin.balance') }}" class="btn-outline">Check balance</a>
+            <span data-balance-chip hidden></span>
             <span data-dirty-hint hidden class="pill bg-[#eda100]/15 text-[#8a5a00]">● Unsaved changes</span>
         </div>
     </div>

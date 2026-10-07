@@ -1,4 +1,5 @@
 /** Small progressive enhancements for the admin pages; every page works without them. */
+import { initBalancePreview } from './admin/balance-preview';
 
 // Toast: fade out the "saved" message after a few seconds.
 document.querySelectorAll('[data-toast]').forEach((el) => {
@@ -115,3 +116,5 @@ document.querySelectorAll('form[data-dirty-guard]').forEach((form) => {
         if (dirty) e.preventDefault();
     });
 });
+
+initBalancePreview();

@@ -97,6 +97,24 @@ class AdminTest extends TestCase
         $this->assertTrue(Hash::check('brand-new-pass', $user->fresh()->password));
     }
 
+    public function test_editors_embed_the_live_balance_preview(): void
+    {
+        $user = User::factory()->create();
+        $question = Question::first();
+        $location = Location::first();
+
+        $data = fn ($response) => json_decode(str($response->getContent())->between('id="balance-data">', '</script>'), true);
+
+        $q = $data($this->actingAs($user)->get(route('admin.questions.edit', $question))->assertOk()->assertSee('data-balance-preview', false));
+        $this->assertSame(['kind' => 'question', 'id' => $question->id], $q['ctx']);
+        $this->assertCount(9, $q['meta']);
+        $this->assertSame([6, 18], [(int) $q['min'], (int) $q['max']]);
+
+        $l = $data($this->get(route('admin.locations.edit', $location))->assertOk());
+        $this->assertSame(['kind' => 'location', 'slug' => $location->slug], $l['ctx']);
+        $this->assertArrayHasKey($location->slug, $l['locations']);
+    }
+
     public function test_dashboard_counts_card_designs(): void
     {
         $this->postJson('/api/events', ['events' => [
