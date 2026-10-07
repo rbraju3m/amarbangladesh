@@ -1,14 +1,15 @@
 import { bnDigits, possessive } from '../bn';
-import { drawCover, fitText, font, footer, H, highlight, INK, INK_2, PAPER, RED, roundRect, stamp, W } from './common';
+import { drawCover, fitText, font, footer, H, highlight, RED, roundRect, shadow, stamp, W } from './common';
+import { fillBackground } from './themes';
 
 /** The original "Bangladesh vibe passport" page with a match stamp and badge stamps. */
-export default function passport(ctx, result, { img, host }) {
+export default function passport(ctx, result, { img, host, t }) {
     const loc = result.location;
-    const accent = loc.accent;
+    const accent = t.cardAccent;
+    const INK = t.cardInk, INK_2 = t.cardInk2;
 
-    // Paper background with a soft accent wash.
-    ctx.fillStyle = PAPER;
-    ctx.fillRect(0, 0, W, H);
+    // Theme background with a soft accent wash.
+    fillBackground(ctx, t, W, H);
     const wash = ctx.createLinearGradient(0, 0, 0, H);
     wash.addColorStop(0, accent + '33');
     wash.addColorStop(1, accent + '08');
@@ -18,9 +19,7 @@ export default function passport(ctx, result, { img, host }) {
     // Passport page.
     const px = 70, py = 110, pw = W - 140, ph = H - 300;
     ctx.save();
-    ctx.shadowColor = 'rgba(20,33,27,.18)';
-    ctx.shadowBlur = 50;
-    ctx.shadowOffsetY = 18;
+    shadow(ctx, t.dark ? 'rgba(0,0,0,.4)' : 'rgba(20,33,27,.18)', 50, 18);
     ctx.fillStyle = '#ffffff';
     roundRect(ctx, px, py, pw, ph, 48);
     ctx.fill();
@@ -110,5 +109,5 @@ export default function passport(ctx, result, { img, host }) {
         stamp(ctx, badge, x, y + row * 110, angles[i], i % 2 ? INK : accent);
     });
 
-    footer(ctx, host);
+    footer(ctx, host, { color: t.ink, muted: t.ink2 });
 }

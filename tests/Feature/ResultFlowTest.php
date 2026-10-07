@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Analytics\Funnel;
 use App\Models\AnalyticsEvent;
 use App\Models\QuizResult;
 use App\Quiz\QuizConfig;
@@ -118,5 +119,27 @@ class ResultFlowTest extends TestCase
         $this->assertNotNull($event->quiz_result_id);
 
         $this->postJson('/api/events', ['events' => [['name' => 'drop_table']]])->assertStatus(422);
+    }
+
+    public function test_funnel_counts_people_so_replays_never_push_completion_past_100_percent(): void
+    {
+        $visitor = (string) Str::uuid();
+        $this->postJson('/api/events', ['visitor_id' => $visitor, 'events' => [['name' => 'landing_view'], ['name' => 'quiz_started']]])->assertNoContent();
+        $answers = $this->answers();
+        foreach ([0, 1, 2] as $_) {
+            $this->postJson('/api/results', ['answers' => $answers, 'visitor_id' => $visitor])->assertCreated();
+        }
+        // Someone who finished without a "started" event in this period is not counted as a completer.
+        $this->postJson('/api/results', ['answers' => $answers, 'visitor_id' => (string) Str::uuid()])->assertCreated();
+
+        $summary = (new Funnel(now()->subDay()))->summary();
+        $this->assertSame(1, $summary['started']);
+        $this->assertSame(1, $summary['completed']);
+        $this->assertSame(4, $summary['plays']);
+        $this->assertEquals(100, $summary['completion_rate']);
+
+        $trend = (new Funnel(now()->subDays(6)->startOfDay()))->trend();
+        $this->assertCount(7, $trend);
+        $this->assertSame(['visitors' => 1, 'completed' => 2], array_intersect_key(end($trend), ['visitors' => 0, 'completed' => 0]));
     }
 }

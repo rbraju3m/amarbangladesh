@@ -1,10 +1,12 @@
 import { bnDigits, possessive } from '../bn';
-import { drawCover, fitText, font, H, INK, roundRect, W } from './common';
+import { drawCover, fitText, font, H, roundRect, shadow, W } from './common';
 
 /** Full-bleed illustration fading into the place colour, with big white type. */
-export default function poster(ctx, result, { img, host }) {
+export default function poster(ctx, result, { img, host, t }) {
     const loc = result.location;
-    const accent = loc.accent;
+    // Dark themes paint with their own deep background colour; the rest with the accent.
+    const accent = t.dark ? t.bg[1] : t.accent;
+    const INK = t.cardInk;
 
     ctx.fillStyle = accent;
     ctx.fillRect(0, 0, W, H);
@@ -78,8 +80,7 @@ export default function poster(ctx, result, { img, host }) {
     fitText(ctx, `${loc.emoji} ${loc.title_bn}`, W - 2 * x0, 60, 600);
     ctx.fillText(`${loc.emoji} ${loc.title_bn}`, x0, y);
 
-    ctx.shadowColor = 'rgba(0,0,0,.25)';
-    ctx.shadowBlur = 24;
+    shadow(ctx, 'rgba(0,0,0,.25)', 24);
     y -= 110;
     fitText(ctx, loc.name_bn, W - 2 * x0, 230, 700);
     ctx.fillText(loc.name_bn, x0, y);

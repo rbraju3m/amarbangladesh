@@ -1,13 +1,14 @@
 import { bnDigits, possessive } from '../bn';
-import { fitText, font, footer, H, INK, INK_2, PAPER, W } from './common';
+import { fitText, font, footer, H, W } from './common';
+import { fillBackground } from './themes';
 
 /** Typography only: flag-like disc, huge place name, trait bars. */
-export default function minimal(ctx, result, { host }) {
+export default function minimal(ctx, result, { host, t }) {
     const loc = result.location;
-    const accent = loc.accent;
+    const accent = t.accent;
+    const INK = t.ink, INK_2 = t.ink2;
 
-    ctx.fillStyle = PAPER;
-    ctx.fillRect(0, 0, W, H);
+    fillBackground(ctx, t, W, H);
 
     // The disc from the flag, in the place colour, bleeding off the corner.
     ctx.fillStyle = accent;
@@ -79,5 +80,5 @@ export default function minimal(ctx, result, { host }) {
         y += 112;
     }
 
-    footer(ctx, host);
+    footer(ctx, host, { color: INK, muted: INK_2 });
 }

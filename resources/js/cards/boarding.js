@@ -1,14 +1,15 @@
 import { bnDigits } from '../bn';
-import { drawCover, fitText, font, footer, H, hash, INK, INK_2, roundRect, W } from './common';
+import { drawCover, fitText, font, footer, H, hash, RED, roundRect, shadow, W } from './common';
 
 /** An airline boarding pass: "মন → {place}", with seat, gate and a barcode stub. */
-export default function boarding(ctx, result, { img, host }) {
+export default function boarding(ctx, result, { img, host, t }) {
     const loc = result.location;
-    const accent = loc.accent;
+    const accent = t.cardAccent;
+    const INK = t.cardInk, INK_2 = t.cardInk2;
     const h = hash(result.code || loc.slug);
 
-    // Dark backdrop with a glow in the place colour.
-    ctx.fillStyle = INK;
+    // Dark backdrop (the theme's own, or its ink) with a glow in the accent.
+    ctx.fillStyle = t.dark ? t.bg[0] : t.ink;
     ctx.fillRect(0, 0, W, H);
     const glow = ctx.createRadialGradient(W / 2, 520, 50, W / 2, 520, 1100);
     glow.addColorStop(0, accent + 'cc');
@@ -27,9 +28,7 @@ export default function boarding(ctx, result, { img, host }) {
         ctx.arc(cx, tear, 36, 0, Math.PI * 2);
     }
     ctx.clip('evenodd');
-    ctx.shadowColor = 'rgba(0,0,0,.35)';
-    ctx.shadowBlur = 60;
-    ctx.shadowOffsetY = 20;
+    shadow(ctx, 'rgba(0,0,0,.35)', 60, 20);
     ctx.fillStyle = '#fff';
     roundRect(ctx, tx, ty, tw, th, 44);
     ctx.fill();
@@ -117,7 +116,7 @@ export default function boarding(ctx, result, { img, host }) {
     [['ভাইব ম্যাচ', `${bnDigits(result.match_pct)}%`], ['আসন', seat], ['গেট', loc.emoji]].forEach(([k, v], i) => {
         const x = tx + 48 + col * i;
         label(k, x, y);
-        ctx.fillStyle = i === 0 ? '#e03a3e' : INK;
+        ctx.fillStyle = i === 0 ? RED : INK;
         ctx.textAlign = 'left';
         font(ctx, 700, 68);
         ctx.fillText(v, x, y + 80);

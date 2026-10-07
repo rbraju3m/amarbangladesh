@@ -2,75 +2,72 @@
 @section('title', $question->exists ? 'Edit question' : 'New question')
 @section('content')
 @php
-    $options = old('options', $question->options->map(fn ($o) => [
+    $options = array_values(old('options', $question->options->map(fn ($o) => [
         'id' => $o->id, 'label_bn' => $o->label_bn, 'emoji' => $o->emoji, 'image' => $o->image, 'reason_bn' => $o->reason_bn,
         'weights' => $o->trait_weights, 'bonus' => $o->location_bonus, 'is_active' => $o->is_active,
-    ])->all());
-    $options = array_merge(array_values($options), array_fill(0, max(0, 4 - count($options)) + 1, ['is_active' => true]));
+    ])->all()));
+    // A new question starts with the 4 answers every question needs.
+    if (! $options) {
+        $options = array_fill(0, 4, ['is_active' => true]);
+    }
 @endphp
-<a href="{{ route('admin.questions.index') }}" class="text-sm text-ink-2">← Questions</a>
-<form method="POST" action="{{ $question->exists ? route('admin.questions.update', $question) : route('admin.questions.store') }}" class="mt-3 space-y-6">
+
+<a href="{{ route('admin.questions.index') }}" class="inline-flex items-center gap-1 text-sm font-semibold text-ink-2 hover:text-ink">← All questions</a>
+
+<form method="POST" action="{{ $question->exists ? route('admin.questions.update', $question) : route('admin.questions.store') }}" class="mt-3" data-dirty-guard>
     @csrf
     @if ($question->exists) @method('PUT') @endif
 
-    <section class="stat grid gap-4 md:grid-cols-[1fr_1fr_auto_auto]">
-        <label class="text-sm font-medium">Question (Bangla)<input name="prompt_bn" value="{{ old('prompt_bn', $question->prompt_bn) }}" required class="input mt-1 text-base"></label>
-        <label class="text-sm font-medium">Subtitle (optional)<input name="subtitle_bn" value="{{ old('subtitle_bn', $question->subtitle_bn) }}" class="input mt-1"></label>
-        <label class="text-sm font-medium">Kind
-            <select name="kind" class="input mt-1">
-                @foreach (\App\Models\Question::KINDS as $kind)<option value="{{ $kind }}" @selected(old('kind', $question->kind) === $kind)>{{ $kind }}</option>@endforeach
+    <header class="mb-5">
+        <h1 class="text-2xl font-bold md:text-3xl">{{ $question->exists ? 'Edit question' : 'New question' }}</h1>
+        <p class="mt-1 text-sm text-ink-2">Changes apply to new plays only; results already shared keep their outcome.</p>
+    </header>
+
+    <section class="panel grid gap-4 md:grid-cols-[2fr_1.3fr_9rem]">
+        <label><span class="field-label">Question (Bangla)</span><input name="prompt_bn" value="{{ old('prompt_bn', $question->prompt_bn) }}" required class="input text-base"></label>
+        <label><span class="field-label">Subtitle <span class="normal-case">(optional)</span></span><input name="subtitle_bn" value="{{ old('subtitle_bn', $question->subtitle_bn) }}" class="input"></label>
+        <label><span class="field-label">Kind</span>
+            <select name="kind" class="input">
+                @foreach (\App\Models\Question::KINDS as $kind)<option value="{{ $kind }}" @selected(old('kind', $question->kind) === $kind)>{{ ucfirst($kind) }}</option>@endforeach
             </select>
         </label>
-        <label class="flex items-center gap-2 self-end pb-2 text-sm font-medium"><input type="checkbox" name="is_active" value="1" @checked(old('is_active', $question->is_active))> Active</label>
+        <label class="flex items-center gap-2 text-sm font-semibold md:col-span-3"><input type="checkbox" name="is_active" value="1" @checked(old('is_active', $question->exists ? $question->is_active : true)) class="size-4 accent-accent"> Active — shown to players</label>
     </section>
 
-    <section>
-        <h2 class="font-bold">Answers</h2>
-        <p class="mb-3 text-sm text-ink-2">
-            <b>Trait points</b> (−5…10) move the player toward places with that trait. <b>Place bonus</b> (0…5) is a direct nudge for a signature answer (ইলিশ → বরিশাল); each point ≈ {{ \App\Quiz\Scorer::BONUS_WEIGHT }} similarity. Use sparingly.
-            Leave a blank row empty to ignore it.
-        </p>
-        <div class="space-y-3">
+    <section class="mt-6">
+        <div class="mb-3 flex flex-wrap items-end justify-between gap-2">
+            <div>
+                <h2 class="text-lg font-bold">Answers</h2>
+                <p class="text-sm text-ink-2"><b>Trait points</b> move the player toward places with that trait. <b>Place bonus</b> is a direct nudge (each point ≈ {{ \App\Quiz\Scorer::BONUS_WEIGHT }} similarity) — use sparingly.</p>
+            </div>
+        </div>
+        <div id="answers" class="space-y-3" data-next="{{ count($options) }}">
             @foreach ($options as $i => $o)
-                <fieldset class="stat">
-                    <input type="hidden" name="options[{{ $i }}][id]" value="{{ $o['id'] ?? '' }}">
-                    <div class="grid gap-3 md:grid-cols-[5rem_1fr_1fr_1fr]">
-                        <label class="text-xs font-medium">Emoji<input name="options[{{ $i }}][emoji]" value="{{ $o['emoji'] ?? '' }}" class="input mt-1 text-center text-lg"></label>
-                        <label class="text-xs font-medium">Label<input name="options[{{ $i }}][label_bn]" value="{{ $o['label_bn'] ?? '' }}" class="input mt-1"></label>
-                        <label class="text-xs font-medium">"Why" phrase <span class="text-ink-2">(used in result text)</span><input name="options[{{ $i }}][reason_bn]" value="{{ $o['reason_bn'] ?? '' }}" class="input mt-1"></label>
-                        <label class="text-xs font-medium">Image path <span class="text-ink-2">(image questions)</span><input name="options[{{ $i }}][image]" value="{{ $o['image'] ?? '' }}" placeholder="images/locations/…svg" class="input mt-1"></label>
-                    </div>
-                    <div class="mt-3 flex flex-wrap gap-x-4 gap-y-2">
-                        <span class="w-full text-xs font-semibold text-ink-2">Trait points</span>
-                        @foreach ($traits as $t)
-                            <label class="flex items-center gap-1 text-xs">{{ $t->emoji }} {{ $t->label_bn }}<input type="number" min="-5" max="10" name="options[{{ $i }}][weights][{{ $t->key }}]" value="{{ $o['weights'][$t->key] ?? '' }}" class="num"></label>
-                        @endforeach
-                    </div>
-                    <div class="mt-3 flex flex-wrap gap-x-4 gap-y-2">
-                        <span class="w-full text-xs font-semibold text-ink-2">Place bonus</span>
-                        @foreach ($locations as $l)
-                            <label class="flex items-center gap-1 text-xs">{{ $l->emoji }} {{ $l->name_bn }}<input type="number" min="0" max="5" name="options[{{ $i }}][bonus][{{ $l->slug }}]" value="{{ $o['bonus'][$l->slug] ?? '' }}" class="num"></label>
-                        @endforeach
-                    </div>
-                    <div class="mt-3 flex gap-4 text-xs">
-                        <label class="flex items-center gap-1.5"><input type="checkbox" name="options[{{ $i }}][is_active]" value="1" @checked($o['is_active'] ?? true)> Active</label>
-                        @if (! empty($o['id']))<label class="flex items-center gap-1.5 text-flag-red"><input type="checkbox" name="options[{{ $i }}][_delete]" value="1"> Delete this answer</label>@endif
-                    </div>
-                </fieldset>
+                @include('admin.partials.answer', ['i' => $i, 'o' => $o, 'open' => empty($o['id']) || $errors->any()])
             @endforeach
         </div>
+        <button type="button" class="btn-outline mt-3 w-full border-dashed" data-add-answer="#answers" data-max="6">+ Add answer</button>
+        <template id="answer-template">@include('admin.partials.answer', ['i' => '__INDEX__', 'o' => ['is_active' => true], 'open' => true])</template>
     </section>
 
-    <div class="flex items-center gap-3">
-        <button class="btn-primary !w-auto">Save</button>
-        <a href="{{ route('admin.balance') }}" class="text-sm underline">Check balance →</a>
+    {{-- Sticky save bar --}}
+    <div class="sticky bottom-0 z-10 -mx-4 mt-8 border-t border-line bg-paper/95 px-4 py-3 backdrop-blur md:-mx-8 md:px-8">
+        <div class="flex flex-wrap items-center gap-3">
+            <button class="btn !bg-flag-red !text-white">Save question</button>
+            <a href="{{ route('admin.balance') }}" class="btn-outline">Check balance</a>
+            <span data-dirty-hint hidden class="pill bg-[#eda100]/15 text-[#8a5a00]">● Unsaved changes</span>
+        </div>
     </div>
 </form>
 
 @if ($question->exists)
-    <form method="POST" action="{{ route('admin.questions.destroy', $question) }}" class="mt-10" onsubmit="return confirm('Delete this question and its answers? Disabling it is usually better.')">
-        @csrf @method('DELETE')
-        <button class="text-sm text-flag-red underline">Delete question</button>
-    </form>
+    <section class="mt-10 rounded-2xl border border-flag-red/30 p-5">
+        <h2 class="font-bold text-flag-red">Danger zone</h2>
+        <p class="mt-1 text-sm text-ink-2">Deleting removes the question and its answers. Turning off "Active" is usually better — it keeps the history.</p>
+        <form method="POST" action="{{ route('admin.questions.destroy', $question) }}" class="mt-3" onsubmit="return confirm('Delete this question and its answers?')">
+            @csrf @method('DELETE')
+            <button class="btn-outline !border-flag-red/40 !text-flag-red">Delete question</button>
+        </form>
+    </section>
 @endif
 @endsection

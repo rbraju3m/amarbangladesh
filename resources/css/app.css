@@ -35,6 +35,10 @@
     --green: #006a4e;
     --green-text: #006a4e;
     --accent: #2f7d4f;
+    /* Admin chart series (validated categorical trio, light / dark). */
+    --viz-1: #2a78d6;
+    --viz-2: #eb6834;
+    --viz-3: #1baf7a;
     color-scheme: light;
 }
 
@@ -47,6 +51,9 @@
         --ink-2: #a9b5ae;
         --line: #2a3832;
         --green-text: #5fd3a4;
+        --viz-1: #3987e5;
+        --viz-2: #d95926;
+        --viz-3: #199e70;
         color-scheme: dark;
     }
 }
@@ -58,6 +65,10 @@
     --ink: #f1ede3;
     --ink-2: #a9b5ae;
     --line: #2a3832;
+    --green-text: #5fd3a4;
+    --viz-1: #3987e5;
+    --viz-2: #d95926;
+    --viz-3: #199e70;
     color-scheme: dark;
 }
 
@@ -74,6 +85,9 @@
     --color-flag-green: var(--green);
     --color-green-text: var(--green-text);
     --color-accent: var(--accent);
+    --color-viz-1: var(--viz-1);
+    --color-viz-2: var(--viz-2);
+    --color-viz-3: var(--viz-3);
     --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -157,6 +171,29 @@
     .share-btn > span:first-child {
         @apply flex size-13 items-center justify-center rounded-full text-white transition duration-150 active:scale-90;
     }
+
+    /* A 9:16 preview tile in the share-card pickers; .is-on marks the chosen one. */
+    .card-thumb {
+        @apply relative flex aspect-[9/16] w-full items-center justify-center overflow-hidden rounded-xl border-2 border-line bg-paper-2 opacity-80 transition duration-150;
+    }
+
+    .card-thumb.is-on {
+        @apply border-accent opacity-100 shadow-md ring-2 ring-accent/30;
+    }
+
+    /* A round colour chip in the card-colour picker. */
+    .color-swatch {
+        @apply relative block size-8 shrink-0 rounded-full border-2 border-line shadow-inner transition duration-150;
+    }
+
+    .color-swatch.is-on {
+        @apply border-accent ring-2 ring-accent/30;
+    }
+
+    .card-thumb.is-on::after {
+        content: '✓';
+        @apply absolute top-1 right-1 flex size-5 items-center justify-center rounded-full bg-accent text-[11px] font-bold text-white;
+    }
 }
 
 /* River motif behind the landing hero. */
@@ -237,17 +274,80 @@
     }
 }
 
-/* Admin form controls */
+/* Admin */
 @layer components {
     .input {
-        @apply block min-h-10 w-full rounded-xl border border-line bg-card px-3 py-2 text-sm outline-none focus:border-accent;
+        @apply block min-h-11 w-full rounded-xl border border-line bg-card px-3 py-2 text-sm transition outline-none placeholder:text-ink-2/60 focus:border-accent focus:ring-4 focus:ring-accent/15;
     }
 
     .num {
-        @apply w-14 rounded-lg border border-line bg-card px-1 py-1 text-center text-sm tabular-nums outline-none focus:border-accent;
+        @apply w-14 rounded-lg border border-line bg-card px-1 py-1 text-center text-sm tabular-nums outline-none focus:border-accent focus:ring-4 focus:ring-accent/15;
     }
 
     .stat {
-        @apply rounded-2xl border border-line bg-card p-4;
+        @apply rounded-2xl border border-line bg-card p-4 shadow-[0_1px_2px_rgb(20_33_27/0.04)];
+    }
+
+    .panel {
+        @apply rounded-2xl border border-line bg-card p-5 shadow-[0_1px_2px_rgb(20_33_27/0.04)];
+    }
+
+    .panel-title {
+        @apply mb-4 flex items-baseline justify-between gap-2 font-bold;
+    }
+
+    .panel-title small {
+        @apply text-xs font-medium text-ink-2;
+    }
+
+    .field-label {
+        @apply mb-1 block text-xs font-semibold tracking-wide text-ink-2 uppercase;
+    }
+
+    .btn {
+        @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-ink px-5 text-sm font-semibold text-paper transition hover:opacity-90 active:scale-[0.97] disabled:opacity-50;
+    }
+
+    .btn-outline {
+        @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-line bg-card px-4 text-sm font-semibold text-ink transition hover:border-ink-2 active:scale-[0.97];
+    }
+
+    .pill {
+        @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold;
+    }
+
+    .nav-link {
+        @apply flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold whitespace-nowrap text-ink-2 transition hover:bg-paper-2 hover:text-ink;
+    }
+
+    .nav-link.is-on {
+        @apply bg-ink text-paper hover:bg-ink hover:text-paper;
+    }
+
+    .nav-link svg {
+        @apply size-[18px] shrink-0;
+    }
+
+    /* Trait slider: the track fills from 0 toward the value, green for +, red for −. */
+    .slider {
+        @apply h-2 w-full cursor-pointer appearance-none rounded-full bg-paper-2 accent-accent;
+    }
+
+    .bonus-input:not(:placeholder-shown) {
+        @apply border-accent bg-accent/10 font-bold;
+    }
+}
+
+@layer components {
+    .slider-value {
+        @apply rounded-md py-0.5 text-center text-xs font-bold tabular-nums text-ink-2;
+    }
+
+    .slider-value[data-sign='pos'] {
+        @apply bg-accent/10 text-accent;
+    }
+
+    .slider-value[data-sign='neg'] {
+        @apply bg-flag-red/10 text-flag-red;
     }
 }

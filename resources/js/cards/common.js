@@ -98,3 +98,11 @@ export function hash(text) {
     for (const ch of String(text)) h = Math.imul(h ^ ch.codePointAt(0), 16777619);
     return h >>> 0;
 }
+
+/** Shadow settings ignore the canvas transform, so scale them for the small picker previews. */
+export function shadow(ctx, color, blur, offsetY = 0) {
+    const k = ctx.getTransform().a;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = blur * k;
+    ctx.shadowOffsetY = offsetY * k;
+}

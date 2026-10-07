@@ -1,21 +1,22 @@
 @extends('layouts.admin')
 @section('title', 'Password')
 @section('content')
-<form method="POST" action="{{ route('admin.password.update') }}" class="max-w-md space-y-4 rounded-3xl border border-line bg-card p-6">
+<header class="mb-6">
+    <h1 class="text-2xl font-bold md:text-3xl">Password</h1>
+    <p class="mt-1 text-sm text-ink-2">Logged in as <b class="text-ink">{{ auth()->user()->email }}</b>.</p>
+</header>
+<form method="POST" action="{{ route('admin.password.update') }}" class="panel max-w-md space-y-4">
     @csrf @method('PUT')
-    <div>
-        <h1 class="text-xl font-bold">Change password</h1>
-        <p class="mt-1 text-sm text-ink-2">Logged in as {{ auth()->user()->email }}. At least 10 characters.</p>
-    </div>
-    <label class="block text-sm font-medium">Current password
-        <input type="password" name="current_password" required autocomplete="current-password" class="input mt-1">
+    <h2 class="font-bold">Change password</h2>
+    <label class="block"><span class="field-label">Current password</span>
+        <input type="password" name="current_password" required autocomplete="current-password" class="input">
     </label>
-    <label class="block text-sm font-medium">New password
-        <input type="password" name="password" required minlength="10" autocomplete="new-password" class="input mt-1">
+    <label class="block"><span class="field-label">New password <span class="normal-case">at least 10 characters</span></span>
+        <input type="password" name="password" required minlength="10" autocomplete="new-password" class="input">
     </label>
-    <label class="block text-sm font-medium">Repeat new password
-        <input type="password" name="password_confirmation" required minlength="10" autocomplete="new-password" class="input mt-1">
+    <label class="block"><span class="field-label">Repeat new password</span>
+        <input type="password" name="password_confirmation" required minlength="10" autocomplete="new-password" class="input">
     </label>
-    <button class="inline-flex min-h-11 items-center rounded-2xl bg-ink px-5 font-semibold text-paper">Update password</button>
+    <button class="btn">Update password</button>
 </form>
 @endsection

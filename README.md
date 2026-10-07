@@ -1,8 +1,8 @@
 # তোমার বাংলাদেশ কোথায়?
 
-A one-minute Bangla personality quiz that matches you with a place in Bangladesh, and gives you a passport-style card to share.
+A one-minute Bangla personality quiz that matches you with a place in Bangladesh, and gives you a story card to share (4 designs × 6 colour themes).
 
-**Flow:** landing → 8 questions → map reveal → result (vibe match %, traits, second-best place) → share → a friend opens the link and sees your result as a teaser → they play and see how closely their result matches yours.
+**Flow:** landing → 8 questions → map reveal → result (vibe match %, traits, second-best place, a live preview of your share card) → share (pick a card design and colour, add your name) → a friend opens the link and sees your result as a teaser → they play and see how closely their result matches yours.
 
 ## Setup
 
@@ -14,7 +14,13 @@ npm run build
 php artisan quiz:og-images                         # link-preview images (needs google-chrome)
 ```
 
-Admin panel: `/admin`. It has the analytics funnel, question and answer editing, place editing and the scoring balance checker.
+Admin panel: `/admin`.
+
+- **Analytics:** the growth funnel (visitors → started → completed → shared, counted as people, with the change against the previous period), a daily trend chart, result distribution, question drop-off, share actions, and which card designs and colours get used.
+- **Questions:** answer cards with trait sliders and place bonuses, add/remove answers, reorder questions.
+- **Locations:** text, accent colour and trait profile per place.
+- **Balance:** how often each place wins across every possible answer combination (healthy band 6–18%).
+- **Password:** change your own password.
 
 
 ## Deploy
@@ -53,5 +59,5 @@ Then remove `ADMIN_PASSWORD` from `.env`, install `deploy/nginx.conf`, and add `
 ## Content still to provide
 
 - Final place illustrations to replace the placeholder SVGs in `public/images/locations/`, then run `php artisan quiz:og-images`.
-- A native-speaker review of all Bangla copy (`database/seeders/data/quiz.php`, or in the admin).
+- A native-speaker review of all Bangla copy (`database/seeders/data/quiz.php`, or in the admin), including the card text in `resources/js/cards/` and the colour theme names in `resources/js/cards/themes.js`.
 - Production domain in `APP_URL`.

@@ -18,7 +18,7 @@ class QuestionController extends Controller
     public function index(): View
     {
         return view('admin.questions.index', [
-            'questions' => Question::withCount('options')->orderBy('sort_order')->orderBy('id')->get(),
+            'questions' => Question::withCount('options')->with('options')->orderBy('sort_order')->orderBy('id')->get(),
         ]);
     }
 

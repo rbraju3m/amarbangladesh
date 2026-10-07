@@ -193,10 +193,17 @@
 
     {{-- ===================== RESULT ===================== --}}
     <template x-if="screen === 'result' && result">
-        <section class="screen pb-12 md:max-w-2xl lg:grid lg:max-w-6xl lg:grid-cols-[5fr_6fr] lg:items-start lg:gap-12 lg:px-8">
-            {{-- Hero (sticky beside the details on desktop) --}}
-            <div class="relative -mx-4 overflow-hidden rounded-b-[2.5rem] bg-accent lg:sticky lg:top-8 lg:mx-0 lg:mt-8 lg:rounded-[2.5rem] lg:shadow-2xl">
+        <section class="screen relative pb-12 md:max-w-2xl lg:grid lg:max-w-6xl lg:grid-cols-[5fr_6fr] lg:items-start lg:gap-x-14 lg:px-8">
+            {{-- Brand bar: over the hero on phones, above the columns on desktop --}}
+            <header class="absolute inset-x-0 top-0 z-10 flex items-center justify-between px-4 py-3 text-white lg:static lg:col-span-2 lg:px-0 lg:py-5 lg:text-ink">
+                <a href="/" @click.prevent="history.pushState({}, '', '/'); screen = 'landing'; scrollTo(0, 0)" class="flex items-center gap-2 text-sm font-bold tracking-wide drop-shadow lg:drop-shadow-none">🇧🇩 আমার বাংলাদেশ</a>
+                <button type="button" @click="retake()" class="rounded-full bg-black/25 px-3 py-1.5 text-sm font-semibold backdrop-blur transition hover:bg-black/40 lg:border lg:border-line lg:bg-card lg:backdrop-blur-none lg:hover:bg-paper-2">🔁 আবার খেলি</button>
+            </header>
+
+            {{-- Phone/tablet hero; on desktop the live share card takes this place --}}
+            <div class="relative -mx-4 overflow-hidden rounded-b-[2.5rem] bg-accent lg:hidden">
                 <img :src="result.location.illustration" :alt="`${result.location.name_bn}-এর ছবি`" width="400" height="300" class="aspect-[4/3] w-full object-cover">
+                <div class="absolute inset-x-0 top-0 h-1/4 bg-gradient-to-b from-black/45 to-transparent"></div>
                 <div class="absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-black/80 via-black/45 to-transparent"></div>
                 <div class="absolute bottom-5 left-5 text-white">
                     <p class="transition-all" :class="liveName ? 'text-xl font-bold' : 'text-sm font-medium opacity-90'" x-text="liveName ? `${possessive(liveName)} বাংলাদেশ` : 'তোমার বাংলাদেশ'"></p>
@@ -204,9 +211,24 @@
                 </div>
             </div>
 
-            <div class="lg:pt-8">
+            <aside class="hidden lg:sticky lg:top-6 lg:block">
+                <button type="button" @click="openSheet()" class="group relative mx-auto block aspect-[9/16] h-[min(78dvh,40rem)] overflow-hidden rounded-[2rem] bg-paper-2 shadow-2xl ring-1 ring-line transition hover:-translate-y-1" aria-label="কার্ডটা শেয়ার করো">
+                    <template x-if="cardUrl"><img :src="cardUrl" alt="তোমার শেয়ার কার্ড" class="size-full object-cover transition-opacity" :class="cardBusy && 'opacity-70'"></template>
+                    <span x-show="!cardUrl" class="absolute inset-0 animate-pulse bg-gradient-to-b from-paper-2 to-line"></span>
+                    <span class="absolute inset-x-4 bottom-4 rounded-2xl bg-ink/85 px-4 py-3 text-center text-sm font-semibold text-paper opacity-0 backdrop-blur transition group-hover:opacity-100">🎨 ডিজাইন ও রং বদলাও · শেয়ার করো</span>
+                </button>
+                <p class="mt-3 text-center text-sm text-ink-2">এটাই তোমার শেয়ার কার্ড — নাম লিখলেই বদলে যাবে ✨</p>
+            </aside>
+
+            <div>
+            {{-- Desktop headline (phones show it on the hero) --}}
+            <div class="hidden lg:block">
+                <p class="font-semibold text-ink-2" x-text="liveName ? `${possessive(liveName)} বাংলাদেশ` : 'তোমার বাংলাদেশ'"></p>
+                <h1 class="animate-pop text-6xl leading-tight font-bold" x-text="`${result.location.emoji} ${result.location.name_bn}`"></h1>
+            </div>
+
             {{-- Title + match --}}
-            <div class="mt-6 flex items-center gap-4 lg:mt-0">
+            <div class="mt-6 flex items-center gap-4 lg:mt-4">
                 <div class="flex-1">
                     <p class="text-2xl leading-snug font-bold text-accent lg:text-3xl" x-text="result.location.title_bn"></p>
                     <p class="mt-1 text-ink-2" x-text="result.location.tagline_bn"></p>
@@ -224,35 +246,41 @@
                 </div>
             </div>
 
-            {{-- Name for the card: prominent until set, then a one-line confirmation --}}
-            <div class="mt-6 rounded-3xl border-2 p-4 transition-colors" :class="result.name && !nameEditing ? 'border-line bg-card' : 'border-accent bg-accent/5'">
-                <template x-if="!result.name || nameEditing">
-                    <form @submit.prevent="submitName()">
-                        <label for="result-name" class="block text-lg font-bold">✍️ কার্ডে তোমার নাম বসাও</label>
-                        <p class="mt-0.5 text-sm text-ink-2">নাম দিলে বন্ধুরা কার্ডটা বেশি খোলে</p>
-                        <div class="mt-3 flex gap-2">
-                            <input id="result-name" x-model="nameInput" maxlength="20" autocomplete="given-name" enterkeyhint="done" placeholder="তোমার নাম"
-                                class="min-h-14 min-w-0 flex-1 rounded-2xl border-2 border-line bg-card px-4 text-lg outline-none focus:border-accent">
-                            <button type="submit" class="min-h-14 shrink-0 rounded-2xl bg-accent px-5 font-semibold text-white transition active:scale-95 disabled:opacity-50"
-                                :disabled="savingName" x-text="savingName ? '…' : 'বসাও ✓'"></button>
-                        </div>
-                    </form>
-                </template>
-                <template x-if="result.name && !nameEditing">
-                    <div class="flex items-center justify-between gap-3">
-                        <p class="font-semibold"><span class="text-accent">✓</span> <span x-text="`${possessive(result.name)} বাংলাদেশ`"></span></p>
-                        <button type="button" class="shrink-0 rounded-full px-2 py-1 text-sm font-semibold text-ink-2 hover:text-ink"
-                            @click="nameEditing = true; $nextTick(() => document.getElementById('result-name')?.focus())">✏️ বদলাও</button>
+            {{-- Your card: name + share in one block --}}
+            <div class="mt-6 rounded-3xl border border-line bg-card p-4 shadow-[0_8px_30px_-12px_rgb(20_33_27/0.18)]">
+                <div class="flex gap-4">
+                    <button type="button" @click="openSheet()" class="relative aspect-[9/16] w-20 shrink-0 overflow-hidden rounded-xl bg-paper-2 shadow-md ring-1 ring-line transition active:scale-95 lg:hidden" aria-label="কার্ডটা দেখো">
+                        <template x-if="cardUrl"><img :src="cardUrl" alt="" class="size-full object-cover"></template>
+                        <span x-show="!cardUrl" class="absolute inset-0 animate-pulse bg-line"></span>
+                    </button>
+                    <div class="min-w-0 flex-1">
+                        <template x-if="!result.name || nameEditing">
+                            <form @submit.prevent="submitName()">
+                                <label for="result-name" class="block text-lg leading-tight font-bold">✍️ কার্ডে তোমার নাম</label>
+                                <p class="mt-0.5 text-sm text-ink-2">নাম দিলে বন্ধুরা কার্ডটা বেশি খোলে</p>
+                                <div class="mt-2.5 flex gap-2">
+                                    <input id="result-name" x-model="nameInput" maxlength="20" autocomplete="given-name" enterkeyhint="done" placeholder="তোমার নাম"
+                                        class="min-h-12 min-w-0 flex-1 rounded-2xl border-2 border-line bg-paper px-3 text-lg outline-none transition focus:border-accent">
+                                    <button type="submit" class="min-h-12 shrink-0 rounded-2xl bg-accent px-4 font-semibold text-white transition active:scale-95 disabled:opacity-50"
+                                        :disabled="savingName" x-text="savingName ? '…' : 'বসাও'"></button>
+                                </div>
+                            </form>
+                        </template>
+                        <template x-if="result.name && !nameEditing">
+                            <div class="flex h-full flex-col justify-center">
+                                <p class="text-sm text-ink-2">তোমার কার্ড তৈরি 🎉</p>
+                                <p class="text-lg font-bold"><span class="text-accent">✓</span> <span x-text="`${possessive(result.name)} বাংলাদেশ`"></span></p>
+                                <button type="button" class="mt-1 self-start text-sm font-semibold text-ink-2 underline-offset-4 hover:text-ink hover:underline"
+                                    @click="nameEditing = true; $nextTick(() => document.getElementById('result-name')?.focus())">✏️ নাম বদলাও</button>
+                            </div>
+                        </template>
                     </div>
-                </template>
-            </div>
+                </div>
 
-            {{-- Share block, deliberately above the fold --}}
-            <div class="mt-4 rounded-3xl border border-line bg-card p-4">
-                <button type="button" class="btn-primary" @click="openSheet()">
+                <button type="button" class="btn-primary mt-4" @click="openSheet()">
                     কার্ডটা শেয়ার করো <span aria-hidden="true">✨</span>
                 </button>
-                <div class="mt-4 grid grid-cols-4 gap-2">
+                <div class="mt-4 grid grid-cols-4 gap-2 border-t border-line pt-4">
                     <button type="button" class="share-btn" @click="shareTo('whatsapp')"><span class="bg-[#25D366]">@include('partials.icon', ['name' => 'whatsapp'])</span><span>WhatsApp</span></button>
                     <button type="button" class="share-btn" @click="shareTo('messenger')"><span class="bg-[#0084FF]">@include('partials.icon', ['name' => 'messenger'])</span><span>Messenger</span></button>
                     <button type="button" class="share-btn" @click="shareTo('facebook')"><span class="bg-[#1877F2]">@include('partials.icon', ['name' => 'facebook'])</span><span>Facebook</span></button>
@@ -324,7 +352,10 @@
             </div>
 
             <button type="button" class="btn-ghost mt-8 w-full" @click="retake()">🔁 আবার খেলি</button>
-            <p class="mt-6 text-center text-xs leading-relaxed text-ink-2">এটা মজার একটা ভাইব-ম্যাচ, বৈজ্ঞানিক পরীক্ষা না 🙂</p>
+            <footer class="mt-8 border-t border-line pt-5 text-center text-xs leading-relaxed text-ink-2">
+                <p>এটা মজার একটা ভাইব-ম্যাচ, বৈজ্ঞানিক পরীক্ষা না 🙂</p>
+                <p class="mt-1">কোনো লগইন নেই · তোমার নাম, ফোন বা ইমেইল আমরা চাই না</p>
+            </footer>
             </div>
         </section>
     </template>
@@ -348,26 +379,42 @@
             </form>
             <button type="button" class="absolute top-4 right-4 hidden size-9 items-center justify-center rounded-full border border-line text-ink-2 md:flex" @click="sheetOpen = false" aria-label="বন্ধ করো">✕</button>
 
-            <div class="mx-auto flex aspect-[9/16] max-h-[40dvh] items-center justify-center overflow-hidden rounded-2xl bg-paper-2 shadow-inner">
-                <template x-if="cardUrl"><img :src="cardUrl" alt="তোমার শেয়ার কার্ড" class="h-full w-auto transition-opacity" :class="cardBusy && 'opacity-60'"></template>
-                <span x-show="!cardUrl" class="text-sm text-ink-2">কার্ড বানাচ্ছি…</span>
-            </div>
-            <p x-show="inApp && cardUrl" class="mt-2 text-center text-xs text-ink-2">👆 ছবিটার ওপর চেপে ধরে রাখো, তারপর "Save image"</p>
+            {{-- Big card preview with the colour picker beside it --}}
+            <div class="flex items-center justify-center gap-4">
+                <div class="flex aspect-[9/16] h-[40dvh] max-h-96 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-paper-2 shadow-inner">
+                    <template x-if="cardUrl"><img :src="cardUrl" alt="তোমার শেয়ার কার্ড" class="h-full w-auto transition-opacity" :class="cardBusy && 'opacity-60'"></template>
+                    <span x-show="!cardUrl" class="text-sm text-ink-2">কার্ড বানাচ্ছি…</span>
+                </div>
 
-            {{-- Card template picker --}}
-            <div class="mt-3" role="radiogroup" aria-label="কার্ডের ডিজাইন">
-                <p class="mb-1.5 text-center text-xs font-medium text-ink-2">🎨 পছন্দের ডিজাইন বেছে নাও</p>
-                <div class="grid grid-cols-4 gap-2">
-                    <template x-for="t in cardTemplates" :key="t.key">
-                        <button type="button" role="radio" :aria-checked="cardTemplate === t.key" @click="pickTemplate(t.key)"
-                            class="flex min-h-16 flex-col items-center justify-center gap-0.5 rounded-2xl border-2 px-1 text-xs leading-tight font-semibold transition active:scale-95"
-                            :class="cardTemplate === t.key ? 'border-accent bg-accent text-white' : 'border-line bg-card text-ink'">
-                            <span x-text="t.icon" class="text-xl" aria-hidden="true"></span><span x-text="t.label"></span>
+                <div role="radiogroup" aria-label="কার্ডের রং" class="flex flex-col gap-1">
+                    <p class="mb-1 text-xs font-semibold text-ink-2">🌈 রং</p>
+                    <template x-for="t in cardThemes" :key="t.key">
+                        <button type="button" role="radio" :aria-checked="cardTheme === t.key" @click="pickTheme(t.key)"
+                            class="flex items-center gap-2 rounded-full py-1 pr-3 pl-1 text-left transition active:scale-95"
+                            :class="cardTheme === t.key ? 'bg-card shadow-sm' : ''">
+                            <span class="color-swatch" :class="cardTheme === t.key ? 'is-on' : ''" :style="swatch(t)"></span>
+                            <span x-text="t.label" class="text-xs leading-tight font-semibold whitespace-nowrap" :class="cardTheme === t.key ? 'text-accent' : 'text-ink-2'"></span>
                         </button>
                     </template>
                 </div>
             </div>
+            <p x-show="inApp && cardUrl" class="mt-2 text-center text-xs text-ink-2">👆 ছবিটার ওপর চেপে ধরে রাখো, তারপর "Save image"</p>
 
+            {{-- Card design + colour pickers: live previews of the player's own card --}}
+            <div class="mt-4" role="radiogroup" aria-label="কার্ডের ডিজাইন">
+                <p class="mb-1.5 text-xs font-semibold text-ink-2">🎨 ডিজাইন বেছে নাও</p>
+                <div class="grid grid-cols-4 gap-2">
+                    <template x-for="t in cardTemplates" :key="t.key">
+                        <button type="button" role="radio" :aria-checked="cardTemplate === t.key" :aria-label="t.label" @click="pickTemplate(t.key)" class="group flex flex-col items-center gap-1 transition active:scale-95">
+                            <span class="card-thumb" :class="cardTemplate === t.key ? 'is-on' : ''">
+                                <img x-show="thumb(t.key, cardTheme)" :src="thumb(t.key, cardTheme)" alt="" class="size-full object-cover">
+                                <span x-show="!thumb(t.key, cardTheme)" x-text="t.icon" class="text-xl" aria-hidden="true"></span>
+                            </span>
+                            <span x-text="t.label" class="text-xs leading-tight font-semibold" :class="cardTemplate === t.key ? 'text-accent' : 'text-ink-2'"></span>
+                        </button>
+                    </template>
+                </div>
+            </div>
 
             <button type="button" x-show="canNativeShare" class="btn-primary mt-4" @click="shareNative()">📲 স্টোরি / স্ট্যাটাসে দাও</button>
 

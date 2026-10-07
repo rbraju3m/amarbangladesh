@@ -1,5 +1,5 @@
 import { bnDigits, possessive } from './bn';
-import { canvasToBlob, renderCard, TEMPLATES, templateKeys } from './card';
+import { canvasToBlob, renderCard, TEMPLATES, templateKeys, THEMES, themeKeys } from './card';
 import { confetti } from './confetti';
 import { canShareFile, copyText, isInAppBrowser, isMobile, shareLinks } from './share';
 import { setTrackingContext, track } from './track';
@@ -67,6 +67,9 @@ export default function quiz(boot) {
         cardKey: null,
         cardTemplate: templateKeys.includes(store.get('bd.card')) ? store.get('bd.card') : templateKeys[0],
         cardTemplates: TEMPLATES.map(({ key, label, icon }) => ({ key, label, icon })),
+        cardTheme: themeKeys.includes(store.get('bd.theme')) ? store.get('bd.theme') : themeKeys[0],
+        cardThemes: THEMES.map(({ key, label, bg, accent }) => ({ key, label, bg, accent })),
+        thumbs: {}, // `${template}|${theme}|${name}` → small JPEG data URL for the picker previews
         cardUrl: null,
         cardBlob: null,
         cardBusy: false,
@@ -100,7 +103,8 @@ export default function quiz(boot) {
             let redraw;
             this.$watch('nameInput', () => {
                 clearTimeout(redraw);
-                if (this.sheetOpen) redraw = setTimeout(() => this.buildCard(), 350);
+                // The result page shows the card too, so keep it current whenever one has been drawn.
+                if (this.sheetOpen || this.cardUrl) redraw = setTimeout(() => this.buildCard(), 350);
             });
 
             addEventListener('popstate', () => {
@@ -227,6 +231,7 @@ export default function quiz(boot) {
             this.cardUrl = null;
             this.cardName = null;
             this.cardKey = null;
+            this.thumbs = {};
             this.screen = 'result';
             if (fresh) {
                 const mine = store.get('bd.mine', {});
@@ -236,6 +241,8 @@ export default function quiz(boot) {
                 navigator.vibrate?.(30);
             }
             this.animateResult(result, fresh);
+            // Draw the share card right away: the result page previews it before the sheet is opened.
+            this.$nextTick(() => this.buildCard());
             document.title = `${result.location.emoji} ${result.location.name_bn} — তোমার বাংলাদেশ কোথায়?`;
             track('result_viewed', { result: result.code, meta: { fresh: fresh ? 1 : 0 } });
             window.scrollTo(0, 0);
@@ -284,6 +291,7 @@ export default function quiz(boot) {
             // Invite a name: focus the empty field on desktop (on phones it would pop the keyboard over the card).
             if (!this.liveName && matchMedia('(hover: hover)').matches) this.$nextTick(() => this.$refs.sheetName?.focus());
             if (!this.cardUrl || this.cardName !== this.liveName) await this.buildCard();
+            else this.buildThumbs(this.cardKey); // finish any previews cut short when the sheet closed
         },
 
         async pickTemplate(key) {
@@ -293,21 +301,57 @@ export default function quiz(boot) {
             await this.buildCard();
         },
 
+        async pickTheme(key) {
+            if (key === this.cardTheme) return;
+            this.cardTheme = key;
+            store.set('bd.theme', key);
+            await this.buildCard();
+        },
+
+        thumb(template, theme) {
+            return this.thumbs[`${template}|${theme}|${this.cardName ?? ''}`] ?? null;
+        },
+
         async buildCard() {
             this.cardBusy = true;
             const name = this.liveName;
-            const template = this.cardTemplate;
-            const key = `${template}|${name}`;
+            const { cardTemplate: template, cardTheme: theme } = this;
+            const key = `${template}|${theme}|${name}`;
             this.cardKey = key;
             try {
-                const canvas = await renderCard({ ...this.result, name: name || null }, { template });
-                if (this.cardKey !== key) return; // typing or the template moved on; a newer render is under way
+                const canvas = await renderCard({ ...this.result, name: name || null }, { template, theme });
+                if (this.cardKey !== key) return; // typing or the design moved on; a newer render is under way
+                if (this.cardName !== name) this.thumbs = {};
                 this.cardName = name;
                 this.cardBlob = await canvasToBlob(canvas);
                 if (this.cardUrl) URL.revokeObjectURL(this.cardUrl);
                 this.cardUrl = URL.createObjectURL(this.cardBlob);
             } finally {
                 if (this.cardKey === key) this.cardBusy = false;
+            }
+            if (this.cardKey === key) this.buildThumbs(key);
+        },
+
+        // Colour swatch for the theme picker: the theme's background with its accent as a dot
+        // ("place" uses the result's own colour on paper).
+        swatch(t) {
+            const accent = t.accent ?? this.result?.location.accent;
+            const bg = t.bg ?? ['#fbf8f1', '#fbf8f1'];
+            return `background: radial-gradient(circle at 50% 50%, ${accent} 0 34%, transparent 35%), linear-gradient(160deg, ${bg[0]}, ${bg[1]})`;
+        },
+
+        // Small previews for the design picker: every design in the current colour. Drawn one per frame
+        // after the main card, so the big preview is never held up.
+        async buildThumbs(key) {
+            const name = this.cardName;
+            const jobs = templateKeys.map((t) => [t, this.cardTheme]).filter(([t, th]) => !this.thumb(t, th));
+            for (const [template, theme] of jobs) {
+                await new Promise(requestAnimationFrame);
+                if (this.cardKey !== key || !this.sheetOpen) return;
+                const k = `${template}|${theme}|${name}`;
+                if (this.thumbs[k]) continue;
+                const canvas = await renderCard({ ...this.result, name: name || null }, { template, theme, scale: 0.2 });
+                if (this.cardName === name) this.thumbs = { ...this.thumbs, [k]: canvas.toDataURL('image/jpeg', 0.85) };
             }
         },
 
@@ -347,7 +391,7 @@ export default function quiz(boot) {
         },
 
         cardFile() {
-            return new File([this.cardBlob], `amar-bangladesh-${this.result.location.slug}-${this.cardTemplate}.png`, { type: 'image/png' });
+            return new File([this.cardBlob], `amar-bangladesh-${this.result.location.slug}-${this.cardTemplate}-${this.cardTheme}.png`, { type: 'image/png' });
         },
 
         get canNativeShare() {
@@ -356,7 +400,7 @@ export default function quiz(boot) {
 
         async shareNative() {
             this.persistName();
-            track('share_clicked', { result: this.result.code, meta: { channel: 'native', template: this.cardTemplate } });
+            track('share_clicked', { result: this.result.code, meta: { channel: 'native', template: this.cardTemplate, theme: this.cardTheme } });
             try {
                 await navigator.share({ files: [this.cardFile()], text: `${this.shareText} ${this.result.url}` });
             } catch {}
@@ -385,7 +429,7 @@ export default function quiz(boot) {
 
         saveCard() {
             this.persistName();
-            track('card_saved', { result: this.result.code, meta: { inapp: this.inApp ? 1 : 0, template: this.cardTemplate } });
+            track('card_saved', { result: this.result.code, meta: { inapp: this.inApp ? 1 : 0, template: this.cardTemplate, theme: this.cardTheme } });
             if (this.inApp) {
                 this.flash('ছবিটার ওপর চেপে ধরে রাখো, তারপর "Save image" চাপো');
                 return;
