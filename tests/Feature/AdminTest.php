@@ -7,6 +7,7 @@ use App\Models\Question;
 use App\Models\User;
 use Database\Seeders\QuizContentSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class AdminTest extends TestCase
@@ -68,5 +69,44 @@ class AdminTest extends TestCase
         $location->refresh();
         $this->assertSame(['🌿 এক', '☕ দুই'], $location->badges);
         $this->assertSame(3, $location->profile['nature']);
+    }
+
+    public function test_login_page_shows_a_clear_error_for_wrong_credentials(): void
+    {
+        $user = User::factory()->create(['password' => 'secret-pass']);
+
+        $this->from('/admin/login')->post('/admin/login', ['email' => $user->email, 'password' => 'nope'])
+            ->assertRedirect('/admin/login');
+        $this->get('/admin/login')->assertOk()->assertSee('These credentials do not match.')->assertSee('toggle-password');
+        $this->assertGuest();
+    }
+
+    public function test_admin_can_change_their_password(): void
+    {
+        $user = User::factory()->create(['password' => 'old-password']);
+        $this->actingAs($user)->get('/admin/password')->assertOk()->assertSee($user->email);
+
+        $this->from('/admin/password')->put('/admin/password', [
+            'current_password' => 'wrong', 'password' => 'brand-new-pass', 'password_confirmation' => 'brand-new-pass',
+        ])->assertSessionHasErrors('current_password');
+
+        $this->from('/admin/password')->put('/admin/password', [
+            'current_password' => 'old-password', 'password' => 'brand-new-pass', 'password_confirmation' => 'brand-new-pass',
+        ])->assertRedirect('/admin/password')->assertSessionHas('status');
+
+        $this->assertTrue(Hash::check('brand-new-pass', $user->fresh()->password));
+    }
+
+    public function test_dashboard_counts_card_designs(): void
+    {
+        $this->postJson('/api/events', ['events' => [
+            ['name' => 'card_saved', 'meta' => ['template' => 'boarding']],
+            ['name' => 'card_saved', 'meta' => ['template' => 'boarding']],
+            ['name' => 'share_clicked', 'meta' => ['channel' => 'native', 'template' => 'poster']],
+            ['name' => 'share_clicked', 'meta' => ['channel' => 'whatsapp']],
+        ]])->assertNoContent();
+
+        $this->actingAs(User::factory()->create())->get('/admin')->assertOk()
+            ->assertSeeInOrder(['Card designs', 'Boarding pass', '2', 'Poster', '1']);
     }
 }

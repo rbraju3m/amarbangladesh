@@ -1,5 +1,5 @@
 import { bnDigits, possessive } from './bn';
-import { canvasToBlob, renderCard } from './card';
+import { canvasToBlob, renderCard, TEMPLATES, templateKeys } from './card';
 import { confetti } from './confetti';
 import { canShareFile, copyText, isInAppBrowser, isMobile, shareLinks } from './share';
 import { setTrackingContext, track } from './track';
@@ -64,6 +64,9 @@ export default function quiz(boot) {
         nameEditing: false,
         savingName: false,
         cardName: null,
+        cardKey: null,
+        cardTemplate: templateKeys.includes(store.get('bd.card')) ? store.get('bd.card') : templateKeys[0],
+        cardTemplates: TEMPLATES.map(({ key, label, icon }) => ({ key, label, icon })),
         cardUrl: null,
         cardBlob: null,
         cardBusy: false,
@@ -223,6 +226,7 @@ export default function quiz(boot) {
             this.nameEditing = false;
             this.cardUrl = null;
             this.cardName = null;
+            this.cardKey = null;
             this.screen = 'result';
             if (fresh) {
                 const mine = store.get('bd.mine', {});
@@ -282,18 +286,28 @@ export default function quiz(boot) {
             if (!this.cardUrl || this.cardName !== this.liveName) await this.buildCard();
         },
 
+        async pickTemplate(key) {
+            if (key === this.cardTemplate) return;
+            this.cardTemplate = key;
+            store.set('bd.card', key);
+            await this.buildCard();
+        },
+
         async buildCard() {
             this.cardBusy = true;
             const name = this.liveName;
+            const template = this.cardTemplate;
+            const key = `${template}|${name}`;
+            this.cardKey = key;
             try {
-                const canvas = await renderCard({ ...this.result, name: name || null });
-                if (name !== this.liveName) return; // typing moved on; a newer render is queued
+                const canvas = await renderCard({ ...this.result, name: name || null }, { template });
+                if (this.cardKey !== key) return; // typing or the template moved on; a newer render is under way
                 this.cardName = name;
                 this.cardBlob = await canvasToBlob(canvas);
                 if (this.cardUrl) URL.revokeObjectURL(this.cardUrl);
                 this.cardUrl = URL.createObjectURL(this.cardBlob);
             } finally {
-                this.cardBusy = false;
+                if (this.cardKey === key) this.cardBusy = false;
             }
         },
 
@@ -333,7 +347,7 @@ export default function quiz(boot) {
         },
 
         cardFile() {
-            return new File([this.cardBlob], `amar-bangladesh-${this.result.location.slug}.png`, { type: 'image/png' });
+            return new File([this.cardBlob], `amar-bangladesh-${this.result.location.slug}-${this.cardTemplate}.png`, { type: 'image/png' });
         },
 
         get canNativeShare() {
@@ -342,7 +356,7 @@ export default function quiz(boot) {
 
         async shareNative() {
             this.persistName();
-            track('share_clicked', { result: this.result.code, meta: { channel: 'native' } });
+            track('share_clicked', { result: this.result.code, meta: { channel: 'native', template: this.cardTemplate } });
             try {
                 await navigator.share({ files: [this.cardFile()], text: `${this.shareText} ${this.result.url}` });
             } catch {}
@@ -371,7 +385,7 @@ export default function quiz(boot) {
 
         saveCard() {
             this.persistName();
-            track('card_saved', { result: this.result.code, meta: { inapp: this.inApp ? 1 : 0 } });
+            track('card_saved', { result: this.result.code, meta: { inapp: this.inApp ? 1 : 0, template: this.cardTemplate } });
             if (this.inApp) {
                 this.flash('ছবিটার ওপর চেপে ধরে রাখো, তারপর "Save image" চাপো');
                 return;

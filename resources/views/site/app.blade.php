@@ -348,11 +348,25 @@
             </form>
             <button type="button" class="absolute top-4 right-4 hidden size-9 items-center justify-center rounded-full border border-line text-ink-2 md:flex" @click="sheetOpen = false" aria-label="বন্ধ করো">✕</button>
 
-            <div class="mx-auto flex aspect-[9/16] max-h-[44dvh] items-center justify-center overflow-hidden rounded-2xl bg-paper-2 shadow-inner">
-                <template x-if="cardUrl"><img :src="cardUrl" alt="তোমার শেয়ার কার্ড" class="h-full w-auto"></template>
+            <div class="mx-auto flex aspect-[9/16] max-h-[40dvh] items-center justify-center overflow-hidden rounded-2xl bg-paper-2 shadow-inner">
+                <template x-if="cardUrl"><img :src="cardUrl" alt="তোমার শেয়ার কার্ড" class="h-full w-auto transition-opacity" :class="cardBusy && 'opacity-60'"></template>
                 <span x-show="!cardUrl" class="text-sm text-ink-2">কার্ড বানাচ্ছি…</span>
             </div>
             <p x-show="inApp && cardUrl" class="mt-2 text-center text-xs text-ink-2">👆 ছবিটার ওপর চেপে ধরে রাখো, তারপর "Save image"</p>
+
+            {{-- Card template picker --}}
+            <div class="mt-3" role="radiogroup" aria-label="কার্ডের ডিজাইন">
+                <p class="mb-1.5 text-center text-xs font-medium text-ink-2">🎨 পছন্দের ডিজাইন বেছে নাও</p>
+                <div class="grid grid-cols-4 gap-2">
+                    <template x-for="t in cardTemplates" :key="t.key">
+                        <button type="button" role="radio" :aria-checked="cardTemplate === t.key" @click="pickTemplate(t.key)"
+                            class="flex min-h-16 flex-col items-center justify-center gap-0.5 rounded-2xl border-2 px-1 text-xs leading-tight font-semibold transition active:scale-95"
+                            :class="cardTemplate === t.key ? 'border-accent bg-accent text-white' : 'border-line bg-card text-ink'">
+                            <span x-text="t.icon" class="text-xl" aria-hidden="true"></span><span x-text="t.label"></span>
+                        </button>
+                    </template>
+                </div>
+            </div>
 
 
             <button type="button" x-show="canNativeShare" class="btn-primary mt-4" @click="shareNative()">📲 স্টোরি / স্ট্যাটাসে দাও</button>

@@ -62,6 +62,17 @@
             @endforelse
         </ul>
     </section>
+
+    <section class="stat">
+        <h2 class="mb-3 font-bold">Card designs <span class="font-normal text-ink-2">(saved + native shares)</span></h2>
+        <ul class="divide-y divide-line text-sm">
+            @forelse ($templates as $template => $n)
+                <li class="flex justify-between py-2"><span>{{ ['passport' => '🛂 Passport', 'poster' => '🖼️ Poster', 'boarding' => '🎫 Boarding pass', 'minimal' => '✨ Minimal'][$template] ?? $template }}</span><span class="tabular-nums">{{ $fmt($n) }}</span></li>
+            @empty
+                <li class="py-2 text-ink-2">No data yet.</li>
+            @endforelse
+        </ul>
+    </section>
 </div>
 <p class="mt-6 text-xs text-ink-2">Visitors are anonymous browser ids; no cookies, IPs or personal data are stored. "Completed" counts saved results.</p>
 @endsection

@@ -23,6 +23,7 @@ class DashboardController extends Controller
             'distribution' => $funnel->resultDistribution(),
             'reach' => $funnel->questionReach(),
             'channels' => $funnel->shareChannels(),
+            'templates' => $funnel->cardTemplates(),
         ]);
     }
 }

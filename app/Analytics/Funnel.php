@@ -73,6 +73,16 @@ final class Funnel
                 'card_saved' => AnalyticsEvent::where('created_at', '>=', $this->since)->where('name', 'card_saved')->count()];
     }
 
+    /** Which share-card design was saved or shared natively. */
+    public function cardTemplates(): array
+    {
+        return AnalyticsEvent::where('created_at', '>=', $this->since)
+            ->where(fn ($q) => $q->where('name', 'card_saved')
+                ->orWhere(fn ($q) => $q->where('name', 'share_clicked')->where('meta->channel', 'native')))
+            ->selectRaw("COALESCE(JSON_UNQUOTE(JSON_EXTRACT(meta, '$.template')), 'passport') as template, COUNT(*) as total")
+            ->groupBy('template')->orderByDesc('total')->pluck('total', 'template')->all();
+    }
+
     private function distinctVisitors(array $names): int
     {
         return AnalyticsEvent::where('created_at', '>=', $this->since)->whereIn('name', $names)
