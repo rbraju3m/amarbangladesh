@@ -4,14 +4,14 @@ namespace App\Console\Commands;
 
 use App\Quiz\QuizConfig;
 use App\Quiz\Simulator;
-use Illuminate\Console\Attributes\Description;
-use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 
-#[Signature('quiz:simulate')]
-#[Description('Play every answer combination and show how often each location wins')]
 class QuizSimulate extends Command
 {
+    protected $signature = 'quiz:simulate';
+
+    protected $description = 'Play every answer combination and show how often each location wins';
+
     public function handle(): int
     {
         $report = (new Simulator(QuizConfig::fromDatabase()))->run();

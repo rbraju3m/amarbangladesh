@@ -2,13 +2,13 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['prompt_bn', 'subtitle_bn', 'kind', 'sort_order', 'is_active'])]
 class Question extends Model
 {
+    protected $fillable = ['prompt_bn', 'subtitle_bn', 'kind', 'sort_order', 'is_active'];
+
     public const KINDS = ['emoji', 'image'];
 
     protected function casts(): array

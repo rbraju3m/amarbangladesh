@@ -2,19 +2,19 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
 
-#[Fillable([
-    'code', 'visitor_id', 'location_id', 'match_pct', 'second_location_id', 'second_match_pct', 'trait_vector',
-    'trait_scores', 'answer_ids', 'reason_bn', 'display_name', 'owner_token_hash', 'referrer_result_id', 'friend_match_pct', 'scoring_version',
-])]
-#[Hidden(['owner_token_hash', 'visitor_id'])]
 class QuizResult extends Model
 {
+    protected $fillable = [
+        'code', 'visitor_id', 'location_id', 'match_pct', 'second_location_id', 'second_match_pct', 'trait_vector',
+        'trait_scores', 'answer_ids', 'reason_bn', 'display_name', 'owner_token_hash', 'referrer_result_id', 'friend_match_pct', 'scoring_version',
+    ];
+
+    protected $hidden = ['owner_token_hash', 'visitor_id'];
+
     public const UPDATED_AT = null;
 
     protected function casts(): array

@@ -1,6 +1,6 @@
 # তোমার বাংলাদেশ কোথায়?
 
-A one-minute Bangla personality quiz that matches you with a place in Bangladesh, and gives you a story card to share (4 designs × 6 colour themes).
+A one-minute Bangla personality quiz that matches you with a place in Bangladesh, and gives you a card to share (story or square, 4 designs × 6 colour themes).
 
 **Flow:** landing → 8 questions → map reveal → result (vibe match %, traits, second-best place, a live preview of your share card) → share (pick a card design and colour, add your name) → a friend opens the link and sees your result as a teaser → they play and see how closely their result matches yours.
 
@@ -25,7 +25,7 @@ Admin panel: `/admin`.
 
 ## Deploy
 
-Files are in `deploy/`: `nginx.conf`, `env.production.example`, `deploy.sh`, `crontab`. They're written for an Ubuntu VPS with nginx, PHP 8.4-FPM, MySQL and Node 20+, behind Cloudflare.
+Files are in `deploy/`: `nginx.conf`, `env.production.example`, `deploy.sh`, `crontab`. They're written for an Ubuntu VPS with nginx, PHP 8.2-FPM (Laravel 12; 8.3/8.4 work too), MySQL and Node 20+, behind Cloudflare.
 
 **First install**
 

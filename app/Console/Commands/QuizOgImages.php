@@ -3,8 +3,6 @@
 namespace App\Console\Commands;
 
 use App\Models\Location;
-use Illuminate\Console\Attributes\Description;
-use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
@@ -13,10 +11,12 @@ use Illuminate\Support\Facades\Process;
  * Renders the 1200×630 link-preview images with headless Chrome, which shapes Bangla
  * correctly (PHP GD cannot). Run after changing location names, titles or illustrations.
  */
-#[Signature('quiz:og-images {--chrome=google-chrome : Chrome/Chromium binary}')]
-#[Description('Render Open Graph preview images for every location and the home page')]
 class QuizOgImages extends Command
 {
+    protected $signature = 'quiz:og-images {--chrome=google-chrome : Chrome/Chromium binary}';
+
+    protected $description = 'Render Open Graph preview images for every location and the home page';
+
     public function handle(): int
     {
         $fonts = base_path('node_modules/@fontsource-variable/anek-bangla/files');

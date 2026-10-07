@@ -2,14 +2,14 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Prunable;
 
-#[Fillable(['visitor_id', 'name', 'quiz_result_id', 'referrer_result_id', 'device', 'meta'])]
 class AnalyticsEvent extends Model
 {
+    protected $fillable = ['visitor_id', 'name', 'quiz_result_id', 'referrer_result_id', 'device', 'meta'];
+
     use Prunable;
 
     public const UPDATED_AT = null;
