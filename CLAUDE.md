@@ -50,6 +50,7 @@ php artisan quiz:og-images           # re-render public/images/og/*.png (needs g
 ## Conventions
 
 - **Laravel 12 on PHP 8.2** (production host runs 8.2; `config.platform.php` is pinned to 8.2.0 so composer only picks 8.2-compatible packages). Don't use PHP 8.3+ features (typed class constants, `#[\Override]`, `json_validate`) or Laravel 13-only APIs (model/command attributes like `#[Fillable]`/`#[Signature]`, `PreventRequestForgery`). Models use `$fillable`/`$hidden`/`$table` properties, commands `$signature`/`$description`; the CSRF middleware is `ValidateCsrfToken`. Test with `php8.2 artisan test` before shipping. The trait model is `PersonalityTrait` (`Trait` is reserved).
+- **Node 18 on the server** (Forge dev box has 18.20.5): front-end tooling is pinned to Vite 6, laravel-vite-plugin 1.x and Tailwind `~4.1.18`. Tailwind 4.2+ and Vite 7+ need Node 20, and npm silently skips Tailwind's native binary on 18. Check a build with Node 18 before bumping them (see `deploy/FORGE.md`).
 - Times are Asia/Dhaka: `APP_TIMEZONE=Asia/Dhaka` and `DB_TIMEZONE=+06:00` (MySQL session zone, so `useCurrent()` defaults agree with PHP).
 - Styling: Tailwind 4 with semantic CSS-variable tokens in `resources/css/app.css` (`bg-paper`, `text-ink`, `text-ink-2`, `border-line`, `bg-accent` …). Dark mode is a token swap under `prefers-color-scheme`, so use tokens rather than `dark:` classes. Per-location colour comes from `--accent`.
 - User-facing copy is conversational Bangla using তুমি; admin UI is English.

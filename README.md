@@ -25,7 +25,7 @@ Admin panel: `/admin`.
 
 ## Deploy
 
-Files are in `deploy/`: `nginx.conf`, `env.production.example`, `deploy.sh`, `crontab`; for Laravel Forge see `deploy/FORGE.md`. They're written for an Ubuntu VPS with nginx, PHP 8.2-FPM (Laravel 12; 8.3/8.4 work too), MySQL and Node 20+, behind Cloudflare.
+Files are in `deploy/`: `nginx.conf`, `env.production.example`, `deploy.sh`, `crontab`; for Laravel Forge see `deploy/FORGE.md`. They're written for an Ubuntu VPS with nginx, PHP 8.2-FPM (Laravel 12; 8.3/8.4 work too), MySQL and Node 18.18+, behind Cloudflare.
 
 **First install**
 

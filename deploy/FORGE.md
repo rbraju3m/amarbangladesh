@@ -5,19 +5,17 @@ Dev site: https://amarbangladesh-dev.on-forge.com (behind Cloudflare).
 ## Server requirements
 
 - PHP **8.2+** (the app is Laravel 12, locked to PHP 8.2 packages).
-- Node **20.19+** (22 recommended, see `.nvmrc`). Vite 8 fails on Node 18 with
-  `SyntaxError: The requested module 'node:util' does not provide an export named 'styleText'`.
+- Node **18.18+** (the server has 18.20.5; `.nvmrc` says 18). The front-end toolchain is pinned to
+  versions that still run on Node 18: Vite 6, laravel-vite-plugin 1.x and Tailwind **4.1.x**.
+  Don't bump Tailwind to 4.2+ or Vite to 7+ while the server is on Node 18: Tailwind 4.2+ declares
+  Node 20, so npm silently skips its native binary ("Cannot find native binding"), and Vite 7+ crashes
+  with `'node:util' does not provide an export named 'styleText'`.
 - MySQL 8.
 
-### Upgrading Node on the server
+### Moving to a newer Node later
 
-Forge servers ship Node from NodeSource. SSH in as `forge` and run (asks for the server's sudo password):
-
-```sh
-curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
-sudo apt-get install -y nodejs
-node -v   # v22.x
-```
+If the server gets Node 20.19+ (e.g. `curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - && sudo apt-get install -y nodejs`),
+the pins in `package.json` can be lifted.
 
 ## Environment (Site → Environment)
 
