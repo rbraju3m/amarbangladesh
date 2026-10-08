@@ -4,8 +4,12 @@ namespace Tests\Feature;
 
 use App\Analytics\Funnel;
 use App\Models\AnalyticsEvent;
+use App\Models\Location;
 use App\Models\QuizResult;
+use App\Models\User;
 use App\Quiz\QuizConfig;
+use App\Quiz\Replay;
+use App\Quiz\Simulator;
 use Database\Seeders\QuizContentSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -195,5 +199,39 @@ class ResultFlowTest extends TestCase
 
         $this->postJson('/api/results', ['answers' => $this->answers(), 'ref' => $code])->assertCreated();
         $this->get("/r/{$code}")->assertSee('১ জন বন্ধু এর মধ্যেই মিলিয়ে দেখেছে');
+    }
+
+    public function test_replay_rescores_each_players_latest_answers_with_current_content(): void
+    {
+        $replayer = (string) Str::uuid();
+        foreach ([1, 2, 0] as $pick) {
+            $this->postJson('/api/results', ['answers' => $this->answers($pick), 'visitor_id' => $replayer])->assertCreated();
+        }
+        $this->play([], 3);
+        // A play whose answers no longer fit the questions is skipped, not counted.
+        $stale = QuizResult::latest('id')->first()->replicate(['code']);
+        $stale->fill(['code' => QuizResult::newCode(), 'visitor_id' => (string) Str::uuid(), 'answer_ids' => [999999]])->save();
+
+        $config = QuizConfig::fromDatabase();
+        $report = (new Replay($config))->run();
+        $this->assertSame(3, $report['players']);
+        $this->assertSame(2, $report['replayed']);
+        $this->assertSame(1, $report['skipped']);
+        $this->assertSame(0, $report['changed']);
+        $this->assertEqualsWithDelta(100, array_sum($report['now']), 0.2);
+        $this->assertSame($report['then'], $report['now']);
+
+        $favoured = (new Simulator($config))->favouredOptions(Simulator::FAVOURED_TRAIT);
+        $picks = count(array_intersect($this->answers(0), $favoured)) + count(array_intersect($this->answers(3), $favoured));
+        $this->assertEquals(round(100 * $picks / (2 * count($favoured)), 1), $report['favoured_rate']);
+
+        // Make the replayer's place lose: the replay shows them moving.
+        $slug = array_search(max($report['now']), $report['now'], true);
+        Location::where('slug', $slug)->update(['is_active' => false]);
+        $moved = (new Replay(QuizConfig::fromDatabase()))->run();
+        $this->assertGreaterThanOrEqual(1, $moved['changed']);
+        $this->assertArrayNotHasKey($slug, $moved['now']);
+
+        $this->actingAs(User::factory()->create())->get('/admin/balance')->assertOk()->assertSee('Real players, replayed');
     }
 }

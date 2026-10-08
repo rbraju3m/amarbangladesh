@@ -26,7 +26,11 @@ final class Simulator
     {
         $scorer = new Scorer($this->config);
         $questions = array_values(array_map('array_values', $this->config->questions));
-        $probs = array_map(fn (array $options) => $this->answerProbabilities($options, $favour, $p), $questions);
+        $favoured = $favour === null ? [] : $this->favouredOptions($favour);
+        $probs = array_values(array_map(
+            fn ($options, $questionId) => $this->answerProbabilities(array_keys($options), $favoured[$questionId] ?? null, $p),
+            $this->config->questions, array_keys($this->config->questions),
+        ));
         $wins = array_fill_keys(array_keys($this->config->locations), 0.0);
         $total = 0;
         $pctMin = 100;
@@ -77,26 +81,45 @@ final class Simulator
     }
 
     /**
-     * Chance of picking each answer: uniform, or $p for the answer with the most of the favoured
-     * trait (first one on a tie) when any answer in the question has it.
+     * The answer with the most of $trait in each question (first one on a tie), for questions
+     * where any answer has it.
      *
-     * @return list<float>
+     * @return array<int, int> question id => option id
      */
-    private function answerProbabilities(array $options, ?string $favour, float $p): array
+    public function favouredOptions(string $trait): array
     {
-        $n = count($options);
-        $trait = $favour === null ? false : array_search($favour, $this->config->traitKeys, true);
-        if ($trait === false || $n < 2) {
-            return array_fill(0, $n, 1 / $n);
+        $index = array_search($trait, $this->config->traitKeys, true);
+        if ($index === false) {
+            return [];
         }
 
-        $amounts = array_map(fn ($o) => $o['weights'][$trait] ?? 0, $options);
-        if (max($amounts) <= 0) {
+        $favoured = [];
+        foreach ($this->config->questions as $questionId => $options) {
+            $amounts = array_map(fn ($o) => $o['weights'][$index] ?? 0, $options);
+            if ($amounts && max($amounts) > 0) {
+                $favoured[$questionId] = array_search(max($amounts), $amounts, true);
+            }
+        }
+
+        return $favoured;
+    }
+
+    /**
+     * Chance of picking each answer: uniform, or $p for the favoured one.
+     *
+     * @param  list<int>  $optionIds
+     * @return list<float>
+     */
+    private function answerProbabilities(array $optionIds, ?int $favoured, float $p): array
+    {
+        $n = count($optionIds);
+        $position = $favoured === null ? false : array_search($favoured, $optionIds, true);
+        if ($position === false || $n < 2) {
             return array_fill(0, $n, 1 / $n);
         }
 
         $probs = array_fill(0, $n, (1 - $p) / ($n - 1));
-        $probs[array_search(max($amounts), $amounts, true)] = $p;
+        $probs[$position] = $p;
 
         return $probs;
     }

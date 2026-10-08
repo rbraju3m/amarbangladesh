@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Location;
 use App\Models\PersonalityTrait;
 use App\Quiz\QuizConfig;
+use App\Quiz\Replay;
 use App\Quiz\Scorer;
 use App\Quiz\Simulator;
 use Illuminate\View\View;
@@ -48,6 +49,8 @@ class BalanceController extends Controller
             'favoured' => $combinations <= 2_000_000 ? (new Simulator($config))->run(Simulator::FAVOURED_TRAIT) : null,
             'favouredTrait' => PersonalityTrait::where('key', Simulator::FAVOURED_TRAIT)->value('label_bn') ?? Simulator::FAVOURED_TRAIT,
             'favouredP' => (int) round(100 * Simulator::FAVOURED_P),
+            'replay' => (new Replay($config))->run(),
+            'trusted' => Replay::TRUSTED,
             'locations' => Location::orderBy('sort_order')->get()->keyBy('slug'),
             'min' => self::MIN,
             'max' => self::MAX,

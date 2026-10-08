@@ -47,7 +47,7 @@
                             <div class="relative h-1.5 flex-1 rounded-full bg-paper-2">
                                 <div @class(['h-full rounded-full', 'bg-ink-2/60' => $favOk, 'bg-flag-red' => ! $favOk]) style="width: {{ min(100, $fav / $scale * 100) }}%"></div>
                             </div>
-                            <span @class(['w-28 text-right text-xs tabular-nums', 'text-ink-2' => $favOk, 'font-semibold text-flag-red' => ! $favOk])>{{ $favouredTrait }}-leaning {{ $fav }}%</span>
+                            <span @class(['shrink-0 text-right text-xs whitespace-nowrap tabular-nums', 'text-ink-2' => $favOk, 'font-semibold text-flag-red' => ! $favOk])>{{ $favouredTrait }}-leaning {{ $fav }}%</span>
                         </div>
                     </li>
                 @endforeach
@@ -71,4 +71,68 @@
         </aside>
     </div>
 @endif
+
+{{-- Real players: their stored answers re-scored with the current content --}}
+<section class="panel mt-4">
+    <div class="mb-1 flex flex-wrap items-center justify-between gap-2">
+        <h2 class="font-bold">Real players, replayed</h2>
+        @if ($replay['replayed'] > 0)
+            @if ($replay['replayed'] < $trusted)
+                <span class="pill bg-paper-2 text-ink-2">Only {{ number_format($replay['replayed']) }} {{ \Illuminate\Support\Str::plural('player', $replay['replayed']) }} · too few to trust yet</span>
+            @else
+                <span class="pill bg-flag-green/10 text-green-text">{{ number_format($replay['replayed']) }} players</span>
+            @endif
+        @endif
+    </div>
+    <p class="max-w-2xl text-sm text-ink-2">
+        Each player's latest answers, scored again with the current weights and profiles. Unlike the simulation above, this uses the answers people really pick.
+        Edit a place or question, then come back to see how real players would move.
+    </p>
+
+    @if ($replay['replayed'] === 0)
+        <p class="mt-4 rounded-xl bg-paper-2 p-4 text-sm text-ink-2">No plays to replay yet{{ $replay['skipped'] ? ' (older plays no longer fit the current questions)' : '' }}.</p>
+    @else
+        @php($scale = max(25, ceil(max([...array_values($replay['then']), ...array_values($replay['now'])]) / 5) * 5))
+        <div class="mt-4 grid gap-6 lg:grid-cols-[1fr_18rem]">
+            <ul class="space-y-3">
+                @foreach ($replay['now'] as $slug => $now)
+                    @php($then = $replay['then'][$slug] ?? 0)
+                    {{-- Only flag out-of-range shares once there are enough players for them to mean something --}}
+                    @php($flag = $replay['replayed'] >= $trusted && ($now < $min || $now > $max))
+                    <li>
+                        <div class="flex justify-between text-sm font-semibold">
+                            <span>{{ $locations[$slug]->emoji ?? '' }} {{ $locations[$slug]->name_bn ?? $slug }}</span>
+                            <span class="tabular-nums text-ink-2">{{ $then }}% → <b @class(['text-flag-red' => $flag, 'text-ink' => ! $flag])>{{ $now }}%</b></span>
+                        </div>
+                        <div class="mt-1.5 space-y-1">
+                            <div class="h-1.5 rounded-full bg-paper-2"><div class="h-full rounded-full" style="width: {{ min(100, $then / $scale * 100) }}%; background: var(--viz-1)"></div></div>
+                            <div class="h-1.5 rounded-full bg-paper-2"><div class="h-full rounded-full" style="width: {{ min(100, $now / $scale * 100) }}%; background: var(--viz-2)"></div></div>
+                        </div>
+                    </li>
+                @endforeach
+            </ul>
+            <aside class="space-y-3 text-sm">
+                <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-2">
+                    <span class="flex items-center gap-1.5"><i class="inline-block h-1.5 w-4 rounded-full" style="background: var(--viz-1)"></i>What they got</span>
+                    <span class="flex items-center gap-1.5"><i class="inline-block h-1.5 w-4 rounded-full" style="background: var(--viz-2)"></i>With current content</span>
+                </div>
+                <div class="rounded-xl bg-paper-2 p-3">
+                    <div class="text-xs text-ink-2">Would get a different place now</div>
+                    <div class="text-xl font-bold tabular-nums">{{ number_format($replay['changed']) }} <span class="text-sm font-normal text-ink-2">of {{ number_format($replay['replayed']) }}</span></div>
+                </div>
+                @if ($replay['favoured_rate'] !== null)
+                    <div class="rounded-xl bg-paper-2 p-3">
+                        <div class="text-xs text-ink-2">Picked the most {{ $favouredTrait }} answer</div>
+                        <div class="text-xl font-bold tabular-nums">{{ $replay['favoured_rate'] }}%</div>
+                        <div class="text-xs text-ink-2">of the time · the check above assumes {{ $favouredP }}%, random picking would be {{ $replay['random_rate'] }}%</div>
+                    </div>
+                @endif
+                @if ($replay['skipped'])
+                    <p class="text-xs text-ink-2">{{ number_format($replay['skipped']) }} older {{ \Illuminate\Support\Str::plural('play', $replay['skipped']) }} skipped: their answers no longer fit the active questions.</p>
+                @endif
+                <p class="text-xs text-ink-2">One play per person (their latest), up to the {{ number_format(\App\Quiz\Replay::LIMIT) }} most recent. Bars end at {{ $scale }}%.</p>
+            </aside>
+        </div>
+    @endif
+</section>
 @endsection
