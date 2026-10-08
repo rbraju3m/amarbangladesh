@@ -57,6 +57,9 @@ After the first successful deploy, run once (Site → Commands):
 php artisan db:seed --force      # quiz content (+ makes sure the super administrator exists)
 ```
 
+Don't seed again later. Content changes that ship in code (like the 2026-10-08 rebalance) come as
+data migrations, which the deploy's `migrate` applies; they leave anything edited in the admin alone.
+
 The super administrator is created by the deploy's `migrate` already (and re-checked hourly), so
 you can log in at `/admin` with the SUPER_ADMIN_* credentials. If you change the password on the
 admin Password page it is kept; `php artisan admin:ensure-super-admin --reset-password` sets it

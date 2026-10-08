@@ -2,7 +2,7 @@
 
 A one-minute Bangla personality quiz that matches you with a place in Bangladesh, and gives you a card to share (story or square, 4 designs × 6 colour themes).
 
-**Flow:** landing → 8 questions → map reveal → result (vibe match %, traits, second-best place, a live preview of your share card) → share (pick a card design and colour, add your name) → a friend opens the link and sees your result as a teaser → they play and see how closely their result matches yours.
+**Flow:** landing → 8 questions → map reveal → result (vibe match %, traits, second-best place, a live preview of your share card) → share (pick a card design and colour, add your name) → a friend opens the link and sees your result as a teaser (with a "how much do you match?" challenge and how many friends already played) → they play and see how closely their result matches yours.
 
 ## Setup
 
@@ -16,10 +16,10 @@ php artisan quiz:og-images                         # link-preview images (needs 
 
 Admin panel: `/admin`.
 
-- **Analytics:** the growth funnel (visitors → started → completed → shared, counted as people, with the change against the previous period), a daily trend chart, result distribution, question drop-off, share actions, and which card designs and colours get used.
+- **Analytics:** the growth funnel (visitors → started → completed → shared, counted as people, with the change against the previous period), the start rate for landing vs friend-link visitors, referral stats and a viral coefficient counted by people, a daily trend chart, result distribution, question drop-off, share actions, and which card designs and colours get used.
 - **Questions:** answer cards with trait sliders and place bonuses, add/remove answers, reorder questions.
 - **Locations:** text, accent colour and trait profile per place.
-- **Balance:** how often each place wins across every possible answer combination (healthy band 6–18%).
+- **Balance:** how often each place wins across every possible answer combination (healthy band 6–18%), also when players lean toward the adventurous answers as real players do, plus a replay of real players' answers with the current content (what they got vs what they'd get now).
 - **Password:** change your own password.
 
 
@@ -42,7 +42,7 @@ sudo chown -R www-data:www-data storage bootstrap/cache
 
 Before going live, `php artisan quiz:purge-plays` removes test plays and analytics (content and admins stay). Then install `deploy/nginx.conf`, and add `deploy/crontab` with `crontab -e` (scheduler + daily DB backup).
 
-**Updates:** `deploy/deploy.sh` (maintenance mode → pull → build → migrate → cache → up).
+**Updates:** `deploy/deploy.sh` (maintenance mode → pull → build → migrate → cache → up). Updates don't re-run the seeder, so quiz content changed in code also needs a data migration; content edited in the admin is live immediately.
 
 **Cloudflare**
 
