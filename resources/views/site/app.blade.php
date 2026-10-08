@@ -86,27 +86,39 @@
         </footer>
     </section>
 
-    {{-- ===================== TEASER (someone shared their result) ===================== --}}
+    {{-- ===================== TEASER (someone shared their result) =====================
+         Compact so the play button sits above the fold on a phone, even inside Messenger's browser. --}}
     @if ($isShared)
         @php($s = $boot['shared'])
-        <section x-show="screen === 'teaser'" class="screen justify-center py-8 text-center md:max-w-lg" style="--accent: {{ $s['location']['accent'] }}">
-            <p class="text-lg text-ink-2">
-                {{ $s['name'] ? \App\Support\Bangla::possessive($s['name']) : 'তোমার বন্ধুর' }} বাংলাদেশ
-            </p>
-            <div class="animate-pop mx-auto mt-4 w-full overflow-hidden rounded-[2rem] border border-line bg-card shadow-xl">
-                <img src="{{ $s['location']['illustration'] }}" alt="{{ $s['location']['name_bn'] }}-এর ছবি" width="400" height="300" class="aspect-[4/3] w-full object-cover">
-                <div class="px-5 py-5">
-                    <div class="text-4xl font-bold text-accent">{{ $s['location']['emoji'] }} {{ $s['location']['name_bn'] }}</div>
-                    <div class="mt-1 text-lg font-semibold">{{ $s['location']['title_bn'] }}</div>
-                    <div class="mt-3 inline-flex rounded-full bg-flag-red/10 px-3 py-1 text-sm font-semibold text-flag-red">
+        @php($friend = $s['name'] ? \App\Support\Bangla::possessive($s['name']) : 'তোমার বন্ধুর')
+        <section x-show="screen === 'teaser'" class="screen justify-center py-6 text-center md:max-w-md" style="--accent: {{ $s['location']['accent'] }}">
+            <p class="text-sm font-semibold text-ink-2">{{ $friend }} বাংলাদেশ হলো</p>
+            <div class="animate-pop mt-3 flex items-center gap-4 overflow-hidden rounded-3xl border border-line bg-card p-3 text-left shadow-xl">
+                <img src="{{ $s['location']['illustration'] }}" alt="{{ $s['location']['name_bn'] }}-এর ছবি" width="400" height="300" fetchpriority="high" class="aspect-[4/3] w-28 shrink-0 rounded-2xl object-cover">
+                <div class="min-w-0">
+                    <div class="text-2xl font-bold text-accent">{{ $s['location']['emoji'] }} {{ $s['location']['name_bn'] }}</div>
+                    <div class="truncate font-semibold">{{ $s['location']['title_bn'] }}</div>
+                    <div class="mt-1.5 inline-flex rounded-full bg-flag-red/10 px-2.5 py-0.5 text-xs font-semibold text-flag-red">
                         ভাইব ম্যাচ {{ \App\Support\Bangla::digits($s['match_pct']) }}%
                     </div>
                 </div>
             </div>
 
-            <h1 class="mt-8 text-3xl font-bold">আর তোমার বাংলাদেশ কোথায়?</h1>
-            <p class="mt-2 text-ink-2">{{ \App\Support\Bangla::digits(count($boot['questions'])) }}টা প্রশ্ন, ১ মিনিট। দেখো কতটা মেলে!</p>
-            <button type="button" class="btn-primary mt-6" @click="start()">তোমার বাংলাদেশ খুঁজে দেখো <span aria-hidden="true">→</span></button>
+            <h1 class="mt-8 text-[2rem] leading-tight font-bold">আর তোমার<br>বাংলাদেশ কোথায়?</h1>
+            <p class="mx-auto mt-3 max-w-sm text-lg leading-relaxed text-ink-2">
+                খেলে দেখো, {{ $s['name'] ? $friend : 'তোমার বন্ধুর' }} সাথে তোমার মিল কত&nbsp;%&nbsp;👀
+            </p>
+            <button type="button" class="btn-primary group mt-6" @click="start()">
+                আমার বাংলাদেশ খুঁজে দেখি <span aria-hidden="true" class="transition-transform duration-200 group-hover:translate-x-1">→</span>
+            </button>
+            <ul class="mt-4 flex flex-wrap justify-center gap-2" aria-label="কুইজের তথ্য">
+                <li class="chip">⏱️ মাত্র ১ মিনিট</li>
+                <li class="chip">✨ {{ \App\Support\Bangla::digits(count($boot['questions'])) }}টি প্রশ্ন</li>
+                <li class="chip">🔒 লগইন লাগবে না</li>
+            </ul>
+            @if ($friendPlays > 0)
+                <p class="mt-5 text-sm text-ink-2">👥 {{ \App\Support\Bangla::digits($friendPlays) }} জন বন্ধু এর মধ্যেই মিলিয়ে দেখেছে</p>
+            @endif
         </section>
     @endif
 

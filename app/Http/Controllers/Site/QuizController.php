@@ -24,6 +24,8 @@ class QuizController extends Controller
         return view('site.app', [
             'boot' => $this->boot() + ['shared' => ResultPresenter::present($result)],
             'result' => $result->loadMissing('location'),
+            // Social proof on the teaser: friends who already played from this link.
+            'friendPlays' => QuizResult::where('referrer_result_id', $result->id)->count(),
         ]);
     }
 

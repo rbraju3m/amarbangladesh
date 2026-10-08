@@ -187,4 +187,13 @@ class ResultFlowTest extends TestCase
         $this->assertSame(['visitors' => 1, 'started' => 1, 'rate' => 100.0], $entries['direct']);
         $this->assertSame(['visitors' => 2, 'started' => 1, 'rate' => 50.0], $entries['link']);
     }
+
+    public function test_teaser_challenges_the_visitor_and_shows_friends_who_played(): void
+    {
+        $code = $this->play()['result']['code'];
+        $this->get("/r/{$code}")->assertOk()->assertSee('লগইন লাগবে না')->assertDontSee('জন বন্ধু এর মধ্যেই');
+
+        $this->postJson('/api/results', ['answers' => $this->answers(), 'ref' => $code])->assertCreated();
+        $this->get("/r/{$code}")->assertSee('১ জন বন্ধু এর মধ্যেই মিলিয়ে দেখেছে');
+    }
 }
