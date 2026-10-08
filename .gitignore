@@ -27,3 +27,6 @@ Homestead.yaml
 Thumbs.db
 /storage/framework/views-apache
 /public/__preview
+
+# Local planning docs (plans and step-by-step work logs), never committed
+/docs

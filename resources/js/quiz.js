@@ -2,26 +2,8 @@ import { bnDigits, possessive } from './bn';
 import { canvasToBlob, FORMATS, formatKeys, renderCard, TEMPLATES, templateKeys, THEMES, themeKeys } from './card';
 import { confetti } from './confetti';
 import { canShareFile, copyText, isInAppBrowser, isMobile, shareLinks } from './share';
+import { store, visitorId as getVisitorId } from './store';
 import { setTrackingContext, track } from './track';
-
-const store = {
-    get(key, fallback) {
-        try {
-            return JSON.parse(localStorage.getItem(key)) ?? fallback;
-        } catch {
-            return fallback;
-        }
-    },
-    set(key, value) {
-        try {
-            localStorage.setItem(key, JSON.stringify(value));
-        } catch {}
-    },
-};
-
-const uuid = () =>
-    crypto.randomUUID?.() ??
-    '10000000-1000-4000-8000-100000000000'.replace(/[018]/g, (c) => (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16));
 
 const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 const wait = (ms) => new Promise((r) => setTimeout(r, reducedMotion() ? 0 : ms));
@@ -88,8 +70,7 @@ export default function quiz(boot) {
 
         init() {
             this.optionById = Object.fromEntries(this.questions.flatMap((q) => q.options.map((o) => [o.id, o])));
-            const visitorId = store.get('bd.visitor') || uuid();
-            store.set('bd.visitor', visitorId);
+            const visitorId = getVisitorId();
             setTrackingContext({ visitor_id: visitorId });
             this.visitorId = visitorId;
 
@@ -555,6 +536,11 @@ export default function quiz(boot) {
             }
             const a = Object.assign(document.createElement('a'), { href: this.cardUrl, download: this.cardFile().name });
             a.click();
+        },
+
+        // Links into the community from the quiz page; the event is flushed as the page unloads.
+        trackCommunity(from, to) {
+            track('community_clicked', { result: this.result?.code, meta: { from, to } });
         },
 
         flash(message) {

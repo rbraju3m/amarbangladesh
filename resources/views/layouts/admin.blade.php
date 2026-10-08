@@ -19,6 +19,7 @@
             ['admin.plays', 'Plays', 'admin.plays', 'M5 4l14 8-14 8V4Z'],
             ['admin.questions.index', 'Questions', 'admin.questions.*', 'M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01'],
             ['admin.locations.index', 'Locations', 'admin.locations.*', 'M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21Zm0-9a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z'],
+            ['admin.community', 'Community', 'admin.community', 'M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.4A8 8 0 1 1 21 12Z'],
             ['admin.balance', 'Balance', 'admin.balance', 'M12 4v16M5 8h14M5 8l-3 7a3.5 3.5 0 0 0 6 0L5 8Zm14 0-3 7a3.5 3.5 0 0 0 6 0l-3-7ZM8 20h8'],
             ['admin.password.edit', 'Password', 'admin.password.*', 'M7 11V8a5 5 0 0 1 10 0v3M5 11h14v10H5V11Zm7 4v2'],
         ];

@@ -31,7 +31,7 @@ class AdminTest extends TestCase
 
         $question = Question::first();
         $location = Location::first();
-        foreach (['/admin', '/admin?days=30', '/admin/balance', '/admin/plays', '/admin/plays?days=7&source=friend', '/admin/questions', "/admin/questions/{$question->id}/edit", '/admin/locations', "/admin/locations/{$location->slug}/edit"] as $url) {
+        foreach (['/admin', '/admin?days=30', '/admin/balance', '/admin/plays', '/admin/plays?days=7&source=friend', '/admin/community', '/admin/community?show=all', '/admin/questions', "/admin/questions/{$question->id}/edit", '/admin/locations', "/admin/locations/{$location->slug}/edit"] as $url) {
             $this->get($url)->assertOk();
         }
     }

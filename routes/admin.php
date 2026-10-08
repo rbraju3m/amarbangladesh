@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\BalanceController;
+use App\Http\Controllers\Admin\CommunityController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ExportController;
 use App\Http\Controllers\Admin\LocationController;
@@ -30,5 +31,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
             ->whereIn('direction', ['up', 'down'])->name('questions.move');
 
         Route::resource('locations', LocationController::class)->only(['index', 'edit', 'update']);
+
+        Route::get('/community', [CommunityController::class, 'index'])->name('community');
+        Route::post('/community/{type}/{id}/{action}', [CommunityController::class, 'moderate'])
+            ->whereIn('type', ['post', 'answer'])->whereNumber('id')->whereIn('action', ['hide', 'restore', 'remove', 'dismiss'])->name('community.moderate');
+        Route::post('/community/members/{member:id}/{action}', [CommunityController::class, 'block'])
+            ->whereIn('action', ['block', 'unblock'])->name('community.block');
     });
 });

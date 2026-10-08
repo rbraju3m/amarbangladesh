@@ -1,5 +1,5 @@
 @php
-    $siteTitle = 'তোমার বাংলাদেশ কোথায়?';
+    $siteTitle = $siteName ?? 'তোমার বাংলাদেশ কোথায়?';
     $ogTitle = $ogTitle ?? $siteTitle.' 🇧🇩';
     $ogDescription = $ogDescription ?? 'বাংলাদেশের কোন জায়গাটা তোমার personality-এর সাথে সবচেয়ে বেশি মেলে? মাত্র ১ মিনিটে খুঁজে বের করো।';
     $ogImage = $ogImage ?? asset('images/og/default.png');
@@ -36,9 +36,9 @@
     <meta name="twitter:image" content="{{ $ogImage }}">
 
     <link rel="preload" href="{{ Vite::asset('resources/fonts/anek-bangla-bengali-500-700.woff2') }}" as="font" type="font/woff2" crossorigin>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite(['resources/css/app.css', $script ?? 'resources/js/app.js'])
 </head>
-<body>
+<body @isset($bodyClass) class="{{ $bodyClass }}" @endisset>
     @yield('content')
 </body>
 </html>

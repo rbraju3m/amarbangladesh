@@ -26,6 +26,11 @@ class AppServiceProvider extends ServiceProvider
         // The IP is only used in memory as the throttle key; it is never persisted.
         RateLimiter::for('results', fn (Request $request) => Limit::perMinute(20)->by($request->ip()));
         RateLimiter::for('events', fn (Request $request) => Limit::perMinute(120)->by($request->ip()));
+        RateLimiter::for('members', fn (Request $request) => Limit::perHour(10)->by($request->ip()));
+        RateLimiter::for('posts', fn (Request $request) => [Limit::perMinute(3)->by('m'.$request->ip()), Limit::perHour(15)->by('h'.$request->ip())]);
+        RateLimiter::for('answers', fn (Request $request) => [Limit::perMinute(6)->by('m'.$request->ip()), Limit::perHour(60)->by('h'.$request->ip())]);
+        RateLimiter::for('community', fn (Request $request) => Limit::perMinute(60)->by($request->ip()));
+        RateLimiter::for('reports', fn (Request $request) => Limit::perHour(30)->by($request->ip()));
 
         Event::listen(MigrationsEnded::class, ProvisionSuperAdminAfterMigrations::class);
         $this->autoProvisionSuperAdmin();
