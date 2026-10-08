@@ -49,6 +49,18 @@ class ScoringTest extends TestCase
         }
     }
 
+    public function test_no_location_dominates_when_players_favour_adventurous_answers(): void
+    {
+        // At launch real players leaned adventurous and বান্দরবান won 47% of plays.
+        $report = (new Simulator(QuizConfig::fromDatabase()))->run(Simulator::FAVOURED_TRAIT);
+
+        $this->assertEqualsWithDelta(100, array_sum($report['share']), 0.1);
+        foreach ($report['share'] as $slug => $share) {
+            $this->assertGreaterThanOrEqual(6, $share, "{$slug} is too rare for adventurous players");
+            $this->assertLessThanOrEqual(18, $share, "{$slug} is too common for adventurous players");
+        }
+    }
+
     public function test_signature_answers_are_quoted_in_the_reason(): void
     {
         $config = QuizConfig::fromDatabase();

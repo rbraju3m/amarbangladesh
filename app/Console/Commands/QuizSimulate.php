@@ -14,15 +14,19 @@ class QuizSimulate extends Command
 
     public function handle(): int
     {
-        $report = (new Simulator(QuizConfig::fromDatabase()))->run();
+        $simulator = new Simulator(QuizConfig::fromDatabase());
+        $report = $simulator->run();
+        $favoured = $simulator->run(Simulator::FAVOURED_TRAIT);
+        $p = (int) round(100 * Simulator::FAVOURED_P);
 
         $rows = [];
         foreach ($report['wins'] as $slug => $wins) {
             $share = $report['share'][$slug];
-            $rows[] = [$slug, $wins, $share.'%', str_repeat('█', (int) round($share))];
+            $rows[] = [$slug, $wins, $share.'%', str_repeat('█', (int) round($share)), $favoured['share'][$slug].'%'];
         }
-        $this->table(['Location', 'Wins', 'Share', ''], $rows);
+        $this->table(['Location', 'Wins', 'Share', '', Simulator::FAVOURED_TRAIT." {$p}%"], $rows);
         $this->line("Combinations: {$report['total']}  ·  Match %: min {$report['match']['min']}, max {$report['match']['max']}, avg {$report['match']['avg']}");
+        $this->line('Last column: share when the most '.Simulator::FAVOURED_TRAIT." answer in each question is picked {$p}% of the time.");
 
         return self::SUCCESS;
     }

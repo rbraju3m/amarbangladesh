@@ -6,6 +6,7 @@
     <p class="mt-1 max-w-2xl text-sm text-ink-2">
         Every possible answer combination ({{ number_format($combinations) }}) is played through the current scoring.
         Each place should win between {{ $min }}% and {{ $max }}% of them — otherwise some results almost never appear, or appear too often.
+        Real players lean toward flattering answers, so the thin bar repeats the check with the most {{ $favouredTrait }} answer in each question picked {{ $favouredP }}% of the time.
     </p>
 </header>
 
@@ -14,7 +15,8 @@
 @else
     @php
         $scale = 25; // bar width: 25% of combinations fills the track
-        $out = collect($report['share'])->filter(fn ($v) => $v < $min || $v > $max);
+        $inRange = fn ($v) => $v >= $min && $v <= $max;
+        $out = collect($report['share'])->keys()->filter(fn ($slug) => ! $inRange($report['share'][$slug]) || ! $inRange($favoured['share'][$slug]));
     @endphp
     <div class="grid gap-4 lg:grid-cols-[1fr_18rem]">
         <section class="panel">
@@ -28,7 +30,9 @@
             </div>
             <ul class="space-y-4">
                 @foreach ($report['share'] as $slug => $share)
-                    @php($ok = $share >= $min && $share <= $max)
+                    @php($ok = $inRange($share))
+                    @php($fav = $favoured['share'][$slug])
+                    @php($favOk = $inRange($fav))
                     <li>
                         <div class="flex justify-between text-sm font-semibold">
                             <span>{{ $locations[$slug]->emoji ?? '' }} {{ $locations[$slug]->name_bn ?? $slug }}</span>
@@ -39,10 +43,16 @@
                             <div class="absolute inset-y-0 rounded-full bg-flag-green/15 ring-1 ring-flag-green/30" style="left: {{ $min / $scale * 100 }}%; width: {{ ($max - $min) / $scale * 100 }}%"></div>
                             <div @class(['relative h-full rounded-full', 'bg-flag-green' => $ok, 'bg-flag-red' => ! $ok]) style="width: {{ min(100, $share / $scale * 100) }}%"></div>
                         </div>
+                        <div class="mt-1 flex items-center gap-2">
+                            <div class="relative h-1.5 flex-1 rounded-full bg-paper-2">
+                                <div @class(['h-full rounded-full', 'bg-ink-2/60' => $favOk, 'bg-flag-red' => ! $favOk]) style="width: {{ min(100, $fav / $scale * 100) }}%"></div>
+                            </div>
+                            <span @class(['w-28 text-right text-xs tabular-nums', 'text-ink-2' => $favOk, 'font-semibold text-flag-red' => ! $favOk])>{{ $favouredTrait }}-leaning {{ $fav }}%</span>
+                        </div>
                     </li>
                 @endforeach
             </ul>
-            <div class="mt-4 flex items-center gap-2 text-xs text-ink-2"><i class="inline-block h-3 w-6 rounded-full bg-flag-green/15 ring-1 ring-flag-green/30"></i> healthy band {{ $min }}–{{ $max }}% · track ends at {{ $scale }}%</div>
+            <div class="mt-4 flex items-center gap-2 text-xs text-ink-2"><i class="inline-block h-3 w-6 rounded-full bg-flag-green/15 ring-1 ring-flag-green/30"></i> healthy band {{ $min }}–{{ $max }}% · track ends at {{ $scale }}% · thin bar: {{ $favouredTrait }}-leaning players</div>
         </section>
 
         <aside class="space-y-4">
