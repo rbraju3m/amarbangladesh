@@ -2,13 +2,16 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Bilingual;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class QuestionOption extends Model
 {
+    use Bilingual;
+
     protected $fillable = [
-        'question_id', 'label_bn', 'emoji', 'image', 'reason_bn', 'trait_weights', 'location_bonus', 'sort_order', 'is_active',
+        'question_id', 'label_bn', 'label_en', 'emoji', 'image', 'reason_bn', 'reason_en', 'trait_weights', 'location_bonus', 'sort_order', 'is_active',
     ];
 
     protected function casts(): array

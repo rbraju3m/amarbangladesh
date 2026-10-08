@@ -1,4 +1,4 @@
-import { bnDigits, possessive } from '../bn';
+import * as i18n from '../i18n';
 import { drawCover, fitText, font, footerSquare, H, roundRect, S, shadow, W } from './common';
 
 /** Full-bleed illustration fading into the place colour, with big white type. */
@@ -32,9 +32,9 @@ export default function poster(ctx, result, { img, host, t }) {
     ctx.fillStyle = INK;
     font(ctx, 600, 32);
     ctx.textAlign = 'left';
-    ctx.fillText('🇧🇩  আমার বাংলাদেশ', 96, 110);
+    ctx.fillText(i18n.t('🇧🇩  আমার বাংলাদেশ'), 96, 110);
 
-    const pct = `${bnDigits(result.match_pct)}% ম্যাচ`;
+    const pct = i18n.t(':n% ম্যাচ', { n: i18n.num(result.match_pct) });
     font(ctx, 700, 36);
     const pw = ctx.measureText(pct).width + 64;
     ctx.fillStyle = INK;
@@ -77,25 +77,25 @@ export default function poster(ctx, result, { img, host, t }) {
 
     ctx.textBaseline = 'alphabetic';
     let y = badgesTop - 40;
-    fitText(ctx, `${loc.emoji} ${loc.title_bn}`, W - 2 * x0, 60, 600);
-    ctx.fillText(`${loc.emoji} ${loc.title_bn}`, x0, y);
+    fitText(ctx, `${loc.emoji} ${loc.title}`, W - 2 * x0, 60, 600);
+    ctx.fillText(`${loc.emoji} ${loc.title}`, x0, y);
 
     shadow(ctx, 'rgba(0,0,0,.25)', 24);
     y -= 110;
-    fitText(ctx, loc.name_bn, W - 2 * x0, 230, 700);
-    ctx.fillText(loc.name_bn, x0, y);
+    fitText(ctx, loc.name, W - 2 * x0, 230, 700);
+    ctx.fillText(loc.name, x0, y);
 
     y -= 245;
     ctx.fillStyle = 'rgba(255,255,255,.88)';
     if (result.name) {
         font(ctx, 500, 50);
-        ctx.fillText('বাংলাদেশ হলো', x0, y);
+        ctx.fillText(i18n.t('বাংলাদেশ হলো'), x0, y);
         ctx.fillStyle = '#fff';
-        fitText(ctx, possessive(result.name), W - 2 * x0, 110, 700);
-        ctx.fillText(possessive(result.name), x0, y - 76);
+        fitText(ctx, i18n.possessive(result.name), W - 2 * x0, 110, 700);
+        ctx.fillText(i18n.possessive(result.name), x0, y - 76);
     } else {
         font(ctx, 500, 56);
-        ctx.fillText('আমার বাংলাদেশ হলো', x0, y);
+        ctx.fillText(i18n.t('আমার বাংলাদেশ হলো'), x0, y);
     }
     ctx.shadowBlur = 0;
 
@@ -104,7 +104,7 @@ export default function poster(ctx, result, { img, host, t }) {
     ctx.textBaseline = 'alphabetic';
     ctx.fillStyle = '#fff';
     font(ctx, 700, 54);
-    ctx.fillText('তোমার বাংলাদেশ কোথায়?', W / 2, H - 112);
+    ctx.fillText(i18n.t('তোমার বাংলাদেশ কোথায়?'), W / 2, H - 112);
     ctx.fillStyle = 'rgba(255,255,255,.75)';
     font(ctx, 500, 36);
     ctx.fillText(host, W / 2, H - 58);
@@ -130,7 +130,7 @@ export function square(ctx, result, { img, host, t }) {
     ctx.fillRect(0, 560, S, S - 560);
 
     // Match % chip, top right.
-    const pct = `${bnDigits(result.match_pct)}% ম্যাচ`;
+    const pct = i18n.t(':n% ম্যাচ', { n: i18n.num(result.match_pct) });
     font(ctx, 700, 34);
     const pw = ctx.measureText(pct).width + 60;
     ctx.fillStyle = t.cardInk;
@@ -147,25 +147,25 @@ export function square(ctx, result, { img, host, t }) {
     ctx.textBaseline = 'alphabetic';
     ctx.fillStyle = '#fff';
     let y = 920;
-    fitText(ctx, `${loc.emoji} ${loc.title_bn}`, S - 2 * x0, 50, 600);
-    ctx.fillText(`${loc.emoji} ${loc.title_bn}`, x0, y);
+    fitText(ctx, `${loc.emoji} ${loc.title}`, S - 2 * x0, 50, 600);
+    ctx.fillText(`${loc.emoji} ${loc.title}`, x0, y);
 
     shadow(ctx, 'rgba(0,0,0,.25)', 24);
     y -= 92;
-    fitText(ctx, loc.name_bn, S - 2 * x0, 170, 700);
-    ctx.fillText(loc.name_bn, x0, y);
+    fitText(ctx, loc.name, S - 2 * x0, 170, 700);
+    ctx.fillText(loc.name, x0, y);
 
     y -= 186;
     ctx.fillStyle = 'rgba(255,255,255,.88)';
     if (result.name) {
         font(ctx, 500, 40);
-        ctx.fillText('বাংলাদেশ হলো', x0, y);
+        ctx.fillText(i18n.t('বাংলাদেশ হলো'), x0, y);
         ctx.fillStyle = '#fff';
-        fitText(ctx, possessive(result.name), S - 2 * x0, 84, 700);
-        ctx.fillText(possessive(result.name), x0, y - 58);
+        fitText(ctx, i18n.possessive(result.name), S - 2 * x0, 84, 700);
+        ctx.fillText(i18n.possessive(result.name), x0, y - 58);
     } else {
         font(ctx, 500, 46);
-        ctx.fillText('আমার বাংলাদেশ হলো', x0, y);
+        ctx.fillText(i18n.t('আমার বাংলাদেশ হলো'), x0, y);
     }
     ctx.shadowBlur = 0;
 

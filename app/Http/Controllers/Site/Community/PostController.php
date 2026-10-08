@@ -30,22 +30,24 @@ class PostController extends Controller
             'category' => ['nullable', Rule::in(array_keys(Taxonomy::categories()))],
             'area' => ['nullable', Rule::in(array_keys(Taxonomy::areas()))],
             'name' => ['nullable', 'string', 'max:40'],
+            'anonymous' => ['nullable', 'boolean'],
         ], [
-            'title.required' => 'কী জানতে চাও, সেটা লেখো।',
-            'title.min' => 'আরেকটু খুলে লেখো, যাতে সবাই বুঝতে পারে।',
-            'title.max' => 'মূল কথাটা ছোট করে লেখো (২০০ অক্ষরের মধ্যে), বাকিটা বিস্তারিত অংশে।',
-            'body.max' => 'বিস্তারিত অংশটা একটু ছোট করো।',
+            'title.required' => __('কী জানতে চান, সেটা লিখুন।'),
+            'title.min' => __('আরেকটু খুলে লিখুন, যাতে সবাই বুঝতে পারে।'),
+            'title.max' => __('মূল কথাটা ছোট করে লিখুন (২০০ অক্ষরের মধ্যে), বাকিটা বিস্তারিত অংশে।'),
+            'body.max' => __('বিস্তারিত অংশটা একটু ছোট করুন।'),
         ]);
 
         $member = self::named($request->attributes->get('member'), $data['name'] ?? null);
         if (Text::linkCount($data['title'].' '.($data['body'] ?? '')) > Text::MAX_LINKS) {
-            throw ValidationException::withMessages(['body' => 'একটা পোস্টে দুটোর বেশি লিংক দেওয়া যাবে না।']);
+            throw ValidationException::withMessages(['body' => __('একটা পোস্টে দুটোর বেশি লিংক দেওয়া যাবে না।')]);
         }
 
         // A double tap or a retry after a slow network should not post twice.
         $post = Post::where('member_id', $member->id)->where('title', $data['title'])->where('created_at', '>=', now()->subMinutes(10))->first()
             ?? Post::create([
                 'member_id' => $member->id,
+                'is_anonymous' => (bool) ($data['anonymous'] ?? false),
                 'type' => $data['type'] ?? 'question',
                 'title' => $data['title'],
                 'body' => $data['body'] ?? null,
@@ -54,7 +56,7 @@ class PostController extends Controller
             ]);
 
         if ($post->wasRecentlyCreated) {
-            AnalyticsEvent::create(['name' => 'post_created', 'device' => Device::fromUserAgent($request->userAgent()), 'meta' => ['type' => $post->type]]);
+            AnalyticsEvent::create(['name' => 'post_created', 'device' => Device::fromUserAgent($request->userAgent()), 'meta' => ['type' => $post->type, 'anon' => $post->is_anonymous ? 1 : 0]]);
         }
 
         return response()->json(['post' => ['id' => $post->id, 'url' => $post->url()], 'member' => MemberController::present($member)], 201);
@@ -90,7 +92,7 @@ class PostController extends Controller
             $member->update(['name' => $name]);
         }
         if (! $member->name) {
-            throw ValidationException::withMessages(['name' => 'তোমার নামটা লেখো, সবাই যাতে চিনতে পারে।']);
+            throw ValidationException::withMessages(['name' => __('আপনার নামটা লিখুন, সবাই যাতে চিনতে পারে।')]);
         }
 
         return $member;

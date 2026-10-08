@@ -9,7 +9,18 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /** A reply to a post: an answer to a question, a comment in a discussion. Same statuses as Post. */
 class Answer extends Model
 {
-    protected $fillable = ['post_id', 'member_id', 'body', 'status'];
+    protected $fillable = ['post_id', 'member_id', 'is_anonymous', 'body', 'status'];
+
+    protected function casts(): array
+    {
+        return ['is_anonymous' => 'boolean'];
+    }
+
+    /** The author as the public sees them: null when posted anonymously. */
+    public function publicAuthor(): ?Member
+    {
+        return $this->is_anonymous ? null : $this->member;
+    }
 
     public function scopePublished(Builder $query): void
     {

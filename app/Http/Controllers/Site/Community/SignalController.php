@@ -17,7 +17,7 @@ class SignalController extends Controller
     {
         $item = $this->target($request);
         $member = $request->attributes->get('member');
-        abort_if($item->member_id === $member->id, 422, 'নিজের লেখায় দেওয়া যায় না 🙂');
+        abort_if($item->member_id === $member->id, 422, __('নিজের লেখায় দেওয়া যায় না 🙂'));
 
         return response()->json(Moderation::toggleHelpful($member, $item));
     }

@@ -19,7 +19,7 @@ final class QuizConfig
     /**
      * @param  list<string>  $traitKeys
      * @param  array<string, array{id:int, profile:list<float>}>  $locations  keyed by slug, in sort order
-     * @param  array<int, array<int, array{weights:list<float>, bonus:array<string,float>, reason:string}>>  $questions  question id => option id => option
+     * @param  array<int, array<int, array{weights:list<float>, bonus:array<string,float>, reason:string, reason_en:?string}>>  $questions  question id => option id => option
      */
     public function __construct(
         public readonly array $traitKeys,
@@ -39,8 +39,10 @@ final class QuizConfig
     public static function forget(): void
     {
         Cache::forget(self::CACHE_KEY);
-        Cache::forget('quiz.boot');
-        Cache::forget('quiz.trait-meta');
+        foreach (['bn', 'en'] as $locale) {
+            Cache::forget("quiz.boot.{$locale}");
+            Cache::forget("quiz.trait-meta.{$locale}");
+        }
     }
 
     public static function fromDatabase(): self
@@ -63,6 +65,7 @@ final class QuizConfig
                     'weights' => $align($option->trait_weights),
                     'bonus' => array_map('floatval', array_intersect_key($option->location_bonus ?? [], $locations)),
                     'reason' => $option->reason_bn,
+                    'reason_en' => $option->reason_en,
                 ];
             }
         }

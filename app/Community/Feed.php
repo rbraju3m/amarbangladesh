@@ -40,12 +40,12 @@ final class Feed
         if ($this->area) {
             // A division covers its districts.
             $areaIds = $this->area['type'] === 'division'
-                ? array_merge([$this->area['id']], array_column(array_filter(Taxonomy::areas(), fn ($a) => $a['division'] === $this->area['name'] && $a['type'] === 'district'), 'id'))
+                ? array_merge([$this->area['id']], array_column(array_filter(Taxonomy::areas(), fn ($a) => $a['division_bn'] === $this->area['name_bn'] && $a['type'] === 'district'), 'id'))
                 : [$this->area['id']];
         }
 
         return Post::published()
-            ->with(['member:id,code,name', 'category:id,slug,name_bn,emoji', 'area:id,slug,name_bn'])
+            ->with(['member:id,code,name', 'category:id,slug,name_bn,name_en,emoji', 'area:id,slug,name_bn,name_en'])
             ->when($this->tab === 'unanswered', fn ($q) => $q->where('answers_count', 0)->whereIn('type', ['question', 'help']))
             ->when($this->category, fn ($q) => $q->where('category_id', $this->category['id']))
             ->when($areaIds, fn ($q) => $q->whereIn('area_id', $areaIds))

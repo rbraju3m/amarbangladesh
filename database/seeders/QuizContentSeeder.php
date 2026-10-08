@@ -67,6 +67,7 @@ class QuizContentSeeder extends Seeder
             }
         });
 
+        $this->call(QuizEnglishSeeder::class);
         QuizConfig::forget();
     }
 }

@@ -1,4 +1,4 @@
-import { bnDigits, possessive } from './bn';
+import { localeHeaders, num, path, possessive, t } from './i18n';
 import { canvasToBlob, FORMATS, formatKeys, renderCard, TEMPLATES, templateKeys, THEMES, themeKeys } from './card';
 import { confetti } from './confetti';
 import { canShareFile, copyText, isInAppBrowser, isMobile, shareLinks } from './share';
@@ -10,6 +10,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, reducedMotion() ? 0 : ms))
 
 const BN_DIGITS = '০১২৩৪৫৬৭৮৯';
 
+// Translated when used (the dictionary loads after this module runs).
 const REVEAL_STEPS = ['ঘোরাঘুরির ভাইব', 'খাবারের রুচি', 'আড্ডার এনার্জি', 'তোমার বাংলাদেশ'];
 
 export default function quiz(boot) {
@@ -39,7 +40,7 @@ export default function quiz(boot) {
         dir: 'fwd', // which way the next question slides in
         hoverOpt: null, // answer under the pointer/focus, lit up in the question's emoji picture
         swipeX: null,
-        revealSteps: REVEAL_STEPS,
+        revealSteps: REVEAL_STEPS.map((step) => t(step)),
         revealStep: -1,
         scanSlug: null,
         lockedSlug: null,
@@ -65,8 +66,9 @@ export default function quiz(boot) {
         toast: '',
         inApp: isInAppBrowser(),
 
-        bn: bnDigits,
+        bn: num,
         possessive,
+        t,
 
         init() {
             this.optionById = Object.fromEntries(this.questions.flatMap((q) => q.options.map((o) => [o.id, o])));
@@ -97,7 +99,7 @@ export default function quiz(boot) {
             });
 
             addEventListener('popstate', () => {
-                if (location.pathname === '/' && this.screen === 'result') this.screen = 'landing';
+                if (location.pathname === path('/') && this.screen === 'result') this.screen = 'landing';
             });
         },
 
@@ -136,9 +138,9 @@ export default function quiz(boot) {
         // A short line of encouragement at the halfway point and near the end.
         get nudge() {
             const left = this.questions.length - this.qIndex;
-            if (left === 1) return 'শেষ প্রশ্ন! 🎉';
-            if (left === 2) return 'আর মাত্র ২টা! 💪';
-            if (this.qIndex === Math.floor(this.questions.length / 2)) return 'অর্ধেক শেষ! 🔥';
+            if (left === 1) return t('শেষ প্রশ্ন! 🎉');
+            if (left === 2) return t('আর মাত্র ২টা! 💪');
+            if (this.qIndex === Math.floor(this.questions.length / 2)) return t('অর্ধেক শেষ! 🔥');
             return null;
         },
 
@@ -218,10 +220,10 @@ export default function quiz(boot) {
 
             const request = fetch('/api/results', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+                headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...localeHeaders() },
                 body: JSON.stringify({ answers: Object.values(this.answers), visitor_id: this.visitorId, ref: this.ref }),
             }).then(async (res) => {
-                if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'সার্ভারে সমস্যা হয়েছে।');
+                if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || t('সার্ভারে সমস্যা হয়েছে।'));
                 return res.json();
             });
 
@@ -247,7 +249,7 @@ export default function quiz(boot) {
             } catch (e) {
                 clearInterval(await scan);
                 this.scanSlug = null;
-                this.error = e.message || 'ইন্টারনেট সংযোগ দেখো, তারপর আবার চেষ্টা করো।';
+                this.error = e.message || t('ইন্টারনেট সংযোগ দেখো, তারপর আবার চেষ্টা করো।');
             }
         },
 
@@ -265,13 +267,13 @@ export default function quiz(boot) {
                 const mine = store.get('bd.mine', {});
                 mine[result.code] = token;
                 store.set('bd.mine', mine);
-                history.pushState({}, '', `/r/${result.code}`);
+                history.pushState({}, '', path(`/r/${result.code}`));
                 navigator.vibrate?.(30);
             }
             this.animateResult(result, fresh);
             // Draw the share card right away: the result page previews it before the sheet is opened.
             this.$nextTick(() => this.buildCard());
-            document.title = `${result.location.emoji} ${result.location.name_bn} — তোমার বাংলাদেশ কোথায়?`;
+            document.title = t(':place — তোমার বাংলাদেশ কোথায়?', { place: `${result.location.emoji} ${result.location.name}` });
             track('result_viewed', { result: result.code, meta: { fresh: fresh ? 1 : 0 } });
             window.scrollTo(0, 0);
         },
@@ -306,7 +308,7 @@ export default function quiz(boot) {
 
         get places() {
             const bySlug = Object.fromEntries(this.locations.map((l) => [l.slug, l]));
-            return (this.result?.places ?? []).map((p, i) => ({ ...bySlug[p.slug], ...p, rank: i + 1 })).filter((p) => p.name_bn);
+            return (this.result?.places ?? []).map((p, i) => ({ ...bySlug[p.slug], ...p, rank: i + 1 })).filter((p) => p.name);
         },
 
         // On the result page the sheet shows this player's match; elsewhere (landing) it's a plain preview.
@@ -362,7 +364,7 @@ export default function quiz(boot) {
 
         retake() {
             track('retake_clicked', { result: this.result?.code });
-            history.pushState({}, '', '/');
+            history.pushState({}, '', path('/'));
             this.start();
         },
 
@@ -370,7 +372,7 @@ export default function quiz(boot) {
 
         get shareText() {
             const r = this.result;
-            return `আমার বাংলাদেশ হলো ${r.location.name_bn} ${r.location.emoji} — ভাইব ম্যাচ ${bnDigits(r.match_pct)}%! তোমার বাংলাদেশ কোথায়? 👉`;
+            return t('আমার বাংলাদেশ হলো :place — ভাইব ম্যাচ :n%! তোমার বাংলাদেশ কোথায়? 👉', { place: `${r.location.name} ${r.location.emoji}`, n: num(r.match_pct) });
         },
 
         async openSheet() {
@@ -472,7 +474,7 @@ export default function quiz(boot) {
                     if (name) track('name_added', { result: this.result.code });
                     if (this.cardUrl && this.cardName !== this.liveName) await this.buildCard();
                 } else {
-                    this.flash('নামটা সেভ করা গেলো না।');
+                    this.flash(t('নামটা সেভ করা গেলো না।'));
                 }
             } finally {
                 this.savingName = false;
@@ -524,14 +526,14 @@ export default function quiz(boot) {
             this.persistName();
             const ok = await copyText(`${this.shareText} ${this.result.url}`);
             track('link_copied', { result: this.result.code });
-            this.flash(ok ? 'লিংক কপি হয়েছে! এখন যেকোনো জায়গায় পেস্ট করো ✨' : 'কপি করা গেলো না।');
+            this.flash(ok ? t('লিংক কপি হয়েছে! এখন যেকোনো জায়গায় পেস্ট করো ✨') : t('কপি করা গেলো না।'));
         },
 
         saveCard() {
             this.persistName();
             track('card_saved', { result: this.result.code, meta: { inapp: this.inApp ? 1 : 0, template: this.cardTemplate, theme: this.cardTheme, format: this.cardFormat } });
             if (this.inApp) {
-                this.flash('ছবিটার ওপর চেপে ধরে রাখো, তারপর "Save image" চাপো');
+                this.flash(t('ছবিটার ওপর চেপে ধরে রাখো, তারপর "Save image" চাপো'));
                 return;
             }
             const a = Object.assign(document.createElement('a'), { href: this.cardUrl, download: this.cardFile().name });

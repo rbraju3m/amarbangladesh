@@ -28,7 +28,7 @@
                 :opacity="lockedSlug && lockedSlug !== '{{ $loc['slug'] }}' ? .3 : 1" />
         @else
             {{-- Hover (mouse) or tap focuses a place; the landing page shows a tooltip and highlights its card. --}}
-            <g data-place class="cursor-pointer" role="button" aria-label="{{ $loc['name_bn'] }}"
+            <g data-place class="cursor-pointer" role="button" aria-label="{{ $loc['name'] }}"
                 @pointerenter="$event.pointerType === 'mouse' && (focusSlug = '{{ $loc['slug'] }}')"
                 @pointerleave="$event.pointerType === 'mouse' && (focusSlug = null)"
                 @click="tapDot('{{ $loc['slug'] }}')">

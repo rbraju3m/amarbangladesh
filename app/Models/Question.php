@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Bilingual;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Question extends Model
 {
-    protected $fillable = ['prompt_bn', 'subtitle_bn', 'kind', 'sort_order', 'is_active'];
+    use Bilingual;
+
+    protected $fillable = ['prompt_bn', 'prompt_en', 'subtitle_bn', 'subtitle_en', 'kind', 'sort_order', 'is_active'];
 
     public const KINDS = ['emoji', 'image'];
 

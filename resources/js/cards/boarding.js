@@ -1,4 +1,4 @@
-import { bnDigits } from '../bn';
+import * as i18n from '../i18n';
 import { drawCover, fitText, font, footer, footerSquare, H, hash, RED, roundRect, S, shadow, W } from './common';
 
 /** An airline boarding pass: "মন → {place}", with seat, gate and a barcode stub. */
@@ -45,10 +45,10 @@ export default function boarding(ctx, result, { img, host, t }) {
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
     font(ctx, 700, 38);
-    ctx.fillText('✈  বাংলাদেশ ভাইব এয়ার', tx + 48, ty + 62);
+    ctx.fillText(i18n.t('✈  বাংলাদেশ ভাইব এয়ার'), tx + 48, ty + 62);
     ctx.textAlign = 'right';
     font(ctx, 600, 30);
-    ctx.fillText('বোর্ডিং পাস', tx + tw - 48, ty + 62);
+    ctx.fillText(i18n.t('বোর্ডিং পাস'), tx + tw - 48, ty + 62);
 
     // Illustration strip.
     const iy = ty + 150;
@@ -67,19 +67,19 @@ export default function boarding(ctx, result, { img, host, t }) {
         ctx.fillText(text, x, y);
     };
     let y = iy + 440;
-    label('থেকে', tx + 48, y);
-    label('গন্তব্য', tx + tw - 48, y, 'right');
+    label(i18n.t('থেকে'), tx + 48, y);
+    label(i18n.t('গন্তব্য'), tx + tw - 48, y, 'right');
     y += 100;
     ctx.fillStyle = INK;
     ctx.textAlign = 'left';
     font(ctx, 700, 96);
-    ctx.fillText('মন', tx + 48, y);
-    const fromW = ctx.measureText('মন').width;
+    ctx.fillText(i18n.t('মন'), tx + 48, y);
+    const fromW = ctx.measureText(i18n.t('মন')).width;
     ctx.textAlign = 'right';
     ctx.fillStyle = accent;
-    fitText(ctx, loc.name_bn, tw - 96 - fromW - 200, 96, 700);
-    const toW = ctx.measureText(loc.name_bn).width;
-    ctx.fillText(loc.name_bn, tx + tw - 48, y);
+    fitText(ctx, loc.name, tw - 96 - fromW - 200, 96, 700);
+    const toW = ctx.measureText(loc.name).width;
+    ctx.fillText(loc.name, tx + tw - 48, y);
 
     // Flight path between the two.
     const ax = tx + 48 + fromW + 30, bx = tx + tw - 48 - toW - 30, ay = y - 32;
@@ -101,19 +101,19 @@ export default function boarding(ctx, result, { img, host, t }) {
 
     // Passenger.
     y += 110;
-    label('যাত্রী', tx + 48, y);
+    label(i18n.t('যাত্রী'), tx + 48, y);
     y += 92;
     ctx.textAlign = 'left';
     ctx.fillStyle = INK;
-    const passenger = result.name || 'তুমি';
+    const passenger = result.name || i18n.t('তুমি');
     fitText(ctx, passenger, tw - 96, 84, 700);
     ctx.fillText(passenger, tx + 48, y);
 
     // Match / seat / gate.
     y += 90;
     const col = (tw - 96) / 3;
-    const seat = `${bnDigits(1 + (h % 32))}${'ABCDEF'[h % 6]}`;
-    [['ভাইব ম্যাচ', `${bnDigits(result.match_pct)}%`], ['আসন', seat], ['গেট', loc.emoji]].forEach(([k, v], i) => {
+    const seat = `${i18n.num(1 + (h % 32))}${'ABCDEF'[h % 6]}`;
+    [[i18n.t('ভাইব ম্যাচ'), `${i18n.num(result.match_pct)}%`], [i18n.t('আসন'), seat], [i18n.t('গেট'), loc.emoji]].forEach(([k, v], i) => {
         const x = tx + 48 + col * i;
         label(k, x, y);
         ctx.fillStyle = i === 0 ? RED : INK;
@@ -124,11 +124,11 @@ export default function boarding(ctx, result, { img, host, t }) {
 
     // Class = the personality title.
     y += 170;
-    label('ক্লাস', tx + 48, y);
+    label(i18n.t('ক্লাস'), tx + 48, y);
     ctx.fillStyle = INK;
     ctx.textAlign = 'left';
-    fitText(ctx, loc.title_bn, tw - 96, 54, 600);
-    ctx.fillText(loc.title_bn, tx + 48, y + 66);
+    fitText(ctx, loc.title, tw - 96, 54, 600);
+    ctx.fillText(loc.title, tx + 48, y + 66);
 
     // Tear line.
     ctx.strokeStyle = '#d9d2c2';
@@ -202,7 +202,7 @@ export function square(ctx, result, { img, host, t }) {
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
     font(ctx, 700, 34);
-    ctx.fillText('✈  বাংলাদেশ ভাইব এয়ার', tx + 40, ty + 50);
+    ctx.fillText(i18n.t('✈  বাংলাদেশ ভাইব এয়ার'), tx + 40, ty + 50);
 
     const mw = tear - tx; // width of the main part
     const iy = ty + 120;
@@ -223,19 +223,19 @@ export function square(ctx, result, { img, host, t }) {
 
     // Route.
     let y = iy + 280;
-    label('থেকে', L, y);
-    label('গন্তব্য', R, y, 'right');
+    label(i18n.t('থেকে'), L, y);
+    label(i18n.t('গন্তব্য'), R, y, 'right');
     y += 80;
     ctx.fillStyle = INK;
     ctx.textAlign = 'left';
     font(ctx, 700, 78);
-    ctx.fillText('মন', L, y);
-    const fromW = ctx.measureText('মন').width;
+    ctx.fillText(i18n.t('মন'), L, y);
+    const fromW = ctx.measureText(i18n.t('মন')).width;
     ctx.textAlign = 'right';
     ctx.fillStyle = accent;
-    fitText(ctx, loc.name_bn, R - L - fromW - 160, 78, 700);
-    const toW = ctx.measureText(loc.name_bn).width;
-    ctx.fillText(loc.name_bn, R, y);
+    fitText(ctx, loc.name, R - L - fromW - 160, 78, 700);
+    const toW = ctx.measureText(loc.name).width;
+    ctx.fillText(loc.name, R, y);
     const ax = L + fromW + 24, bx = R - toW - 24, ay = y - 26;
     ctx.strokeStyle = INK_2;
     ctx.lineWidth = 3;
@@ -255,17 +255,17 @@ export function square(ctx, result, { img, host, t }) {
 
     // Passenger and match / seat.
     y += 70;
-    label('যাত্রী', L, y);
+    label(i18n.t('যাত্রী'), L, y);
     y += 70;
     ctx.textAlign = 'left';
     ctx.fillStyle = INK;
-    fitText(ctx, result.name || 'তুমি', R - L, 66, 700);
-    ctx.fillText(result.name || 'তুমি', L, y);
+    fitText(ctx, result.name || i18n.t('তুমি'), R - L, 66, 700);
+    ctx.fillText(result.name || i18n.t('তুমি'), L, y);
 
     y += 64;
     const col = (R - L) / 3;
-    const seat = `${bnDigits(1 + (h % 32))}${'ABCDEF'[h % 6]}`;
-    [['ভাইব ম্যাচ', `${bnDigits(result.match_pct)}%`], ['আসন', seat], ['গেট', loc.emoji]].forEach(([k, v], i) => {
+    const seat = `${i18n.num(1 + (h % 32))}${'ABCDEF'[h % 6]}`;
+    [[i18n.t('ভাইব ম্যাচ'), `${i18n.num(result.match_pct)}%`], [i18n.t('আসন'), seat], [i18n.t('গেট'), loc.emoji]].forEach(([k, v], i) => {
         const x = L + col * i;
         label(k, x, y);
         ctx.fillStyle = i === 0 ? RED : INK;
@@ -286,11 +286,11 @@ export function square(ctx, result, { img, host, t }) {
 
     // Stub: class, then a sideways barcode.
     const sx = tear + 36, sw = tx + tw - 36 - sx;
-    label('ক্লাস', sx, ty + 90);
+    label(i18n.t('ক্লাস'), sx, ty + 90);
     ctx.fillStyle = INK;
     ctx.textAlign = 'left';
-    fitText(ctx, loc.title_bn, sw, 34, 600);
-    ctx.fillText(loc.title_bn, sx, ty + 134);
+    fitText(ctx, loc.title, sw, 34, 600);
+    ctx.fillText(loc.title, sx, ty + 134);
 
     let by = ty + 190, seed = h;
     const end = ty + th - 110;

@@ -25,7 +25,7 @@
     <div class="art" style="background: {{ $accent }}22">
         @if ($illustration)
             <img src="{{ $illustration }}" alt="">
-            <div class="flag">🇧🇩 বাংলাদেশ ভাইব পাসপোর্ট</div>
+            <div class="flag">{{ __('🇧🇩 বাংলাদেশ ভাইব পাসপোর্ট') }}</div>
         @else
             <svg viewBox="0 0 400 552"><path d="@include('partials.bd-map-path')" fill="#2f8a5f" stroke="#1f5f42" stroke-width="1.5"/></svg>
         @endif
@@ -34,7 +34,7 @@
         <div class="kicker">{{ $kicker }}</div>
         <div class="name">{{ $name }}</div>
         <div class="title">{{ $title }}</div>
-        <div class="cta">{{ $cta ?? 'তোমার বাংলাদেশ কোথায়? →' }}</div>
+        <div class="cta">{{ $cta ?? __('তোমার বাংলাদেশ কোথায়? →') }}</div>
     </div>
 </div>
 </body>

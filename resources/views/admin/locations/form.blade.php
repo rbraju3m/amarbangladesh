@@ -26,6 +26,16 @@
                 <label class="sm:col-span-2"><span class="field-label">Description</span><textarea name="description_bn" rows="4" required class="input">{{ old('description_bn', $location->description_bn) }}</textarea></label>
                 <label class="sm:col-span-2"><span class="field-label">"Why" ending</span><input name="reason_tail_bn" value="{{ old('reason_tail_bn', $location->reason_tail_bn) }}" required class="input">
                     <span class="mt-1 block text-xs text-ink-2">Follows the player's two answers, e.g. "… — এমন মিশেল সিলেট ছাড়া আর কোথায় মেলে?"</span></label>
+                <details class="rounded-xl border border-line p-3 sm:col-span-2" @if ($location->title_en) open @endif>
+                    <summary class="cursor-pointer text-sm font-semibold">English <span class="font-medium text-ink-2">— shown on /en; empty fields fall back to Bangla</span></summary>
+                    <div class="mt-3 grid gap-3 sm:grid-cols-2" lang="en">
+                        <label><span class="field-label">Personality title</span><input name="title_en" value="{{ old('title_en', $location->title_en) }}" class="input"></label>
+                        <label class="sm:col-span-2"><span class="field-label">Tagline</span><input name="tagline_en" value="{{ old('tagline_en', $location->tagline_en) }}" class="input"></label>
+                        <label class="sm:col-span-2"><span class="field-label">Description</span><textarea name="description_en" rows="4" class="input">{{ old('description_en', $location->description_en) }}</textarea></label>
+                        <label class="sm:col-span-2"><span class="field-label">"Why" ending</span><input name="reason_tail_en" value="{{ old('reason_tail_en', $location->reason_tail_en) }}" class="input"></label>
+                        <label class="sm:col-span-2"><span class="field-label">Badges <span class="normal-case">one per line</span></span><textarea name="badges_en" rows="4" class="input">{{ old('badges_en', implode("\n", $location->badges_en ?? [])) }}</textarea></label>
+                    </div>
+                </details>
                 <label class="sm:col-span-2"><span class="field-label">Badges <span class="normal-case">one per line, 3–4</span></span><textarea name="badges" rows="4" required class="input">{{ old('badges', implode("\n", $location->badges ?? [])) }}</textarea></label>
             </section>
 

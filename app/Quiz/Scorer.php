@@ -74,6 +74,8 @@ final class Scorer
         $slugs = array_keys($ranking);
         [$top, $second] = [$slugs[0], $slugs[1] ?? $slugs[0]];
 
+        $explaining = $this->explainingOptions($answers, $top);
+
         return new ScoreResult(
             locationSlug: $top,
             matchPct: $this->displayPct($ranking[$top]),
@@ -81,8 +83,9 @@ final class Scorer
             secondPct: min($this->displayPct($ranking[$second]), $this->displayPct($ranking[$top]) - 1),
             vector: array_combine($this->config->traitKeys, $vector),
             traitScores: $this->traitScores($vector),
-            reasons: $this->reasons($answers, $top),
+            reasons: array_column($explaining, 'reason'),
             ranking: $ranking,
+            reasonsEn: array_map(fn ($o) => $o['reason_en'] ?? $o['reason'], $explaining),
         );
     }
 
@@ -213,20 +216,46 @@ final class Scorer
     }
 
     /**
-     * The two answers that pulled hardest toward the winning location.
+     * English reason phrases for a stored result: results from before the English content kept only
+     * the Bangla sentence, so English pages rebuild it from the stored answers.
      *
+     * @param  array<int|string>  $optionIds
      * @return list<string>
      */
-    private function reasons(array $answers, string $slug): array
+    public function englishReasons(array $optionIds, string $slug): array
+    {
+        if (! isset($this->config->locations[$slug])) {
+            return [];
+        }
+        $answers = [];
+        foreach ($this->config->questions as $questionId => $options) {
+            foreach ($optionIds as $id) {
+                if (isset($options[$id])) {
+                    $answers[$questionId] = $id;
+                }
+            }
+        }
+
+        return array_map(fn ($o) => $o['reason_en'] ?? $o['reason'], $this->explainingOptions($answers, $slug));
+    }
+
+    /**
+     * The two answers that pulled hardest toward the winning location (one per reason text).
+     *
+     * @return list<array> config options
+     */
+    private function explainingOptions(array $answers, string $slug): array
     {
         $pulls = [];
+        $options = [];
 
         foreach ($answers as $questionId => $optionId) {
             $option = $this->config->questions[$questionId][$optionId];
             $pulls[$option['reason']] = $this->pull($option, $slug);
+            $options[$option['reason']] = $option;
         }
         arsort($pulls);
 
-        return array_slice(array_keys($pulls), 0, 2);
+        return array_map(fn ($reason) => $options[$reason], array_slice(array_keys($pulls), 0, 2));
     }
 }

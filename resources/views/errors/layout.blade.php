@@ -1,11 +1,11 @@
 {{-- Self-contained (inline CSS, no Vite, no DB) so it still renders when the app is broken or down. --}}
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="{{ \App\Support\Lang::current() }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="robots" content="noindex">
-    <title>@yield('title') · তোমার বাংলাদেশ কোথায়?</title>
+    <title>@yield('title') · {{ __('তোমার বাংলাদেশ কোথায়?') }}</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <style>
         :root { --paper: #fbf8f1; --card: #fff; --ink: #14211b; --ink-2: #4b5a52; --line: #e4ddcc; --green: #006a4e; --red: #e03a3e; color-scheme: light; }
@@ -32,7 +32,7 @@
         <p>@yield('message')</p>
         @hasSection('noLink')
         @else
-            <a href="/">কুইজটা খেলো →</a>
+            <a href="{{ \App\Support\Lang::path('/') }}">{{ __('কুইজটা খেলো →') }}</a>
         @endif
     </main>
 </body>

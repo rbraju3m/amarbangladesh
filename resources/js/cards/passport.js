@@ -1,4 +1,4 @@
-import { bnDigits, possessive } from '../bn';
+import * as i18n from '../i18n';
 import { drawCover, fitText, font, footer, footerSquare, H, highlight, RED, roundRect, S, shadow, stamp, W } from './common';
 import { fillBackground } from './themes';
 
@@ -40,14 +40,14 @@ export default function passport(ctx, result, { img, host, t }) {
     ctx.fillStyle = INK;
     font(ctx, 600, 32);
     ctx.textBaseline = 'middle';
-    ctx.fillText('🇧🇩  বাংলাদেশ ভাইব পাসপোর্ট', px + 88, py + 94);
+    ctx.fillText(i18n.t('🇧🇩  বাংলাদেশ ভাইব পাসপোর্ট'), px + 88, py + 94);
 
     // Owner line: a named card leads with the name as a highlighted headline.
     let y;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'alphabetic';
     if (result.name) {
-        const who = possessive(result.name);
+        const who = i18n.possessive(result.name);
         y = py + 710;
         fitText(ctx, who, pw - 180, 120, 700);
         highlight(ctx, who, W / 2, y, accent + '38');
@@ -56,26 +56,26 @@ export default function passport(ctx, result, { img, host, t }) {
         y += 66;
         ctx.fillStyle = INK_2;
         font(ctx, 500, 42);
-        ctx.fillText('বাংলাদেশ হলো', W / 2, y);
+        ctx.fillText(i18n.t('বাংলাদেশ হলো'), W / 2, y);
         y += 160;
     } else {
         y = py + 760;
         ctx.fillStyle = INK_2;
         font(ctx, 500, 46);
-        ctx.fillText('আমার বাংলাদেশ', W / 2, y);
+        ctx.fillText(i18n.myBangladesh(), W / 2, y);
         y += 170;
     }
 
     // Location name.
     ctx.fillStyle = accent;
-    fitText(ctx, `${loc.name_bn} ${loc.emoji}`, pw - 120, 168, 700);
-    ctx.fillText(`${loc.name_bn} ${loc.emoji}`, W / 2, y);
+    fitText(ctx, `${loc.name} ${loc.emoji}`, pw - 120, 168, 700);
+    ctx.fillText(`${loc.name} ${loc.emoji}`, W / 2, y);
 
     // Personality title.
     y += 120;
     ctx.fillStyle = INK;
-    fitText(ctx, loc.title_bn, pw - 140, 62, 600);
-    ctx.fillText(loc.title_bn, W / 2, y);
+    fitText(ctx, loc.title, pw - 140, 62, 600);
+    ctx.fillText(loc.title, W / 2, y);
 
     // Match stamp.
     y += 175;
@@ -94,9 +94,9 @@ export default function passport(ctx, result, { img, host, t }) {
     ctx.fillStyle = RED;
     ctx.textAlign = 'center';
     font(ctx, 700, 92);
-    ctx.fillText(`${bnDigits(result.match_pct)}%`, 0, 22);
+    ctx.fillText(`${i18n.num(result.match_pct)}%`, 0, 22);
     font(ctx, 600, 30);
-    ctx.fillText('ভাইব ম্যাচ', 0, 70);
+    ctx.fillText(i18n.t('ভাইব ম্যাচ'), 0, 70);
     ctx.restore();
 
     // Badge stamps, two rows.
@@ -147,7 +147,7 @@ export function square(ctx, result, { img, host, t }) {
     font(ctx, 600, 28);
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText('🇧🇩  ভাইব পাসপোর্ট', px + 76, py + 83);
+    ctx.fillText(i18n.t('🇧🇩  ভাইব পাসপোর্ট'), px + 76, py + 83);
 
     // Details column.
     const cx = px + 28 + iw + (pw - iw - 56) / 2;
@@ -156,7 +156,7 @@ export function square(ctx, result, { img, host, t }) {
     ctx.textBaseline = 'alphabetic';
     let y;
     if (result.name) {
-        const who = possessive(result.name);
+        const who = i18n.possessive(result.name);
         y = 200;
         fitText(ctx, who, cw - 40, 88, 700);
         highlight(ctx, who, cx, y, accent + '38');
@@ -165,21 +165,21 @@ export function square(ctx, result, { img, host, t }) {
         y += 54;
         ctx.fillStyle = INK_2;
         font(ctx, 500, 36);
-        ctx.fillText('বাংলাদেশ হলো', cx, y);
+        ctx.fillText(i18n.t('বাংলাদেশ হলো'), cx, y);
     } else {
         y = 230;
         ctx.fillStyle = INK_2;
         font(ctx, 500, 42);
-        ctx.fillText('আমার বাংলাদেশ', cx, y);
+        ctx.fillText(i18n.myBangladesh(), cx, y);
     }
     y += 140;
     ctx.fillStyle = accent;
-    fitText(ctx, `${loc.name_bn} ${loc.emoji}`, cw, 124, 700);
-    ctx.fillText(`${loc.name_bn} ${loc.emoji}`, cx, y);
+    fitText(ctx, `${loc.name} ${loc.emoji}`, cw, 124, 700);
+    ctx.fillText(`${loc.name} ${loc.emoji}`, cx, y);
     y += 76;
     ctx.fillStyle = INK;
-    fitText(ctx, loc.title_bn, cw, 44, 600);
-    ctx.fillText(loc.title_bn, cx, y);
+    fitText(ctx, loc.title, cw, 44, 600);
+    ctx.fillText(loc.title, cx, y);
 
     // Match stamp.
     y += 160;
@@ -197,9 +197,9 @@ export function square(ctx, result, { img, host, t }) {
     ctx.stroke();
     ctx.fillStyle = RED;
     font(ctx, 700, 76);
-    ctx.fillText(`${bnDigits(result.match_pct)}%`, 0, 18);
+    ctx.fillText(`${i18n.num(result.match_pct)}%`, 0, 18);
     font(ctx, 600, 26);
-    ctx.fillText('ভাইব ম্যাচ', 0, 58);
+    ctx.fillText(i18n.t('ভাইব ম্যাচ'), 0, 58);
     ctx.restore();
 
     // Two badge stamps.

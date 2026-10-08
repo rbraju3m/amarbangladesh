@@ -336,6 +336,37 @@
         @apply flex items-center gap-3 rounded-3xl bg-flag-green p-4 text-white shadow-[0_10px_30px_-12px_rgb(0_106_78/0.6)] transition active:scale-[0.98];
     }
 
+    /* On/off switch drawn after a visually hidden checkbox (.peer). */
+    .switch {
+        @apply relative h-7 w-12 shrink-0 rounded-full bg-line transition;
+    }
+
+    .switch::after {
+        content: '';
+        @apply absolute top-1 left-1 size-5 rounded-full bg-white shadow transition;
+    }
+
+    .peer:checked + .switch {
+        @apply bg-flag-green;
+    }
+
+    .peer:checked + .switch::after {
+        @apply translate-x-5;
+    }
+
+    .peer:focus-visible + .switch {
+        outline: 3px solid var(--accent);
+        outline-offset: 3px;
+    }
+
+    .lang-switch {
+        @apply inline-flex min-h-8 items-center rounded-full border border-line bg-card px-3 text-sm font-semibold text-ink-2 transition hover:border-ink-2 hover:text-ink;
+    }
+
+    .login-btn {
+        @apply flex min-h-13 w-full items-center justify-center gap-2.5 rounded-2xl border-2 border-line bg-card px-4 text-base font-semibold transition active:scale-[0.98];
+    }
+
     .tab-link {
         @apply flex flex-col items-center gap-0.5 py-2 text-[0.7rem] font-semibold text-ink-2;
     }

@@ -1,3 +1,5 @@
+import { withLang } from './i18n';
+
 /**
  * A few community posts embedded in the quiz page (landing and result). Fetched when the block
  * nears the viewport, so the quiz's first paint and cached HTML are untouched.
@@ -9,7 +11,7 @@ export default function communityPreview(limit = 3) {
         init() {
             const load = async () => {
                 try {
-                    const res = await fetch(`/api/feed?limit=${limit}&compact=1`, { headers: { Accept: 'application/json' } });
+                    const res = await fetch(withLang(`/api/feed?limit=${limit}&compact=1`), { headers: { Accept: 'application/json' } });
                     const data = await res.json();
                     this.html = data.html;
                     this.count = data.count;

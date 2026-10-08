@@ -2,10 +2,10 @@
     $siteTitle = $siteName ?? 'তোমার বাংলাদেশ কোথায়?';
     $ogTitle = $ogTitle ?? $siteTitle.' 🇧🇩';
     $ogDescription = $ogDescription ?? 'বাংলাদেশের কোন জায়গাটা তোমার personality-এর সাথে সবচেয়ে বেশি মেলে? মাত্র ১ মিনিটে খুঁজে বের করো।';
-    $ogImage = $ogImage ?? asset('images/og/default.png');
+    $ogImage = $ogImage ?? asset(\App\Support\Lang::isEnglish() && file_exists(public_path('images/og/en/default.png')) ? 'images/og/en/default.png' : 'images/og/default.png');
 @endphp
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="{{ \App\Support\Lang::current() }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -15,6 +15,9 @@
     <meta name="theme-color" content="#0f1613" media="(prefers-color-scheme: dark)">
     @isset($noindex)<meta name="robots" content="noindex, follow">@endisset
     <link rel="canonical" href="{{ $canonical ?? url()->current() }}">
+    <link rel="alternate" hreflang="bn" href="{{ \App\Support\Lang::switchUrl('bn') }}">
+    <link rel="alternate" hreflang="en" href="{{ \App\Support\Lang::switchUrl('en') }}">
+    <link rel="alternate" hreflang="x-default" href="{{ \App\Support\Lang::switchUrl('bn') }}">
     <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="48x48">
     <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
     <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
@@ -22,7 +25,7 @@
 
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="{{ $siteTitle }}">
-    <meta property="og:locale" content="bn_BD">
+    <meta property="og:locale" content="{{ \App\Support\Lang::isEnglish() ? 'en_US' : 'bn_BD' }}">
     <meta property="og:url" content="{{ $canonical ?? url()->current() }}">
     <meta property="og:title" content="{{ $ogTitle }}">
     <meta property="og:description" content="{{ $ogDescription }}">

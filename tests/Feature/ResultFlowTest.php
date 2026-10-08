@@ -57,7 +57,7 @@ class ResultFlowTest extends TestCase
         $data = $this->play();
 
         $this->assertSame(40, strlen($data['owner_token']));
-        $this->assertNotEmpty($data['result']['location']['name_bn']);
+        $this->assertNotEmpty($data['result']['location']['name']);
         $this->assertCount(5, $data['result']['traits']);
         $this->assertStringEndsWith('/r/'.$data['result']['code'], $data['result']['url']);
         $this->assertDatabaseHas('analytics_events', ['name' => 'quiz_completed']);

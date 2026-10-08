@@ -4,6 +4,7 @@ namespace App\Community;
 
 use App\Models\Area;
 use App\Models\Category;
+use App\Support\Lang;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -12,27 +13,41 @@ use Illuminate\Support\Facades\Cache;
  */
 final class Taxonomy
 {
-    /** @return array<string, array{id: int, slug: string, name: string, emoji: string}> by slug */
+    /** @return array<string, array{id: int, slug: string, name: string, emoji: string}> by slug, names in the page language */
     public static function categories(): array
     {
-        return Cache::rememberForever('community.categories', fn () => Category::where('is_active', true)->orderBy('sort_order')->get()
-            ->mapWithKeys(fn (Category $c) => [$c->slug => ['id' => $c->id, 'slug' => $c->slug, 'name' => $c->name_bn, 'emoji' => $c->emoji]])
-            ->all());
+        return self::localize(Cache::rememberForever('community.categories.v2', fn () => Category::where('is_active', true)->orderBy('sort_order')->get()
+            ->mapWithKeys(fn (Category $c) => [$c->slug => ['id' => $c->id, 'slug' => $c->slug, 'name_bn' => $c->name_bn, 'name_en' => $c->name_en ?: $c->name_bn, 'emoji' => $c->emoji]])
+            ->all()));
     }
 
     /** @return array<string, array{id: int, slug: string, name: string, division: ?string}> by slug, divisions first */
     public static function areas(): array
     {
-        return Cache::rememberForever('community.areas', function () {
+        return self::localize(Cache::rememberForever('community.areas.v2', function () {
             $all = Area::orderBy('sort_order')->orderBy('name_bn')->get();
             $divisions = $all->where('type', 'division')->keyBy('id');
 
             return $all->sortBy(fn (Area $a) => $a->type === 'division' ? 0 : 1)
                 ->mapWithKeys(fn (Area $a) => [$a->slug => [
-                    'id' => $a->id, 'slug' => $a->slug, 'name' => $a->name_bn, 'type' => $a->type,
-                    'division' => $divisions[$a->parent_id]->name_bn ?? null,
+                    'id' => $a->id, 'slug' => $a->slug, 'type' => $a->type, 'name_bn' => $a->name_bn, 'name_en' => $a->name_en,
+                    'division_bn' => $divisions[$a->parent_id]->name_bn ?? null, 'division_en' => $divisions[$a->parent_id]->name_en ?? null,
                 ]])->all();
-        });
+        }));
+    }
+
+    /** Adds `name` (and `division`) in the page language to cached rows that hold both. */
+    private static function localize(array $rows): array
+    {
+        $en = Lang::isEnglish();
+        foreach ($rows as &$row) {
+            $row['name'] = $en ? $row['name_en'] : $row['name_bn'];
+            if (array_key_exists('division_bn', $row)) {
+                $row['division'] = $en ? $row['division_en'] : $row['division_bn'];
+            }
+        }
+
+        return $rows;
     }
 
     /** Districts grouped under their division's name, for a <select> with optgroups. */
@@ -50,7 +65,7 @@ final class Taxonomy
 
     public static function forget(): void
     {
-        Cache::forget('community.categories');
-        Cache::forget('community.areas');
+        Cache::forget('community.categories.v2');
+        Cache::forget('community.areas.v2');
     }
 }

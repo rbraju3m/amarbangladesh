@@ -10,7 +10,7 @@ class QuizResult extends Model
 {
     protected $fillable = [
         'code', 'visitor_id', 'location_id', 'match_pct', 'second_location_id', 'second_match_pct', 'trait_vector',
-        'trait_scores', 'answer_ids', 'reason_bn', 'display_name', 'owner_token_hash', 'referrer_result_id', 'friend_match_pct', 'scoring_version',
+        'trait_scores', 'answer_ids', 'reason_bn', 'reason_en', 'display_name', 'owner_token_hash', 'referrer_result_id', 'friend_match_pct', 'scoring_version',
     ];
 
     protected $hidden = ['owner_token_hash', 'visitor_id'];

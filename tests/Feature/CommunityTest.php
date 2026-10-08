@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Community\Accounts;
 use App\Community\Moderation;
 use App\Models\Answer;
 use App\Models\Area;
@@ -11,6 +12,7 @@ use App\Models\User;
 use Database\Seeders\QuizContentSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Routing\Middleware\ThrottleRequests;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class CommunityTest extends TestCase
@@ -19,12 +21,12 @@ class CommunityTest extends TestCase
 
     protected $seeder = QuizContentSeeder::class;
 
-    /** @return array{0: Member, 1: string} */
+    /** A signed-in member and their browser token. @return array{0: Member, 1: string} */
     private function member(?string $name = 'রাশেদ'): array
     {
-        $data = $this->postJson('/api/members', ['name' => $name])->assertCreated()->json();
+        $member = Accounts::signIn('email', Str::random(10).'@example.test', $name);
 
-        return [Member::where('code', $data['member']['code'])->first(), $data['token']];
+        return [$member, $member->issueToken()];
     }
 
     private function as(string $token): static
@@ -67,10 +69,17 @@ class CommunityTest extends TestCase
         $this->assertStringContainsString('communityPreview', $html);
     }
 
-    public function test_writing_needs_a_member_token(): void
+    public function test_writing_needs_a_signed_in_account(): void
     {
-        $this->postJson('/api/posts', ['title' => 'কোনো টোকেন ছাড়া প্রশ্ন করা যায়?'])->assertUnauthorized();
+        $this->postJson('/api/posts', ['title' => 'কোনো টোকেন ছাড়া প্রশ্ন করা যায়?'])->assertUnauthorized()->assertJson(['login' => true]);
         $this->withHeader('X-Member-Token', str_repeat('x', 40))->postJson('/api/posts', ['title' => 'ভুল টোকেন দিয়ে প্রশ্ন করা যায়?'])->assertUnauthorized();
+
+        // A device-only member from before sign-in existed can read its identity but not write.
+        $legacy = Member::create(['code' => 'legacy01', 'name' => 'পুরনো']);
+        $token = $legacy->issueToken();
+        $this->as($token)->getJson('/api/members/me')->assertOk()->assertJson(['member' => ['account' => false]]);
+        $this->as($token)->postJson('/api/posts', ['title' => 'লগইন ছাড়া পুরনো পরিচয়ে প্রশ্ন?'])->assertUnauthorized();
+        $this->as($token)->postJson('/api/helpful', ['type' => 'post', 'id' => 1])->assertUnauthorized();
     }
 
     public function test_a_member_asks_with_optional_category_and_area_and_it_shows_in_the_feed(): void
@@ -245,7 +254,7 @@ class CommunityTest extends TestCase
             Post::create(['member_id' => $member->id, 'title' => "পরীক্ষার প্রশ্ন নম্বর {$i} এখানে"]);
         }
 
-        $this->get('/feed')->assertSee('পরীক্ষার প্রশ্ন নম্বর 20 এখানে')->assertDontSee('পরীক্ষার প্রশ্ন নম্বর 5 এখানে')->assertSee('আরও দেখো');
+        $this->get('/feed')->assertSee('পরীক্ষার প্রশ্ন নম্বর 20 এখানে')->assertDontSee('পরীক্ষার প্রশ্ন নম্বর 5 এখানে')->assertSee('আরও দেখুন');
 
         $first = $this->getJson('/api/feed?limit=15')->assertOk()->json();
         $this->assertSame(15, $first['count']);
@@ -265,6 +274,42 @@ class CommunityTest extends TestCase
 
         $this->as($token)->getJson('/api/members/me')->assertJson(['member' => ['code' => $member->code, 'name' => 'রাশেদ']]);
         $this->as($token)->patchJson('/api/members/me', ['name' => '<b>রাশেদ খান</b>'])->assertJson(['member' => ['name' => 'রাশেদ খান']]);
-        $this->assertArrayNotHasKey('token_hash', $member->fresh()->toArray());
+        $this->assertArrayNotHasKey('password', $member->fresh()->toArray());
+    }
+
+    public function test_anonymous_posts_and_answers_never_reveal_the_author_publicly(): void
+    {
+        [$asker, $askerToken] = $this->member('গোপন আসিফ');
+        $post = $this->ask($askerToken, ['anonymous' => '1', 'category' => 'health']);
+        [$helper, $helperToken] = $this->member('গোপন নাদিয়া');
+        $answerHtml = $this->as($helperToken)->postJson("/api/posts/{$post->id}/answers", ['body' => 'বেনামে একটা উত্তর দিচ্ছি।', 'anonymous' => true])->json('html');
+        Moderation::toggleHelpful($asker, Answer::first());
+
+        $this->assertTrue($post->is_anonymous);
+        $pages = [
+            $this->get($post->url())->assertOk()->assertSee('বেনামী')->getContent(),
+            $this->get('/feed')->assertOk()->getContent(),
+            $this->getJson('/api/feed')->json('html'),
+            $answerHtml,
+        ];
+        foreach ($pages as $html) {
+            foreach ([$asker, $helper] as $m) {
+                $this->assertStringNotContainsString($m->code, $html);
+                $this->assertStringNotContainsString($m->name, $html);
+            }
+        }
+
+        // Profiles leave anonymous items out, counts included.
+        $this->get("/u/{$asker->code}")->assertOk()->assertDontSee($post->title);
+        $this->get("/u/{$helper->code}")->assertOk()->assertDontSee('বেনামে একটা উত্তর দিচ্ছি।');
+
+        // The author still gets owner controls through /api/mine.
+        $this->as($askerToken)->postJson('/api/mine', ['items' => ["post:{$post->id}", 'answer:'.Answer::first()->id]])->assertExactJson(['mine' => ["post:{$post->id}"]]);
+        $this->as($helperToken)->postJson('/api/mine', ['items' => ["post:{$post->id}", 'answer:'.Answer::first()->id]])->assertExactJson(['mine' => ['answer:'.Answer::first()->id]]);
+        $this->flushHeaders()->postJson('/api/mine', ['items' => ["post:{$post->id}"]])->assertUnauthorized();
+
+        // Admins see who wrote it.
+        $this->actingAs(User::factory()->create());
+        $this->get('/admin/community?show=all')->assertOk()->assertSee('গোপন আসিফ')->assertSee('anonymous');
     }
 }

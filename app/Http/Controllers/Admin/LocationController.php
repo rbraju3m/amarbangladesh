@@ -45,6 +45,11 @@ class LocationController extends Controller
             'description_bn' => ['required', 'string', 'max:2000'],
             'reason_tail_bn' => ['required', 'string', 'max:255'],
             'badges' => ['required', 'string', 'max:500'],
+            'title_en' => ['nullable', 'string', 'max:100'],
+            'tagline_en' => ['nullable', 'string', 'max:255'],
+            'description_en' => ['nullable', 'string', 'max:2000'],
+            'reason_tail_en' => ['nullable', 'string', 'max:255'],
+            'badges_en' => ['nullable', 'string', 'max:500'],
             'accent_color' => ['required', 'regex:/^#[0-9a-fA-F]{6}$/'],
             'illustration' => ['nullable', 'string', 'max:255'],
             'og_image' => ['nullable', 'string', 'max:255'],
@@ -53,7 +58,8 @@ class LocationController extends Controller
             'profile.*' => ['required', 'integer', 'between:0,10'],
         ]);
 
-        $data['badges'] = array_values(array_filter(array_map('trim', preg_split('/\R/', $data['badges']))));
+        $data['badges'] = array_values(array_filter(array_map('trim', preg_split('/\R/u', $data['badges']))));
+        $data['badges_en'] = array_values(array_filter(array_map('trim', preg_split('/\R/u', (string) ($data['badges_en'] ?? ''))))) ?: null;
         $data['profile'] = array_map('intval', array_intersect_key($data['profile'], array_flip($traitKeys)));
         $data['is_active'] = $request->boolean('is_active');
 

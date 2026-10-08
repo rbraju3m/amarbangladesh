@@ -49,6 +49,7 @@ class ResultController extends Controller
             'trait_scores' => $score->traitScores,
             'answer_ids' => array_map('intval', $data['answers']),
             'reason_bn' => implode(' আর ', $score->reasons).' — '.$location->reason_tail_bn,
+            'reason_en' => ResultPresenter::englishReason($score->reasonsEn, $location->reason_tail_en ?: $location->reason_tail_bn),
             'owner_token_hash' => hash('sha256', $token),
             'referrer_result_id' => $referrer?->id,
             'friend_match_pct' => $referrer ? Scorer::friendMatch($referrer->trait_vector, $score->vector, $referrer->location_id === $location->id) : null,

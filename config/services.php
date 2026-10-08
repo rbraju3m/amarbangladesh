@@ -35,4 +35,27 @@ return [
         ],
     ],
 
+    // Community sign-in. A method appears on the site only when its keys are set.
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => '/auth/google/callback',
+    ],
+
+    'facebook' => [
+        'client_id' => env('FACEBOOK_CLIENT_ID'),
+        'client_secret' => env('FACEBOOK_CLIENT_SECRET'),
+        'redirect' => '/auth/facebook/callback',
+    ],
+
+    // Phone sign-in codes. "log" writes the message to the log (local development);
+    // "bulksmsbd" sends through bulksmsbd.net. Empty disables phone sign-in.
+    'sms' => [
+        'driver' => env('SMS_DRIVER', env('APP_ENV') === 'production' ? null : 'log'),
+        'bulksmsbd' => [
+            'api_key' => env('BULKSMSBD_API_KEY'),
+            'sender_id' => env('BULKSMSBD_SENDER_ID'),
+        ],
+    ],
+
 ];

@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Site\Community;
 use App\Community\Feed;
 use App\Community\Taxonomy;
 use App\Http\Controllers\Controller;
-use App\Models\Answer;
 use App\Models\Member;
 use App\Models\Post;
 use Illuminate\Http\JsonResponse;
@@ -37,7 +36,7 @@ class PageController extends Controller
         return response()->json([
             'html' => view('community.partials.post-list', ['posts' => $posts, 'compact' => $request->boolean('compact')])->render(),
             'count' => $posts->count(),
-            'next' => $posts->nextPageUrl() ? route('feed', $feed->query(['cursor' => $posts->nextCursor()->encode()]), false) : null,
+            'next' => $posts->nextPageUrl() ? lroute('feed', $feed->query(['cursor' => $posts->nextCursor()->encode()])) : null,
         ]);
     }
 
@@ -73,21 +72,22 @@ class PageController extends Controller
         ]);
     }
 
+    /** A member's public page. Anonymous posts and answers are left out entirely, counts included. */
     public function member(Member $member): View
     {
-        $posts = $member->posts()->published()->with(['member:id,code,name', 'category', 'area'])->latest('id')->limit(30)->get();
-        $answers = $member->answers()->published()->whereHas('post', fn ($q) => $q->published())
-            ->with('post:id,title,type,accepted_answer_id')->latest('id')->limit(30)->get();
+        $posts = fn () => $member->posts()->published()->where('is_anonymous', false);
+        $answers = fn () => $member->answers()->published()->where('is_anonymous', false);
 
         return view('community.member', [
             'member' => $member,
-            'posts' => $posts,
-            'answers' => $answers,
+            'posts' => $posts()->with(['member:id,code,name', 'category', 'area'])->latest('id')->limit(30)->get(),
+            'answers' => $answers()->whereHas('post', fn ($q) => $q->published())
+                ->with('post:id,title,type,accepted_answer_id')->latest('id')->limit(30)->get(),
             'stats' => [
-                'posts' => $member->posts()->published()->count(),
-                'answers' => $member->answers()->published()->count(),
-                'helpful' => (int) $member->posts()->published()->sum('helpful_count') + (int) $member->answers()->published()->sum('helpful_count'),
-                'solved' => Post::published()->whereIn('accepted_answer_id', Answer::select('id')->where('member_id', $member->id))->count(),
+                'posts' => $posts()->count(),
+                'answers' => $answers()->count(),
+                'helpful' => (int) $posts()->sum('helpful_count') + (int) $answers()->sum('helpful_count'),
+                'solved' => Post::published()->whereIn('accepted_answer_id', $answers()->select('id'))->count(),
             ],
         ]);
     }
@@ -96,5 +96,17 @@ class PageController extends Controller
     public function me(): View
     {
         return view('community.me');
+    }
+
+    /** Google/Facebook land here with the token in the #fragment; the page stores it and returns. */
+    public function authDone(): View
+    {
+        return view('community.auth-done');
+    }
+
+    /** The link from the password-reset email; the token is in the #fragment. */
+    public function resetPassword(): View
+    {
+        return view('community.reset-password');
     }
 }

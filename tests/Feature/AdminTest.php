@@ -73,6 +73,25 @@ class AdminTest extends TestCase
         $this->assertSame(3, $location->profile['nature']);
     }
 
+    public function test_english_content_edited_in_admin_shows_on_english_pages(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $location = Location::first();
+
+        $this->put("/admin/locations/{$location->slug}", [
+            ...$location->only('name_bn', 'name_en', 'emoji', 'title_bn', 'tagline_bn', 'description_bn', 'reason_tail_bn', 'accent_color', 'sort_order'),
+            'badges' => implode("\n", $location->badges),
+            'title_en' => 'An edited English title',
+            'badges_en' => "One\nTwo",
+            'profile' => $location->profile,
+            'is_active' => 1,
+        ])->assertRedirect();
+
+        $this->assertSame(['One', 'Two'], $location->fresh()->badges_en);
+        $this->get('/en')->assertSee('"title":"An edited English title"', false);
+        $this->get('/')->assertSee('"title":"'.$location->title_bn.'"', false)->assertDontSee('An edited English title');
+    }
+
     public function test_login_page_shows_a_clear_error_for_wrong_credentials(): void
     {
         $user = User::factory()->create(['password' => 'secret-pass']);

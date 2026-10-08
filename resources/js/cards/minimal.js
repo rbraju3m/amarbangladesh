@@ -1,4 +1,4 @@
-import { bnDigits, possessive } from '../bn';
+import * as i18n from '../i18n';
 import { fitText, font, footer, footerSquare, H, S, W } from './common';
 import { fillBackground } from './themes';
 
@@ -27,10 +27,10 @@ export default function minimal(ctx, result, { host, t }) {
     // Match number.
     ctx.fillStyle = INK;
     font(ctx, 700, 150);
-    ctx.fillText(`${bnDigits(result.match_pct)}%`, x, 330);
+    ctx.fillText(`${i18n.num(result.match_pct)}%`, x, 330);
     ctx.fillStyle = INK_2;
     font(ctx, 500, 40);
-    ctx.fillText('ভাইব ম্যাচ', x, 400);
+    ctx.fillText(i18n.t('ভাইব ম্যাচ'), x, 400);
 
     // Who + place.
     let y = 720;
@@ -38,24 +38,24 @@ export default function minimal(ctx, result, { host, t }) {
     font(ctx, 500, 52);
     if (result.name) {
         ctx.fillStyle = INK;
-        fitText(ctx, possessive(result.name), W - 2 * x, 96, 700);
-        ctx.fillText(possessive(result.name), x, y);
+        fitText(ctx, i18n.possessive(result.name), W - 2 * x, 96, 700);
+        ctx.fillText(i18n.possessive(result.name), x, y);
         y += 74;
         ctx.fillStyle = INK_2;
         font(ctx, 500, 48);
-        ctx.fillText('বাংলাদেশ হলো', x, y);
+        ctx.fillText(i18n.t('বাংলাদেশ হলো'), x, y);
     } else {
-        ctx.fillText('আমার বাংলাদেশ হলো', x, y + 40);
+        ctx.fillText(i18n.t('আমার বাংলাদেশ হলো'), x, y + 40);
     }
     y += 250;
     ctx.fillStyle = accent;
-    fitText(ctx, loc.name_bn, W - 2 * x, 250, 700);
-    ctx.fillText(loc.name_bn, x, y);
+    fitText(ctx, loc.name, W - 2 * x, 250, 700);
+    ctx.fillText(loc.name, x, y);
 
     y += 100;
     ctx.fillStyle = INK;
-    fitText(ctx, loc.title_bn, W - 2 * x, 60, 600);
-    ctx.fillText(loc.title_bn, x, y);
+    fitText(ctx, loc.title, W - 2 * x, 60, 600);
+    ctx.fillText(loc.title, x, y);
 
     // Rule.
     y += 70;
@@ -71,7 +71,7 @@ export default function minimal(ctx, result, { host, t }) {
         ctx.textAlign = 'right';
         ctx.fillStyle = INK_2;
         font(ctx, 500, 38);
-        ctx.fillText(`${bnDigits(t.pct)}%`, W - x, y);
+        ctx.fillText(`${i18n.num(t.pct)}%`, W - x, y);
         ctx.textAlign = 'left';
         ctx.fillStyle = accent + '2e';
         ctx.fillRect(x, y + 26, W - 2 * x, 14);
@@ -105,34 +105,34 @@ export function square(ctx, result, { host, t }) {
     ctx.textBaseline = 'alphabetic';
     ctx.fillStyle = INK;
     font(ctx, 700, 120);
-    ctx.fillText(`${bnDigits(result.match_pct)}%`, x, 200);
+    ctx.fillText(`${i18n.num(result.match_pct)}%`, x, 200);
     ctx.fillStyle = INK_2;
     font(ctx, 500, 36);
-    ctx.fillText('ভাইব ম্যাচ', x, 258);
+    ctx.fillText(i18n.t('ভাইব ম্যাচ'), x, 258);
 
     let y = 430;
     if (result.name) {
         ctx.fillStyle = INK;
-        fitText(ctx, possessive(result.name), S - 2 * x, 76, 700);
-        ctx.fillText(possessive(result.name), x, y);
+        fitText(ctx, i18n.possessive(result.name), S - 2 * x, 76, 700);
+        ctx.fillText(i18n.possessive(result.name), x, y);
         y += 56;
         ctx.fillStyle = INK_2;
         font(ctx, 500, 40);
-        ctx.fillText('বাংলাদেশ হলো', x, y);
+        ctx.fillText(i18n.t('বাংলাদেশ হলো'), x, y);
     } else {
         ctx.fillStyle = INK_2;
         font(ctx, 500, 46);
-        ctx.fillText('আমার বাংলাদেশ হলো', x, y + 40);
+        ctx.fillText(i18n.t('আমার বাংলাদেশ হলো'), x, y + 40);
     }
     y += 190;
     ctx.fillStyle = accent;
-    fitText(ctx, loc.name_bn, S - 2 * x, 190, 700);
-    ctx.fillText(loc.name_bn, x, y);
+    fitText(ctx, loc.name, S - 2 * x, 190, 700);
+    ctx.fillText(loc.name, x, y);
 
     y += 80;
     ctx.fillStyle = INK;
-    fitText(ctx, loc.title_bn, S - 2 * x, 50, 600);
-    ctx.fillText(loc.title_bn, x, y);
+    fitText(ctx, loc.title, S - 2 * x, 50, 600);
+    ctx.fillText(loc.title, x, y);
 
     // Top two traits side by side.
     y += 100;
@@ -146,7 +146,7 @@ export function square(ctx, result, { host, t }) {
         ctx.textAlign = 'right';
         ctx.fillStyle = INK_2;
         font(ctx, 500, 34);
-        ctx.fillText(`${bnDigits(tr.pct)}%`, cx + colW, y);
+        ctx.fillText(`${i18n.num(tr.pct)}%`, cx + colW, y);
         ctx.fillStyle = accent + '2e';
         ctx.fillRect(cx, y + 22, colW, 12);
         ctx.fillStyle = accent;

@@ -3,7 +3,7 @@
 @section('content')
 @php
     $options = array_values(old('options', $question->options->map(fn ($o) => [
-        'id' => $o->id, 'label_bn' => $o->label_bn, 'emoji' => $o->emoji, 'image' => $o->image, 'reason_bn' => $o->reason_bn,
+        'id' => $o->id, 'label_bn' => $o->label_bn, 'label_en' => $o->label_en, 'emoji' => $o->emoji, 'image' => $o->image, 'reason_bn' => $o->reason_bn, 'reason_en' => $o->reason_en,
         'weights' => $o->trait_weights, 'bonus' => $o->location_bonus, 'is_active' => $o->is_active,
     ])->all()));
     // A new question starts with the 4 answers every question needs.
@@ -28,6 +28,8 @@
     <section class="panel grid gap-4 md:grid-cols-[2fr_1.3fr_9rem]">
         <label><span class="field-label">Question (Bangla)</span><input name="prompt_bn" value="{{ old('prompt_bn', $question->prompt_bn) }}" required class="input text-base"></label>
         <label><span class="field-label">Subtitle <span class="normal-case">(optional)</span></span><input name="subtitle_bn" value="{{ old('subtitle_bn', $question->subtitle_bn) }}" class="input"></label>
+        <label><span class="field-label">Question (English) <span class="normal-case">shown on /en; empty = Bangla</span></span><input name="prompt_en" value="{{ old('prompt_en', $question->prompt_en) }}" lang="en" class="input text-base"></label>
+        <label><span class="field-label">Subtitle (English) <span class="normal-case">(optional)</span></span><input name="subtitle_en" value="{{ old('subtitle_en', $question->subtitle_en) }}" lang="en" class="input"></label>
         <label><span class="field-label">Kind</span>
             <select name="kind" class="input">
                 @foreach (\App\Models\Question::KINDS as $kind)<option value="{{ $kind }}" @selected(old('kind', $question->kind) === $kind)>{{ ucfirst($kind) }}</option>@endforeach

@@ -1,16 +1,23 @@
 import Alpine from 'alpinejs';
-import { bnDigits } from './bn';
+import { lang, loadDictionary, localeHeaders, num, path, t, withLang } from './i18n';
 import { copyText, isMobile, shareLinks } from './share';
 import { store, visitorId } from './store';
 import { setTrackingContext, track } from './track';
 
 /**
  * Community pages. The pages are server-rendered and cacheable; this component adds what depends on
- * the reader: their member identity (a token kept in localStorage, sent as a header), which posts are
- * theirs, what they marked helpful, and the write actions (post, answer, helpful, report, delete).
+ * the reader: who they are signed in as (a token kept in localStorage, sent as a header), which posts
+ * are theirs, what they marked helpful, and the write actions (post, answer, helpful, report, delete).
+ * Every write needs a signed-in account: a signed-out reader gets the sign-in sheet, and the action
+ * carries on once they are in.
  */
-const MEMBER = 'bd.member'; // { token, code, name }
+const MEMBER = 'bd.member'; // { token, code, name, account }
+const RETURN = 'bd.return'; // where to come back to after Google/Facebook
+const DRAFT = 'bd.draft'; // { path, fields } typed text kept across a Google/Facebook round trip
 const MARKS = 'bd.helpful'; // ['post:12', 'answer:40', …]
+
+// Rejection used when the reader closes the sign-in sheet: actions stop quietly.
+const CANCELLED = Object.assign(new Error(''), { cancelled: true });
 
 const PAGE_EVENTS = [
     [/^\/feed/, 'feed_view'],
@@ -21,15 +28,15 @@ const PAGE_EVENTS = [
 async function api(method, url, body = null, token = null) {
     const res = await fetch(url, {
         method,
-        headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...(token ? { 'X-Member-Token': token } : {}) },
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...localeHeaders(), ...(token ? { 'X-Member-Token': token } : {}) },
         body: body ? JSON.stringify(body) : undefined,
     });
     const data = res.status === 204 ? {} : await res.json().catch(() => ({}));
     if (!res.ok) {
         const message =
             res.status === 429
-                ? 'একটু থামো, কিছুক্ষণ পরে আবার চেষ্টা করো।'
-                : (data.errors && Object.values(data.errors)[0]?.[0]) || data.message || 'কিছু একটা গোলমাল হয়েছে। আবার চেষ্টা করো।';
+                ? t('একটু থামুন, কিছুক্ষণ পরে আবার চেষ্টা করুন।')
+                : (data.errors && Object.values(data.errors)[0]?.[0]) || data.message || t('কিছু একটা গোলমাল হয়েছে। আবার চেষ্টা করুন।');
         throw Object.assign(new Error(message), { status: res.status });
     }
     return data;
@@ -40,20 +47,30 @@ function community() {
         member: store.get(MEMBER, null),
         marks: Object.fromEntries(store.get(MARKS, []).map((k) => [k, true])),
         counts: {}, // helpful counts changed on this page, by 'type:id'
+        owned: {}, // 'type:id' → true for the reader's own items on this page (from /api/mine)
         postId: null,
         accepted: null,
         answersCount: 0,
         sheet: null, // { kind: 'report' | 'delete', type, id }
+        loginOpen: false,
+        loginStep: 'choose', // choose | phone | code | email-login | email-register | email-forgot | forgot-sent
+        loginPhone: '',
+        loginEmail: '',
+        authError: '',
+        authBusy: false, // the sign-in sheet's own busy flag: the action that opened it is still "busy" 
+        _waiting: [], // actions waiting for sign-in
         busy: false,
         formError: '',
         toast: '',
-        bn: bnDigits,
+        bn: num,
         track,
 
         init() {
+            this.restoreDraft();
             setTrackingContext({ visitor_id: visitorId() });
             const event = PAGE_EVENTS.find(([re]) => re.test(location.pathname));
             if (event) track(event[1]);
+            this.refreshMine();
         },
 
         get me() {
@@ -64,31 +81,189 @@ function community() {
             return this.member?.name ?? '';
         },
 
+        get signedIn() {
+            return !!(this.member?.token && this.member.account);
+        },
+
         saveMember(member, token = this.member?.token) {
-            this.member = { token, code: member.code, name: member.name };
+            this.member = { token, code: member.code, name: member.name, account: member.account };
             store.set(MEMBER, this.member);
         },
 
-        // A member is created on the first write (a name may come with it). No sign-up step.
-        async ensureMember(name = null) {
-            if (!this.member?.token) {
-                const data = await api('POST', '/api/members', { name });
-                this.saveMember(data.member, data.token);
-            }
-            return this.member;
+        // ---------- sign-in ----------
+
+        /** Opens the sign-in sheet; resolves once signed in, rejects (quietly) if the sheet is closed. */
+        openLogin() {
+            this.loginStep = 'choose';
+            this.formError = '';
+            this.loginOpen = true;
+            this.$nextTick(() => document.querySelector('.login-btn')?.focus()); // keyboard and screen readers land in the sheet
+            return new Promise((resolve, reject) => this._waiting.push({ resolve, reject }));
         },
 
-        async call(method, url, body = null) {
-            const { token } = await this.ensureMember();
+        closeLogin() {
+            this.loginOpen = false;
+            this._waiting.splice(0).forEach((w) => w.reject(CANCELLED));
+        },
+
+        async signedInWith(data) {
+            const legacy = this.member?.token && !this.member.account ? this.member.token : null;
+            this.saveMember(data.member, data.token);
+            if (legacy) {
+                // Posts written before sign-in existed move into the account.
+                try {
+                    this.saveMember((await api('POST', '/api/auth/link', { legacy_token: legacy }, data.token)).member);
+                } catch {}
+            }
+            this.loginOpen = false;
+            this.flash(t('লগইন হয়েছে। স্বাগতম!'));
+            await this.refreshMine();
+            this._waiting.splice(0).forEach((w) => w.resolve());
+        },
+
+        async authStep(work) {
+            this.formError = '';
+            this.authBusy = true;
             try {
-                return await api(method, url, body, token);
+                await work();
+            } catch (e) {
+                this.formError = e.message;
+            } finally {
+                this.authBusy = false;
+            }
+        },
+
+        sendCode(form) {
+            return this.authStep(async () => {
+                await api('POST', '/api/auth/phone/send', { phone: form.phone.value });
+                this.loginStep = 'code';
+                this.$nextTick(() => document.getElementById('login-code')?.focus());
+            });
+        },
+
+        verifyCode(form) {
+            return this.authStep(async () => {
+                await this.signedInWith(await api('POST', '/api/auth/phone/verify', { phone: this.loginPhone, code: form.code.value, name: form.name.value || null }));
+                form.reset();
+            });
+        },
+
+        emailAuth(form) {
+            const register = this.loginStep === 'email-register';
+            const payload = Object.fromEntries(new FormData(form));
+            return this.authStep(async () => {
+                await this.signedInWith(await api('POST', register ? '/api/auth/email/register' : '/api/auth/email/login', payload));
+                form.password.value = '';
+            });
+        },
+
+        forgotPassword(form) {
+            return this.authStep(async () => {
+                await api('POST', '/api/auth/email/forgot', { email: form.email.value });
+                this.loginStep = 'forgot-sent';
+            });
+        },
+
+        // Google/Facebook leave the page: remember where to come back to and what was typed.
+        rememberReturn() {
+            try {
+                sessionStorage.setItem(RETURN, location.pathname + location.search);
+                const fields = {};
+                document.querySelectorAll('form[data-draft] [name]').forEach((el) => {
+                    if (el.type !== 'password' && el.value) fields[el.name] = el.value;
+                });
+                sessionStorage.setItem(DRAFT, JSON.stringify({ path: location.pathname, fields }));
+            } catch {}
+        },
+
+        restoreDraft() {
+            try {
+                const draft = JSON.parse(sessionStorage.getItem(DRAFT));
+                if (!draft || draft.path !== location.pathname) return;
+                sessionStorage.removeItem(DRAFT);
+                this.$nextTick(() => {
+                    for (const [name, value] of Object.entries(draft.fields)) {
+                        const el = document.querySelector(`form[data-draft] [name="${name}"]`);
+                        if (!el) continue;
+                        el.value = value;
+                        el.dispatchEvent(new Event('input'));
+                    }
+                });
+            } catch {}
+        },
+
+        // /auth/done: Google/Facebook hand over the token in the #fragment (never sent to a server).
+        async finishSocialLogin() {
+            const params = new URLSearchParams(location.hash.slice(1));
+            history.replaceState(null, '', location.pathname);
+            const token = params.get('t');
+            if (!token) {
+                this.authError = params.get('error') === 'blocked' ? t('এই অ্যাকাউন্ট থেকে লেখা বন্ধ করা হয়েছে।') : t('লগইন হলো না। আবার চেষ্টা করুন।');
+                return;
+            }
+            try {
+                await this.signedInWith({ token, member: (await api('GET', '/api/members/me', null, token)).member });
+            } catch {
+                this.authError = t('লগইন হলো না। আবার চেষ্টা করুন।');
+                return;
+            }
+            let back = path('/feed');
+            try {
+                back = sessionStorage.getItem(RETURN) || back;
+                sessionStorage.removeItem(RETURN);
+            } catch {}
+            location.replace(back);
+        },
+
+        // /reset-password#t=…
+        resetPassword(form) {
+            const token = new URLSearchParams(location.hash.slice(1)).get('t');
+            return this.authStep(async () => {
+                await this.signedInWith(await api('POST', '/api/auth/email/reset', { token, password: form.password.value }));
+                history.replaceState(null, '', location.pathname);
+                location.replace(path(this.member.code ? `/u/${this.member.code}` : '/feed'));
+            });
+        },
+
+        async logout() {
+            try {
+                await api('POST', '/api/auth/logout', null, this.member?.token);
+            } catch {}
+            this.member = null;
+            this.owned = {};
+            store.set(MEMBER, null);
+            location.href = path('/feed');
+        },
+
+        /** A write: signs in first if needed, and once more if the server says the session is gone. */
+        async call(method, url, body = null) {
+            if (!this.signedIn) await this.openLogin();
+            try {
+                return await api(method, url, body, this.member.token);
             } catch (e) {
                 if (e.status !== 401) throw e;
-                // The stored identity is gone on the server: start a fresh one and retry once.
-                this.member = null;
-                store.set(MEMBER, null);
-                return api(method, url, body, (await this.ensureMember(body?.name)).token);
+                this.member = this.member?.account ? null : this.member; // keep a legacy token so it can be linked
+                store.set(MEMBER, this.member);
+                await this.openLogin();
+                return api(method, url, body, this.member.token);
             }
+        },
+
+        // Interface text: Bangla is the key; English pages translate it (resources/js/i18n.js).
+        t,
+
+        mine(type, id) {
+            return !!this.owned[`${type}:${id}`];
+        },
+
+        // Owner controls: ask the server which of the items on the page are the reader's.
+        async refreshMine() {
+            const items = [...document.querySelectorAll('[data-own]')].map((el) => el.dataset.own);
+            if (!this.member?.token || !items.length) return;
+            try {
+                const data = await api('POST', '/api/mine', { items: items.slice(0, 200) }, this.member.token);
+                this.owned = Object.fromEntries(data.mine.map((k) => [k, true]));
+            } catch {}
         },
 
         marked(key) {
@@ -97,7 +272,7 @@ function community() {
 
         count(key, initial) {
             const n = this.counts[key] ?? initial;
-            return n ? bnDigits(n) : '';
+            return n ? num(n) : '';
         },
 
         async helpful(type, id) {
@@ -119,7 +294,7 @@ function community() {
             try {
                 await this.call('POST', '/api/reports', { type, id, reason });
                 this.sheet = null;
-                this.flash('ধন্যবাদ! আমরা দেখবো।');
+                this.flash(t('ধন্যবাদ! আমরা দেখবো।'));
             } catch (e) {
                 this.flash(e.message);
             } finally {
@@ -134,13 +309,13 @@ function community() {
                 await this.call('DELETE', type === 'post' ? `/api/posts/${id}` : `/api/answers/${id}`);
                 this.sheet = null;
                 if (type === 'post') {
-                    location.href = '/feed';
+                    location.href = path('/feed');
                     return;
                 }
                 document.getElementById(`answer-${id}`)?.remove();
                 this.answersCount = Math.max(0, this.answersCount - 1);
                 if (this.accepted === id) this.accepted = null;
-                this.flash('মুছে ফেলা হয়েছে');
+                this.flash(t('মুছে ফেলা হয়েছে'));
             } catch (e) {
                 this.flash(e.message);
             } finally {
@@ -152,7 +327,7 @@ function community() {
             try {
                 const data = await this.call('POST', `/api/posts/${this.postId}/accept`, { answer: this.accepted === answerId ? null : answerId });
                 this.accepted = data.accepted;
-                if (data.accepted) this.flash('সমাধান হিসেবে চিহ্নিত হলো ✓ উত্তরদাতাকে ধন্যবাদ!');
+                if (data.accepted) this.flash(t('সমাধান হিসেবে চিহ্নিত হলো ✓ উত্তরদাতাকে ধন্যবাদ!'));
             } catch (e) {
                 this.flash(e.message);
             }
@@ -179,14 +354,15 @@ function community() {
             try {
                 const data = await this.call('POST', `/api/posts/${postId}/answers`, payload);
                 this.saveMember(data.member);
+                this.owned[`answer:${data.answer.id}`] = true;
                 if (!document.getElementById(`answer-${data.answer.id}`)) {
                     document.getElementById('answers').insertAdjacentHTML('beforeend', data.html);
                 }
                 this.answersCount = data.answers_count;
                 form.reset();
-                form.querySelector('textarea').dispatchEvent(new Event('input'));
+                form.querySelectorAll('textarea, input[type=checkbox]').forEach((el) => el.dispatchEvent(new Event(el.type === 'checkbox' ? 'change' : 'input')));
                 this.$nextTick(() => document.getElementById(`answer-${data.answer.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
-                this.flash('তোমার উত্তর পোস্ট হয়েছে। ধন্যবাদ 🙏');
+                this.flash(t('আপনার উত্তর পোস্ট হয়েছে। ধন্যবাদ 🙏'));
             } catch (e) {
                 this.formError = e.message;
             } finally {
@@ -198,18 +374,19 @@ function community() {
         async loadMore(link, listSelector) {
             if (this.busy) return;
             const url = new URL(link.href);
-            url.pathname = '/api/feed';
+            url.pathname = '/api/feed'; // the next-page link points at /feed or /en/feed
+            if (lang === 'en') url.searchParams.set('lang', 'en');
             this.busy = true;
-            link.textContent = 'আনছি…';
+            link.textContent = t('আনছি…');
             try {
                 const data = await api('GET', url.pathname + url.search);
                 document.querySelector(listSelector).insertAdjacentHTML('beforeend', data.html);
                 if (data.next) link.href = data.next;
                 else link.remove();
             } catch {
-                this.flash('আনা গেলো না। ইন্টারনেট দেখে আবার চেষ্টা করো।');
+                this.flash(t('আনা গেলো না। ইন্টারনেট দেখে আবার চেষ্টা করুন।'));
             } finally {
-                link.textContent = 'আরও দেখো';
+                link.textContent = t('আরও দেখুন');
                 this.busy = false;
             }
         },
@@ -229,10 +406,10 @@ function community() {
             track('post_shared', { meta: { channel } });
             if (channel === 'copy' || (channel === 'messenger' && !isMobile())) {
                 const ok = await copyText(`${title}\n${url}`);
-                this.flash(ok ? 'লিংক কপি হয়েছে! যাকে দরকার তাকে পাঠাও ✨' : 'কপি করা গেলো না।');
+                this.flash(ok ? t('লিংক কপি হয়েছে! যাঁর দরকার তাঁকে পাঠান ✨') : t('কপি করা গেলো না।'));
                 return;
             }
-            const href = shareLinks[channel](`${title} — জানা থাকলে উত্তর দাও 🙏`, url);
+            const href = shareLinks[channel](t(':title — জানা থাকলে উত্তর দিন 🙏', { title }), url);
             if (channel === 'messenger') location.href = href;
             else window.open(href, '_blank', 'noopener');
         },
@@ -242,7 +419,7 @@ function community() {
             try {
                 const data = await this.call('PATCH', '/api/members/me', { name });
                 this.saveMember(data.member);
-                this.flash('নাম বদলানো হয়েছে');
+                this.flash(t('নাম বদলানো হয়েছে'));
                 return true;
             } catch (e) {
                 this.flash(e.message);
@@ -252,29 +429,13 @@ function community() {
             }
         },
 
-        async copyRecovery() {
-            const ok = await copyText(`${location.origin}/me#t=${this.member.token}`);
-            this.flash(ok ? 'গোপন লিংক কপি হয়েছে। নিজের কাছে রেখো, কাউকে দিও না 🔑' : 'কপি করা গেলো না।');
-        },
-
-        // /me: restore an identity from a private link (the token stays in the #fragment, never sent
-        // to the server in a URL), then go to the member page.
-        async openMe() {
-            const match = location.hash.match(/^#t=([A-Za-z0-9]{40})$/);
-            if (match) {
-                history.replaceState(null, '', location.pathname);
-                try {
-                    const data = await api('GET', '/api/members/me', null, match[1]);
-                    this.saveMember(data.member, match[1]);
-                } catch {
-                    this.flash('লিংকটা কাজ করছে না।');
-                    return;
-                }
-            }
-            if (this.me) location.replace(`/u/${this.me}`);
+        // /me: the profile of whoever is signed in, or the sign-in sheet.
+        openMe() {
+            if (this.signedIn) location.replace(path(`/u/${this.me}`));
         },
 
         flash(message) {
+            if (!message) return; // a closed sign-in sheet: nothing to say
             this.toast = message;
             clearTimeout(this._toastTimer);
             this._toastTimer = setTimeout(() => (this.toast = ''), 3500);
@@ -284,4 +445,4 @@ function community() {
 
 Alpine.data('community', community);
 window.Alpine = Alpine;
-Alpine.start();
+loadDictionary().then(() => Alpine.start());

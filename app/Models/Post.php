@@ -29,7 +29,18 @@ class Post extends Model
 
     public const DELETED = 'deleted';  // deleted by its author
 
-    protected $fillable = ['member_id', 'type', 'title', 'body', 'category_id', 'area_id', 'status', 'accepted_answer_id'];
+    protected $fillable = ['member_id', 'is_anonymous', 'type', 'title', 'body', 'category_id', 'area_id', 'status', 'accepted_answer_id'];
+
+    protected function casts(): array
+    {
+        return ['is_anonymous' => 'boolean'];
+    }
+
+    /** The author as the public sees them: null when posted anonymously. */
+    public function publicAuthor(): ?Member
+    {
+        return $this->is_anonymous ? null : $this->member;
+    }
 
     public function scopePublished(Builder $query): void
     {
@@ -46,6 +57,12 @@ class Post extends Model
         return self::TYPES[$this->type] ?? self::TYPES['question'];
     }
 
+    /** The type's name in the page language (context keys, since "আলোচনা" is also the feed's name). */
+    public static function typeLabel(string $type): string
+    {
+        return __('post.type.'.(isset(self::TYPES[$type]) ? $type : 'question'));
+    }
+
     public function isQuestion(): bool
     {
         return in_array($this->type, ['question', 'help'], true);
@@ -53,7 +70,7 @@ class Post extends Model
 
     public function url(): string
     {
-        return route('posts.show', $this, false);
+        return lroute('posts.show', $this);
     }
 
     /** Re-count from the answers table; called whenever an answer appears, disappears or changes status. */

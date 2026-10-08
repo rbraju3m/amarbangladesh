@@ -124,6 +124,8 @@ class QuestionController extends Controller
         $request->validate([
             'prompt_bn' => ['required', 'string', 'max:255'],
             'subtitle_bn' => ['nullable', 'string', 'max:255'],
+            'prompt_en' => ['nullable', 'string', 'max:255'],
+            'subtitle_en' => ['nullable', 'string', 'max:255'],
             'kind' => ['required', Rule::in(Question::KINDS)],
             'options' => ['required', 'array', 'min:2', 'max:6'],
             'options.*.id' => ['nullable', 'integer'],
@@ -131,6 +133,8 @@ class QuestionController extends Controller
             'options.*.emoji' => ['nullable', 'string', 'max:16'],
             'options.*.image' => ['nullable', 'string', 'max:255'],
             'options.*.reason_bn' => ['required', 'string', 'max:120'],
+            'options.*.label_en' => ['nullable', 'string', 'max:120'],
+            'options.*.reason_en' => ['nullable', 'string', 'max:120'],
             'options.*.weights' => ['array'],
             'options.*.weights.*' => ['nullable', 'integer', 'between:-5,10'],
             'options.*.bonus' => ['array'],
@@ -144,7 +148,7 @@ class QuestionController extends Controller
             'bonus' => array_filter(array_map('intval', array_intersect_key($o['bonus'] ?? [], array_flip($slugs)))),
         ])->all()]);
 
-        return $request->only('prompt_bn', 'subtitle_bn', 'kind') + ['is_active' => $request->boolean('is_active')];
+        return $request->only('prompt_bn', 'subtitle_bn', 'prompt_en', 'subtitle_en', 'kind') + ['is_active' => $request->boolean('is_active')];
     }
 
     private function syncOptions(Question $question, Request $request): void
@@ -159,6 +163,8 @@ class QuestionController extends Controller
                 'emoji' => $o['emoji'] ?? null,
                 'image' => $o['image'] ?? null,
                 'reason_bn' => $o['reason_bn'],
+                'label_en' => ($o['label_en'] ?? null) ?: null,
+                'reason_en' => ($o['reason_en'] ?? null) ?: null,
                 'trait_weights' => $o['weights'],
                 'location_bonus' => $o['bonus'],
                 'sort_order' => $n + 1,

@@ -5,6 +5,7 @@ namespace App\Quiz;
 use App\Models\Location;
 use App\Models\PersonalityTrait;
 use App\Models\QuizResult;
+use App\Support\Lang;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -31,7 +32,7 @@ final class ResultPresenter
 
         return [
             'code' => $result->code,
-            'url' => route('results.show', $result),
+            'url' => lroute('results.show', $result, true),
             'name' => $result->display_name,
             'location' => self::location($result->location),
             'match_pct' => $result->match_pct,
@@ -46,21 +47,42 @@ final class ResultPresenter
                 ->map(fn ($pct, $key) => $traits[$key] + ['key' => $key, 'pct' => $pct, 'answers' => $explore['traits'][$key] ?? []])
                 ->values()->all(),
             'places' => self::places($result, $explore['places']),
-            'reason' => $result->reason_bn,
+            'reason' => self::reason($result),
             'friend' => $friend,
         ];
     }
 
+    /** Text fields are in the page language (Bangla where no English is written yet). */
     public static function location(Location $location): array
     {
         return self::locationBrief($location) + [
             'name_en' => $location->name_en,
-            'title_bn' => $location->title_bn,
-            'tagline_bn' => $location->tagline_bn,
-            'description_bn' => $location->description_bn,
-            'badges' => $location->badges,
+            'title' => $location->text('title'),
+            'tagline' => $location->text('tagline'),
+            'description' => $location->text('description'),
+            'badges' => $location->localizedBadges(),
             'illustration' => $location->illustrationUrl(),
         ];
+    }
+
+    /** "the call of the hills", "hot fried hilsa" + tail → "The call of the hills and hot fried hilsa — tail". */
+    public static function englishReason(array $reasons, string $tail): string
+    {
+        return ucfirst(implode(' and ', $reasons)).' — '.$tail;
+    }
+
+    /** Why this place, in the page language. Older results stored only Bangla; English rebuilds it. */
+    private static function reason(QuizResult $result): string
+    {
+        if (! Lang::isEnglish()) {
+            return $result->reason_bn;
+        }
+        if ($result->reason_en) {
+            return $result->reason_en;
+        }
+        $reasons = (new Scorer(QuizConfig::load()))->englishReasons($result->answer_ids ?? [], $result->location->slug);
+
+        return $reasons ? self::englishReason($reasons, $result->location->text('reason_tail')) : $result->reason_bn;
     }
 
     /**
@@ -95,7 +117,7 @@ final class ResultPresenter
     {
         return [
             'slug' => $location->slug,
-            'name_bn' => $location->name_bn,
+            'name' => Lang::isEnglish() && $location->name_en ? $location->name_en : $location->name_bn,
             'emoji' => $location->emoji,
             'accent' => $location->accent_color,
         ];
@@ -104,7 +126,7 @@ final class ResultPresenter
     /** @return array<string, array{label:string, emoji:string}> */
     private static function traitMeta(): array
     {
-        return Cache::remember('quiz.trait-meta', 3600, fn () => PersonalityTrait::orderBy('sort_order')->get()
-            ->mapWithKeys(fn ($t) => [$t->key => ['label' => $t->label_bn, 'emoji' => $t->emoji]])->all());
+        return Cache::remember('quiz.trait-meta.'.Lang::current(), 3600, fn () => PersonalityTrait::orderBy('sort_order')->get()
+            ->mapWithKeys(fn ($t) => [$t->key => ['label' => $t->text('label'), 'emoji' => $t->emoji]])->all());
     }
 }

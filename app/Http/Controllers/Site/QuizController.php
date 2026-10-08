@@ -7,6 +7,7 @@ use App\Models\Location;
 use App\Models\Question;
 use App\Models\QuizResult;
 use App\Quiz\ResultPresenter;
+use App\Support\Lang;
 use App\Support\PublicUrl;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
@@ -43,27 +44,27 @@ class QuizController extends Controller
     /** Everything the quiz needs, embedded in the page so there is no extra request before the first question. */
     private function boot(): array
     {
-        return Cache::rememberForever('quiz.boot', fn () => [
+        return Cache::rememberForever('quiz.boot.'.Lang::current(), fn () => [
             'questions' => Question::where('is_active', true)->orderBy('sort_order')->orderBy('id')
                 ->with(['options' => fn ($q) => $q->where('is_active', true)])
                 ->get()
                 ->map(fn (Question $q) => [
                     'id' => $q->id,
-                    'prompt' => $q->prompt_bn,
-                    'subtitle' => $q->subtitle_bn,
+                    'prompt' => $q->text('prompt'),
+                    'subtitle' => $q->text('subtitle'),
                     'kind' => $q->kind,
                     'options' => $q->options->map(fn ($o) => [
                         'id' => $o->id,
-                        'label' => $o->label_bn,
+                        'label' => $o->text('label'),
                         'emoji' => $o->emoji,
                         'image' => $o->image ? PublicUrl::path($o->image) : null,
                     ])->all(),
                 ])->filter(fn ($q) => count($q['options']) > 0)->values()->all(),
             'locations' => Location::where('is_active', true)->orderBy('sort_order')->get()
                 ->map(fn (Location $l) => ResultPresenter::locationBrief($l) + [
-                    'title_bn' => $l->title_bn,
-                    'tagline_bn' => $l->tagline_bn,
-                    'description_bn' => $l->description_bn,
+                    'title' => $l->text('title'),
+                    'tagline' => $l->text('tagline'),
+                    'description' => $l->text('description'),
                     'x' => $l->map_x,
                     'y' => $l->map_y,
                     'illustration' => $l->illustrationUrl(),

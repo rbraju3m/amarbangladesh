@@ -27,6 +27,11 @@
             <label><span class="field-label">Label</span><input data-label name="options[{{ $i }}][label_bn]" value="{{ $o['label_bn'] ?? '' }}" placeholder="যেমন: পাহাড়ে" class="input text-base"></label>
             <label><span class="field-label">"Why" phrase</span><input name="options[{{ $i }}][reason_bn]" value="{{ $o['reason_bn'] ?? '' }}" placeholder="used in the result text" class="input"></label>
         </div>
+        <div class="grid gap-3 sm:grid-cols-[5rem_1fr_1fr]">
+            <span class="hidden self-center text-xs font-semibold text-ink-2 sm:block">English</span>
+            <label><span class="field-label">Label (English)</span><input name="options[{{ $i }}][label_en]" value="{{ $o['label_en'] ?? '' }}" placeholder="e.g. The hills" lang="en" class="input"></label>
+            <label><span class="field-label">"Why" phrase (English)</span><input name="options[{{ $i }}][reason_en]" value="{{ $o['reason_en'] ?? '' }}" placeholder="lower case, e.g. the call of the hills" lang="en" class="input"></label>
+        </div>
         <label class="block max-w-xl"><span class="field-label">Image path <span class="normal-case">(image questions only)</span></span><input name="options[{{ $i }}][image]" value="{{ $o['image'] ?? '' }}" placeholder="images/locations/…svg" class="input"></label>
 
         <div>

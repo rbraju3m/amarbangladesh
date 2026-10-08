@@ -24,18 +24,19 @@ class AnswerController extends Controller
         $data = $request->validate([
             'body' => ['required', 'string', 'min:2', 'max:5000'],
             'name' => ['nullable', 'string', 'max:40'],
+            'anonymous' => ['nullable', 'boolean'],
         ], [
-            'body.required' => 'উত্তরটা লেখো।',
-            'body.max' => 'উত্তরটা একটু ছোট করো।',
+            'body.required' => __('উত্তরটা লিখুন।'),
+            'body.max' => __('উত্তরটা একটু ছোট করুন।'),
         ]);
 
         $member = PostController::named($request->attributes->get('member'), $data['name'] ?? null);
         if (Text::linkCount($data['body']) > Text::MAX_LINKS) {
-            throw ValidationException::withMessages(['body' => 'একটা উত্তরে দুটোর বেশি লিংক দেওয়া যাবে না।']);
+            throw ValidationException::withMessages(['body' => __('একটা উত্তরে দুটোর বেশি লিংক দেওয়া যাবে না।')]);
         }
 
         $answer = Answer::where(['post_id' => $post->id, 'member_id' => $member->id, 'body' => $data['body']])->where('created_at', '>=', now()->subMinutes(10))->first()
-            ?? Answer::create(['post_id' => $post->id, 'member_id' => $member->id, 'body' => $data['body']]);
+            ?? Answer::create(['post_id' => $post->id, 'member_id' => $member->id, 'is_anonymous' => (bool) ($data['anonymous'] ?? false), 'body' => $data['body']]);
 
         if ($answer->wasRecentlyCreated) {
             $post->refreshAnswerCount();

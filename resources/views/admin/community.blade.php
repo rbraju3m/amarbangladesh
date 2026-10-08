@@ -36,6 +36,7 @@
                         <p class="flex flex-wrap items-center gap-2 text-xs text-ink-2">
                             <span class="pill {{ $statusPill($item->status) }}">{{ $item->status }}</span>
                             @if ($item->reports_count)<span class="pill bg-flag-red/10 text-flag-red">🚩 {{ $item->reports_count }} {{ \Illuminate\Support\Str::plural('report', $item->reports_count) }}</span>@endif
+                            @if ($item->is_anonymous)<span class="pill bg-ink/10 text-ink" title="Shown publicly as বেনামী">🕶️ anonymous</span>@endif
                             <span>{{ $item->member->displayName() }}@if ($item->member->isBlocked()) <b class="text-flag-red">(blocked)</b>@endif</span>
                             <span>· {{ $item->created_at->format('j M Y, g:i a') }}</span>
                         </p>

@@ -1,3 +1,4 @@
+import * as i18n from '../i18n';
 /** Shared canvas helpers for the 1080×1920 story cards (see ../card.js). */
 export const W = 1080;
 export const H = 1920;
@@ -88,7 +89,7 @@ export function footer(ctx, host, { color = INK, muted = INK_2 } = {}) {
     ctx.textBaseline = 'alphabetic';
     ctx.fillStyle = color;
     font(ctx, 700, 54);
-    ctx.fillText('তোমার বাংলাদেশ কোথায়?', W / 2, H - 112);
+    ctx.fillText(i18n.t('তোমার বাংলাদেশ কোথায়?'), W / 2, H - 112);
     ctx.fillStyle = muted;
     font(ctx, 500, 36);
     ctx.fillText(host, W / 2, H - 58);
@@ -100,7 +101,7 @@ export function footerSquare(ctx, host, { color = INK, muted = INK_2 } = {}) {
     ctx.textAlign = 'left';
     ctx.fillStyle = color;
     font(ctx, 700, 38);
-    ctx.fillText('তোমার বাংলাদেশ কোথায়?', 60, S - 44);
+    ctx.fillText(i18n.t('তোমার বাংলাদেশ কোথায়?'), 60, S - 44);
     ctx.textAlign = 'right';
     ctx.fillStyle = muted;
     font(ctx, 500, 30);

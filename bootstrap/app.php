@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\ResolveMember;
 use App\Http\Middleware\SecurityHeaders;
+use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -16,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // Trusted proxies come from config/trustedproxy.php (TRUSTED_PROXIES).
         $middleware->append(SecurityHeaders::class);
+        $middleware->append(SetLocale::class);
         $middleware->alias(['member' => ResolveMember::class]);
 
         // Only admins have accounts (community members hold a device token instead).
