@@ -162,4 +162,29 @@ class ResultFlowTest extends TestCase
         $this->assertCount(7, $trend);
         $this->assertSame(['visitors' => 1, 'completed' => 2], array_intersect_key(end($trend), ['visitors' => 0, 'completed' => 0]));
     }
+
+    public function test_referral_numbers_count_people_and_split_start_rate_by_entry(): void
+    {
+        $owner = (string) Str::uuid();
+        $this->postJson('/api/events', ['visitor_id' => $owner, 'events' => [['name' => 'landing_view'], ['name' => 'quiz_started', 'meta' => ['referred' => 0]]]])->assertNoContent();
+        $code = $this->postJson('/api/results', ['answers' => $this->answers(), 'visitor_id' => $owner])->json('result.code');
+
+        // A friend opens the link and plays three times; a second link visitor never presses play.
+        $friend = (string) Str::uuid();
+        $this->postJson('/api/events', ['visitor_id' => $friend, 'events' => [['name' => 'share_page_view', 'result' => $code], ['name' => 'quiz_started', 'meta' => ['referred' => 1]]]])->assertNoContent();
+        foreach ([0, 1, 2] as $_) {
+            $this->postJson('/api/results', ['answers' => $this->answers(), 'visitor_id' => $friend, 'ref' => $code])->assertCreated();
+        }
+        $this->postJson('/api/events', ['visitor_id' => (string) Str::uuid(), 'events' => [['name' => 'share_page_view', 'result' => $code]]])->assertNoContent();
+
+        $funnel = new Funnel(now()->subDay());
+        $summary = $funnel->summary();
+        $this->assertSame(1, $summary['referred_players']);
+        $this->assertEquals(50, $summary['referral_conversion']);
+        $this->assertEquals(1, $summary['viral_k']);
+
+        $entries = $funnel->startRateByEntry();
+        $this->assertSame(['visitors' => 1, 'started' => 1, 'rate' => 100.0], $entries['direct']);
+        $this->assertSame(['visitors' => 2, 'started' => 1, 'rate' => 50.0], $entries['link']);
+    }
 }

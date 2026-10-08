@@ -33,7 +33,15 @@ final class Funnel
         $completed = $this->results()->whereIn('visitor_id', $this->events()->where('name', 'quiz_started')->select('visitor_id'))
             ->distinct()->count('visitor_id');
         $plays = $this->results()->count();
-        $referredCompleted = $this->results()->whereNotNull('referrer_result_id')->count();
+        // People, not plays: replays would otherwise inflate the referral numbers.
+        $referredPlayers = $this->results()->whereNotNull('referrer_result_id')->whereNotNull('visitor_id')
+            ->distinct()->count('visitor_id');
+        $originalPlayers = $this->results()->whereNotNull('visitor_id')
+            ->whereNotIn('visitor_id', $this->results()->whereNotNull('referrer_result_id')->whereNotNull('visitor_id')->select('visitor_id'))
+            ->distinct()->count('visitor_id');
+        $referredFromLinks = $this->results()->whereNotNull('referrer_result_id')
+            ->whereIn('visitor_id', $this->events()->where('name', 'share_page_view')->select('visitor_id'))
+            ->distinct()->count('visitor_id');
         $sharedResults = $this->events()->whereIn('name', ['share_clicked', 'link_copied', 'card_saved'])
             ->whereNotNull('quiz_result_id')->distinct()->count('quiz_result_id');
         $referralVisitors = $this->distinctVisitors(['share_page_view']);
@@ -48,11 +56,32 @@ final class Funnel
             'shared' => $sharedResults,
             'share_rate' => self::pct($sharedResults, $plays),
             'referral_visitors' => $referralVisitors,
-            'referred_completed' => $referredCompleted,
-            'referral_conversion' => self::pct($referredCompleted, $referralVisitors),
+            'referred_players' => $referredPlayers,
+            'referral_conversion' => self::pct($referredFromLinks, $referralVisitors),
             // New players brought in per original (non-referred) player.
-            'viral_k' => ($plays - $referredCompleted) > 0 ? round($referredCompleted / ($plays - $referredCompleted), 2) : 0,
+            'viral_k' => $originalPlayers > 0 ? round($referredPlayers / $originalPlayers, 2) : 0,
         ];
+    }
+
+    /**
+     * Start rate by how people arrived: the landing page or a friend's shared result.
+     * A starter counts for an entry only if they also viewed it this period, so rates stay ≤ 100%.
+     *
+     * @return array{direct: array{visitors:int, started:int, rate:float}, link: array{visitors:int, started:int, rate:float}}
+     */
+    public function startRateByEntry(): array
+    {
+        $entry = function (string $view, int $referred) {
+            $visitors = $this->distinctVisitors([$view]);
+            $started = $this->events()->where('name', 'quiz_started')
+                ->whereRaw("CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(meta, '$.referred')), '0') AS UNSIGNED) = ?", [$referred])
+                ->whereIn('visitor_id', $this->events()->where('name', $view)->select('visitor_id'))
+                ->distinct()->count('visitor_id');
+
+            return ['visitors' => $visitors, 'started' => $started, 'rate' => self::pct($started, $visitors)];
+        };
+
+        return ['direct' => $entry('landing_view', 0), 'link' => $entry('share_page_view', 1)];
     }
 
     /**

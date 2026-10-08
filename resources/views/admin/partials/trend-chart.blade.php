@@ -3,7 +3,7 @@
     $series = [
         ['key' => 'visitors', 'label' => 'Visitors', 'color' => 'var(--viz-1)'],
         ['key' => 'completed', 'label' => 'Completed', 'color' => 'var(--viz-3)'],
-        ['key' => 'shared', 'label' => 'Shared', 'color' => 'var(--viz-2)'],
+        ['key' => 'shared', 'label' => 'Shared', 'color' => 'var(--viz-2)', 'dash' => '6 5'],
     ];
     [$W, $H, $left, $right, $top, $bottom] = [800, 250, 36, 676, 14, 214];
     $n = count($rows);
@@ -29,7 +29,7 @@
 <div class="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
     @foreach ($series as $s)
         <span data-series="{{ $s['key'] }}" data-label="{{ $s['label'] }}" data-color="{{ $s['color'] }}" class="flex items-center gap-2">
-            <i class="inline-block h-1 w-4 rounded-full" style="background: {{ $s['color'] }}"></i>{{ $s['label'] }}
+            <svg viewBox="0 0 16 4" class="h-1 w-4" aria-hidden="true"><line x1="1" x2="15" y1="2" y2="2" stroke="{{ $s['color'] }}" stroke-width="3" stroke-linecap="round" @isset($s['dash']) stroke-dasharray="3 4" @endisset /></svg>{{ $s['label'] }}
             <b class="tabular-nums">{{ number_format(array_sum(array_column($rows, $s['key']))) }}</b>
         </span>
     @endforeach
@@ -50,7 +50,7 @@
         @endforeach
         <line data-cross x1="0" x2="0" y1="{{ $top }}" y2="{{ $bottom }}" stroke="var(--ink-2)" stroke-width="1" style="opacity: 0" />
         @foreach ($series as $s)
-            <polyline fill="none" stroke="{{ $s['color'] }}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"
+            <polyline fill="none" stroke="{{ $s['color'] }}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" @isset($s['dash']) stroke-dasharray="{{ $s['dash'] }}" @endisset
                 points="{{ collect($rows)->map(fn ($r, $i) => round($x($i), 1).','.round($y($r[$s['key']]), 1))->implode(' ') }}" />
         @endforeach
         @foreach ($ends as $e)

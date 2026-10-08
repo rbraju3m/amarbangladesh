@@ -26,6 +26,7 @@ class DashboardController extends Controller
             'ranges' => self::RANGES,
             'summary' => $funnel->summary(),
             'previous' => $previous->summary(),
+            'entries' => $funnel->startRateByEntry(),
             'trend' => $trend->trend(),
             'distribution' => $funnel->resultDistribution(),
             'reach' => $funnel->questionReach(),

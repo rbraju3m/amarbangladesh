@@ -67,11 +67,25 @@
     </ol>
 </section>
 
+{{-- Where the landing → play leak is: people arriving directly vs from a friend's result --}}
+<section class="panel mt-4">
+    <h2 class="panel-title">Start rate by entry <small>visitors who pressed play</small></h2>
+    <div class="grid gap-4 sm:grid-cols-2">
+        @foreach (['direct' => 'Landing page', 'link' => "Friend's shared link"] as $key => $label)
+            @php($e = $entries[$key])
+            <div>
+                <div class="flex justify-between text-sm"><span>{{ $label }}</span><span class="tabular-nums text-ink-2"><b class="text-ink">{{ $fmt($e['started']) }}</b> of {{ $fmt($e['visitors']) }} · {{ $e['rate'] }}%</span></div>
+                <div class="mt-1.5 h-2 rounded-full bg-paper-2"><div class="h-full rounded-full bg-flag-green" style="width: {{ $e['rate'] }}%"></div></div>
+            </div>
+        @endforeach
+    </div>
+</section>
+
 <div class="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
     <div class="stat"><div class="text-xs font-semibold text-ink-2">From shared links</div><div class="mt-1 text-2xl font-bold tabular-nums">{{ $fmt($s['referral_visitors']) }}</div><div class="text-xs text-ink-2">visitors via a friend's result</div></div>
-    <div class="stat"><div class="text-xs font-semibold text-ink-2">Played via links</div><div class="mt-1 text-2xl font-bold tabular-nums">{{ $fmt($s['referred_completed']) }}</div><div class="text-xs text-ink-2">{{ $s['referral_conversion'] }}% of link visitors</div></div>
+    <div class="stat"><div class="text-xs font-semibold text-ink-2">Played via links</div><div class="mt-1 text-2xl font-bold tabular-nums">{{ $fmt($s['referred_players']) }}</div><div class="text-xs text-ink-2">people · {{ $s['referral_conversion'] }}% of link visitors</div></div>
     <div class="stat"><div class="text-xs font-semibold text-ink-2">Total plays</div><div class="mt-1 text-2xl font-bold tabular-nums">{{ $fmt($s['plays']) }}</div><div class="text-xs text-ink-2">incl. replays</div></div>
-    <div class="stat"><div class="flex items-center justify-between text-xs font-semibold text-ink-2">Viral coefficient <span class="pill {{ $s['viral_k'] >= 1 ? $tone['up'] : $tone['flat'] }}">{{ $s['viral_k'] >= 1 ? 'self-growing' : 'K < 1' }}</span></div><div class="mt-1 text-2xl font-bold tabular-nums">{{ $s['viral_k'] }}</div><div class="text-xs text-ink-2">new players per original player</div></div>
+    <div class="stat"><div class="flex items-center justify-between text-xs font-semibold text-ink-2">Viral coefficient <span class="pill {{ $s['viral_k'] >= 1 ? $tone['up'] : $tone['flat'] }}">{{ $s['viral_k'] >= 1 ? 'self-growing' : 'K < 1' }}</span></div><div class="mt-1 text-2xl font-bold tabular-nums">{{ $s['viral_k'] }}</div><div class="text-xs text-ink-2">new players per original player (people, not plays)</div></div>
 </div>
 
 <section class="panel mt-4">
