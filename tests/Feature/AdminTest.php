@@ -31,7 +31,7 @@ class AdminTest extends TestCase
 
         $question = Question::first();
         $location = Location::first();
-        foreach (['/admin', '/admin?days=30', '/admin/balance', '/admin/questions', "/admin/questions/{$question->id}/edit", '/admin/locations', "/admin/locations/{$location->slug}/edit"] as $url) {
+        foreach (['/admin', '/admin?days=30', '/admin/balance', '/admin/plays', '/admin/plays?days=7&source=friend', '/admin/questions', "/admin/questions/{$question->id}/edit", '/admin/locations', "/admin/locations/{$location->slug}/edit"] as $url) {
             $this->get($url)->assertOk();
         }
     }
@@ -139,6 +139,34 @@ class AdminTest extends TestCase
         $this->get('/admin/export/secrets.csv')->assertNotFound();
         auth()->logout();
         $this->get(route('admin.export', ['type' => 'results']))->assertRedirect(route('admin.login'));
+    }
+
+    public function test_plays_page_lists_every_play_with_filters(): void
+    {
+        $answers = array_map(fn ($o) => array_key_first($o), array_values(QuizConfig::fromDatabase()->questions));
+        $first = $this->postJson('/api/results', ['answers' => $answers])->assertCreated()->json('result.code');
+        $friend = $this->postJson('/api/results', ['answers' => $answers, 'ref' => $first])->assertCreated()->json('result.code');
+        $place = QuizResult::first()->location;
+
+        $this->actingAs(User::factory()->create());
+        $this->get('/admin/plays')->assertOk()->assertSeeText('2 plays')->assertSeeInOrder(['/r/'.$friend, '/r/'.$first])
+            ->assertSee(now()->format('j M Y'));
+        $this->get('/admin/plays?source=friend')->assertSeeText('1 play')->assertSee('/r/'.$friend)->assertSee("Friend's link", false);
+        $this->get('/admin/plays?source=direct&place='.$place->id)->assertSeeText('1 play')->assertDontSee('/r/'.$friend);
+        $this->get('/admin/plays?place=999999')->assertSee('No plays match these filters.');
+        $this->get('/admin')->assertSee(route('admin.plays', ['days' => 7]));
+    }
+
+    public function test_dashboard_shows_plays_by_hour(): void
+    {
+        $answers = array_map(fn ($o) => array_key_first($o), array_values(QuizConfig::fromDatabase()->questions));
+        $this->postJson('/api/results', ['answers' => $answers])->assertCreated();
+        $hour = now()->hour;
+
+        $this->actingAs(User::factory()->create());
+        $this->get('/admin?days=1')->assertOk()->assertSee('When people play')->assertSee('Busiest hour')
+            ->assertSee(now()->format('D j M').', '.now()->setTime($hour, 0)->format('g a').' – ', false);
+        $this->get('/admin?days=365')->assertOk()->assertSee(now()->format('l'));
     }
 
     public function test_editors_embed_the_live_balance_preview(): void

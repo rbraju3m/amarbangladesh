@@ -93,6 +93,11 @@
     @include('admin.partials.trend-chart', ['rows' => $trend])
 </section>
 
+<section class="panel mt-4">
+    <h2 class="panel-title">When people play <small>plays per hour · {{ $ranges[$days] }}</small></h2>
+    @include('admin.partials.hourly-heatmap')
+</section>
+
 <div class="mt-4 grid gap-4 lg:grid-cols-3">
     <section class="panel">
         <h2 class="panel-title">Result distribution <small>@php($n = array_sum(array_column($distribution, 'count'))){{ $fmt($n) }} {{ \Illuminate\Support\Str::plural('result', $n) }}</small></h2>
@@ -161,7 +166,7 @@
 </div>
 <div class="mt-6 grid gap-6 lg:grid-cols-[2fr_1fr]">
     <section class="panel">
-        <h2 class="panel-title">Recent plays <small>newest first · tap to open the shared page</small></h2>
+        <h2 class="panel-title"><span>Recent plays <small>newest first · tap to open the shared page</small></span><a href="{{ route('admin.plays', ['days' => $days]) }}" class="shrink-0 text-sm font-semibold text-green-text hover:underline">All plays →</a></h2>
         <ul class="divide-y divide-line text-sm">
             @forelse ($recent as $play)
                 <li>

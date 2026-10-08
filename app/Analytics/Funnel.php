@@ -116,6 +116,41 @@ final class Funnel
         return $rows;
     }
 
+    /**
+     * Plays and visitors per hour of the day (Asia/Dhaka), one row per date; past 31 days the rows are weekdays
+     * instead, so a year still fits on screen.
+     *
+     * @return array{by:'date'|'weekday', rows:list<array{key:string, plays:list<int>, visitors:list<int>}>, hours:list<int>}
+     */
+    public function hourly(): array
+    {
+        $byWeekday = $this->since->diffInDays($this->until ?? now()) > 31;
+        // WEEKDAY(): 0 = Monday.
+        $row = $byWeekday ? 'WEEKDAY(created_at)' : 'DATE(created_at)';
+        $count = fn (Builder $q, string $what) => $q->selectRaw("{$row} as r, HOUR(created_at) as h, {$what} as n")
+            ->groupBy('r', 'h')->get()->groupBy('r')->map(fn ($hours) => $hours->pluck('n', 'h'));
+
+        $plays = $count($this->results(), 'COUNT(*)');
+        $visitors = $count($this->events()->whereIn('name', ['landing_view', 'share_page_view'])->whereNotNull('visitor_id'), 'COUNT(DISTINCT visitor_id)');
+
+        if ($byWeekday) {
+            $keys = range(0, 6);
+        } else {
+            $keys = [];
+            for ($day = ($this->until ?? now())->copy()->startOfDay(); $day >= $this->since->copy()->startOfDay(); $day = $day->subDay()) {
+                $keys[] = $day->toDateString();
+            }
+        }
+        $fill = fn ($counts) => array_map(fn ($h) => (int) ($counts[$h] ?? 0), range(0, 23));
+
+        return [
+            'by' => $byWeekday ? 'weekday' : 'date',
+            'rows' => array_map(fn ($key) => ['key' => (string) $key, 'plays' => $fill($plays[$key] ?? []), 'visitors' => $fill($visitors[$key] ?? [])], $keys),
+            // Totals per hour, for the busiest-hour read-out and the column sums.
+            'hours' => $fill($this->results()->selectRaw('HOUR(created_at) as h, COUNT(*) as n')->groupBy('h')->pluck('n', 'h')),
+        ];
+    }
+
     /** @return list<array{name:string, emoji:string, count:int, pct:float}> */
     public function resultDistribution(): array
     {

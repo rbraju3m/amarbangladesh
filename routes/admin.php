@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\BalanceController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ExportController;
 use App\Http\Controllers\Admin\LocationController;
+use App\Http\Controllers\Admin\PlayController;
 use App\Http\Controllers\Admin\QuestionController;
 use Illuminate\Support\Facades\Route;
 
@@ -19,6 +20,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/password', [AuthController::class, 'editPassword'])->name('password.edit');
         Route::put('/password', [AuthController::class, 'updatePassword'])->middleware('throttle:6,1')->name('password.update');
         Route::get('/', DashboardController::class)->name('dashboard');
+        Route::get('/plays', PlayController::class)->name('plays');
         Route::get('/balance', BalanceController::class)->name('balance');
         Route::get('/export/{type}.csv', ExportController::class)->whereIn('type', ['results', 'daily'])->name('export');
 
