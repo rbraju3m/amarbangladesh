@@ -32,7 +32,16 @@ DB_DATABASE=…   DB_USERNAME=…   DB_PASSWORD=…   # from Forge's database
 SUPER_ADMIN_NAME=Raju
 SUPER_ADMIN_EMAIL=rbraju3m@gmail.com
 SUPER_ADMIN_PASSWORD=…                          # same as hospital-management; 10+ chars, letters + digits
+MAIL_MAILER=smtp  MAIL_HOST=…  MAIL_USERNAME=…  MAIL_PASSWORD=…  MAIL_FROM_ADDRESS=…   # password-reset emails
+GOOGLE_CLIENT_ID=…  GOOGLE_CLIENT_SECRET=…       # optional: "Continue with Google"
+FACEBOOK_CLIENT_ID=…  FACEBOOK_CLIENT_SECRET=…   # optional: "Continue with Facebook" (needs Meta app review)
+SMS_DRIVER=bulksmsbd  BULKSMSBD_API_KEY=…  BULKSMSBD_SENDER_ID=…   # optional: phone sign-in
 ```
+
+Each community sign-in method shows up only once its keys are set; email sign-in always works (it
+needs mail for "forgot password"). OAuth redirect URIs: `${APP_URL}/auth/google/callback` and
+`${APP_URL}/auth/facebook/callback`. After changing keys, redeploy (the deploy runs `optimize`,
+which caches config).
 
 `APP_KEY` must be set: run `php artisan key:generate --show` once and paste the value in.
 
@@ -76,4 +85,5 @@ mysqldump --single-transaction amarbangladesh > amarbangladesh.sql
 ```
 
 Quiz content (questions, places, traits) and admin accounts are kept. Shared result links from the
-deleted plays stop working, which is what you want for demo data.
+deleted plays stop working, which is what you want for demo data. Community data (members, posts,
+answers) is **not** purged: remove test posts in the admin Community page (Remove) before going live.
