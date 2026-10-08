@@ -29,7 +29,7 @@
             {{-- Desktop sidebar --}}
             <aside class="sticky top-0 hidden h-dvh flex-col border-r border-line bg-card px-4 py-5 lg:flex">
                 <a href="{{ route('admin.dashboard') }}" class="mb-8 flex items-center gap-3 px-2">
-                    <span class="grid size-10 place-items-center rounded-xl bg-flag-green"><span class="size-4 rounded-full bg-flag-red"></span></span>
+                    @include('partials.logo', ['class' => 'size-10 shrink-0'])
                     <span class="leading-tight"><span class="block font-bold">আমার বাংলাদেশ</span><span class="text-xs text-ink-2">Admin panel</span></span>
                 </a>
                 <nav class="space-y-1">
@@ -50,7 +50,7 @@
                 <header class="sticky top-0 z-20 border-b border-line bg-paper/90 backdrop-blur lg:hidden">
                     <div class="flex items-center justify-between px-4 pt-3">
                         <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-2 font-bold">
-                            <span class="grid size-8 place-items-center rounded-lg bg-flag-green"><span class="size-3 rounded-full bg-flag-red"></span></span>Admin
+                            @include('partials.logo', ['class' => 'size-8'])Admin
                         </a>
                         <div class="flex items-center gap-1">
                             <a href="{{ route('home') }}" target="_blank" class="nav-link !px-2" aria-label="View site">{!! $icon('M14 4h6v6M20 4l-9 9M18 14v6H4V6h6') !!}</a>

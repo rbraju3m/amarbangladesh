@@ -56,5 +56,6 @@ php artisan quiz:og-images           # re-render public/images/og/*.png (needs g
 - Times are Asia/Dhaka: `APP_TIMEZONE=Asia/Dhaka` and `DB_TIMEZONE=+06:00` (MySQL session zone, so `useCurrent()` defaults agree with PHP).
 - Styling: Tailwind 4 with semantic CSS-variable tokens in `resources/css/app.css` (`bg-paper`, `text-ink`, `text-ink-2`, `border-line`, `bg-accent` …). Dark mode is a token swap under `prefers-color-scheme`, so use tokens rather than `dark:` classes. Per-location colour comes from `--accent`.
 - User-facing copy is conversational Bangla using তুমি; admin UI is English.
+- Brand mark: `partials/logo.blade.php` (inline emblem, token colours for dark mode; redrawn from the Facebook-page logo on the accurate map outline). Static copies: `public/images/brand/logo.svg`; favicons/app icons are the simpler green tile (white country + red sun) so they read at 16px.
 - Place illustrations are placeholder flat SVGs in `public/images/locations/` (400×300 viewBox); the image question reuses them.
 - Production needs a correct `APP_URL` (used in share URLs and `og:image`).

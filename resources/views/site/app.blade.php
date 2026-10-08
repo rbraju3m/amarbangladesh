@@ -16,7 +16,7 @@
     <section x-show="screen === 'landing'" @if ($isShared) x-cloak @endif class="screen pb-10 md:max-w-2xl lg:max-w-6xl lg:px-8"
         @click="$event.target.closest('[data-place]') || (focusSlug = null)">
         <header class="flex items-center justify-between py-3 lg:py-4">
-            <span class="text-sm font-semibold tracking-wide">🇧🇩 আমার বাংলাদেশ</span>
+            <span class="flex items-center gap-2 text-sm font-semibold tracking-wide">@include('partials.logo', ['class' => 'size-8'])আমার বাংলাদেশ</span>
         </header>
 
         <div class="lg:grid lg:flex-1 lg:grid-cols-2 lg:items-center lg:gap-16 lg:py-6">
@@ -221,7 +221,7 @@
         <section class="screen relative pb-12 md:max-w-2xl lg:grid lg:max-w-6xl lg:grid-cols-[5fr_6fr] lg:items-start lg:gap-x-14 lg:px-8">
             {{-- Brand bar: over the hero on phones, above the columns on desktop --}}
             <header class="absolute inset-x-0 top-0 z-10 flex items-center justify-between px-4 py-3 text-white lg:static lg:col-span-2 lg:px-0 lg:py-5 lg:text-ink">
-                <a href="/" @click.prevent="history.pushState({}, '', '/'); screen = 'landing'; scrollTo(0, 0)" class="flex items-center gap-2 text-sm font-bold tracking-wide drop-shadow lg:drop-shadow-none">🇧🇩 আমার বাংলাদেশ</a>
+                <a href="/" @click.prevent="history.pushState({}, '', '/'); screen = 'landing'; scrollTo(0, 0)" class="flex items-center gap-2 text-sm font-bold tracking-wide drop-shadow lg:drop-shadow-none"><span class="rounded-full bg-card p-0.5 lg:bg-transparent lg:p-0">@include('partials.logo', ['class' => 'block size-6'])</span>আমার বাংলাদেশ</a>
                 <button type="button" @click="retake()" class="rounded-full bg-black/25 px-3 py-1.5 text-sm font-semibold backdrop-blur transition hover:bg-black/40 lg:border lg:border-line lg:bg-card lg:backdrop-blur-none lg:hover:bg-paper-2">🔁 আবার খেলি</button>
             </header>
 

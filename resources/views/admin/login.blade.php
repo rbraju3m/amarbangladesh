@@ -7,7 +7,7 @@
     <div class="relative hidden overflow-hidden bg-flag-green lg:flex lg:flex-col lg:justify-between lg:p-12">
         <div class="absolute -right-24 top-1/2 size-[28rem] -translate-y-1/2 rounded-full bg-flag-red/90" aria-hidden="true"></div>
         <div class="relative flex items-center gap-3 text-white">
-            <span class="flex size-11 items-center justify-center rounded-2xl bg-white/15 text-2xl">🇧🇩</span>
+            <span class="rounded-full bg-white p-1">@include('partials.logo', ['class' => 'block size-10'])</span>
             <span class="text-lg font-bold">তোমার বাংলাদেশ কোথায়?</span>
         </div>
         <div class="relative max-w-sm text-white">
@@ -21,7 +21,7 @@
         <form method="POST" action="{{ route('admin.login') }}" class="w-full max-w-sm">
             @csrf
             <div class="mb-8 flex items-center gap-3 lg:hidden">
-                <span class="flex size-11 items-center justify-center rounded-2xl bg-flag-green" aria-hidden="true"><span class="-ml-1 size-5 rounded-full bg-flag-red"></span></span>
+                @include('partials.logo', ['class' => 'size-11 shrink-0'])
                 <span class="font-bold">তোমার বাংলাদেশ কোথায়?</span>
             </div>
             <h1 class="text-2xl font-bold">Welcome back</h1>
