@@ -15,12 +15,13 @@
     {{-- ===================== LANDING ===================== --}}
     <section x-show="screen === 'landing'" @if ($isShared) x-cloak @endif class="screen pb-10 md:max-w-2xl lg:max-w-6xl lg:px-8"
         @click="$event.target.closest('[data-place]') || (focusSlug = null)">
-        <header class="flex items-center justify-between py-4">
+        <header class="flex items-center justify-between py-3 lg:py-4">
             <span class="text-sm font-semibold tracking-wide">🇧🇩 আমার বাংলাদেশ</span>
         </header>
 
         <div class="lg:grid lg:flex-1 lg:grid-cols-2 lg:items-center lg:gap-16 lg:py-6">
-            <div class="relative mx-auto -mb-4 w-[68%] max-w-64 lg:mb-0 lg:w-[78%] lg:max-w-sm">
+            {{-- On phones the map's height is capped (400×552, so 25dvh wide ≈ 34dvh tall) to keep the play button above the fold, Messenger's browser included. --}}
+            <div class="relative mx-auto -mb-2 w-[min(68%,25dvh)] max-w-64 lg:mb-0 lg:w-[78%] lg:max-w-sm">
                 @include('partials.bd-map', ['mode' => 'hero', 'class' => 'w-full drop-shadow-[0_18px_30px_rgb(0_106_78/0.25)]', 'locations' => $boot['locations']])
                 <div class="transition-opacity duration-200" :class="focusSlug && 'opacity-0'" aria-hidden="true">
                     <span class="animate-pop absolute top-[18%] -left-6 rounded-full bg-card px-3 py-1 text-sm font-semibold shadow-lg [animation-delay:.2s]">🌿 সিলেট?</span>
@@ -38,18 +39,21 @@
             </div>
 
             <div class="relative z-10 text-center lg:text-left">
-                <h1 class="text-[2.6rem] leading-[1.15] font-bold tracking-tight lg:text-[4.2rem]">
+                <h1 class="text-[2.3rem] leading-[1.15] font-bold tracking-tight sm:text-[2.6rem] lg:text-[4.2rem]">
                     তোমার <span class="text-green-text">বাংলাদেশ</span><br>কোথায়?
                 </h1>
-                <p class="mx-auto mt-3 max-w-xs text-lg leading-relaxed text-ink-2 lg:mx-0 lg:mt-5 lg:max-w-md lg:text-xl">
+                <p class="mx-auto mt-2 max-w-xs text-base leading-relaxed text-ink-2 sm:text-lg lg:mx-0 lg:mt-5 lg:max-w-md lg:text-xl">
                     বাংলাদেশের কোন জায়গাটা তোমার personality-র সাথে সবচেয়ে বেশি মেলে?
                 </p>
 
-                <button type="button" class="btn-primary group mt-7 lg:w-auto lg:px-10" @click="start()">
+                <button type="button" class="btn-primary group mt-5 lg:mt-7 lg:w-auto lg:px-10" @click="start()">
                     আমার বাংলাদেশ খুঁজে দেখি <span aria-hidden="true" class="transition-transform duration-200 group-hover:translate-x-1">→</span>
                 </button>
 
-                <ul class="mt-5 flex flex-wrap justify-center gap-2 lg:justify-start" aria-label="কুইজের তথ্য">
+                @if ($totalPlays ?? null)
+                    <p class="mt-3 text-sm text-ink-2">👥 {{ \App\Support\Bangla::digits($totalPlays) }} জন এর মধ্যেই খুঁজে পেয়েছে তাদের বাংলাদেশ</p>
+                @endif
+                <ul class="mt-4 flex flex-wrap justify-center gap-2 lg:mt-5 lg:justify-start" aria-label="কুইজের তথ্য">
                     <li class="chip">⏱️ মাত্র ১ মিনিট</li>
                     <li class="chip">✨ {{ \App\Support\Bangla::digits(count($boot['questions'])) }}টি প্রশ্ন</li>
                     <li class="chip">🇧🇩 {{ \App\Support\Bangla::digits(count($boot['locations'])) }}টি বাংলাদেশ</li>

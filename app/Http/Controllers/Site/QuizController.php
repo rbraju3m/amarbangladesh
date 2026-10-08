@@ -13,9 +13,20 @@ use Illuminate\View\View;
 
 class QuizController extends Controller
 {
+    /** Below this, a play count is weak social proof, so the landing page doesn't show it. */
+    public const SHOW_PLAYS_FROM = 100;
+
     public function index(): View
     {
-        return view('site.app', ['boot' => $this->boot()]);
+        return view('site.app', ['boot' => $this->boot(), 'totalPlays' => self::totalPlays()]);
+    }
+
+    /** Social proof on the landing page; a few minutes stale is fine, so it costs one query per 10 minutes. */
+    public static function totalPlays(): ?int
+    {
+        $plays = Cache::remember('quiz.total_plays', 600, fn () => QuizResult::count());
+
+        return $plays >= self::SHOW_PLAYS_FROM ? $plays : null;
     }
 
     /** The share page: a teaser for visitors, the full result for its owner (decided client-side). */

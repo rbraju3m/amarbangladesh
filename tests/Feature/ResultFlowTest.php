@@ -201,6 +201,14 @@ class ResultFlowTest extends TestCase
         $this->get("/r/{$code}")->assertSee('১ জন বন্ধু এর মধ্যেই মিলিয়ে দেখেছে');
     }
 
+    public function test_landing_shows_the_play_count_only_once_it_is_convincing(): void
+    {
+        $this->get('/')->assertOk()->assertDontSee('জন এর মধ্যেই খুঁজে পেয়েছে');
+
+        cache()->put('quiz.total_plays', 1234, 600);
+        $this->get('/')->assertSee('১২৩৪ জন এর মধ্যেই খুঁজে পেয়েছে');
+    }
+
     public function test_replay_rescores_each_players_latest_answers_with_current_content(): void
     {
         $replayer = (string) Str::uuid();

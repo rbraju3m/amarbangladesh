@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\AnalyticsEvent;
 use App\Models\QuizResult;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -41,6 +42,7 @@ class PurgePlays extends Command
             QuizResult::query()->whereNotNull('referrer_result_id')->update(['referrer_result_id' => null]);
             QuizResult::query()->delete();
         });
+        Cache::forget('quiz.total_plays');
 
         $this->components->info("Deleted {$results} results and {$events} events. Content and admin accounts are untouched.");
 
