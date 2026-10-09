@@ -37,6 +37,16 @@ final class Notifier
         }
     }
 
+    /** A reply tells the author of what it replies to (site only, no email). */
+    public static function replied(Answer $reply): void
+    {
+        $parent = $reply->parent;
+        if ($parent->member_id === $reply->member_id || Member::whereKey($parent->member_id)->whereNotNull('deleted_at')->exists()) {
+            return;
+        }
+        MemberNotification::firstOrCreate(['member_id' => $parent->member_id, 'type' => 'reply', 'answer_id' => $reply->id], ['post_id' => $reply->post_id]);
+    }
+
     public static function accepted(Answer $answer): void
     {
         if ($answer->member_id !== $answer->post->member_id && ! $answer->member->isDeleted()) {

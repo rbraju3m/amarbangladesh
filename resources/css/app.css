@@ -302,6 +302,24 @@
         @apply rounded-3xl border border-line bg-card p-4 md:p-5;
     }
 
+    /* Threads: replies sit one step in, behind a quiet line; deeper replies don't indent further. */
+    .replies {
+        @apply mt-2 ml-4 space-y-2 border-l-2 border-line pl-3 md:ml-6 md:pl-4;
+    }
+
+    .reply-card {
+        @apply rounded-2xl bg-card/70 px-3.5 py-3 ring-1 ring-line/70 transition;
+    }
+
+    .reply-card:target,
+    .answer-card:target {
+        @apply ring-2 ring-flag-green/50;
+    }
+
+    .reply-composer {
+        @apply mt-2 ml-4 rounded-2xl border border-line bg-card p-3 md:ml-6;
+    }
+
     .answer-card.is-accepted {
         @apply border-2 border-flag-green;
     }

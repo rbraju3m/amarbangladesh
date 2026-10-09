@@ -340,8 +340,17 @@ function community() {
                     location.href = path('/feed');
                     return;
                 }
-                document.getElementById(`answer-${id}`)?.remove();
-                this.answersCount = Math.max(0, this.answersCount - 1);
+                // A top-level answer with replies leaves a placeholder (its replies keep their context);
+                // without replies the whole thread goes; a reply just disappears.
+                const el = document.getElementById(`answer-${id}`);
+                const thread = document.getElementById(`thread-${id}`);
+                if (thread) {
+                    if (thread.querySelector('.replies')?.children.length) el?.replaceWith(Object.assign(document.createElement('p'), { className: 'answer-card text-sm text-ink-2', textContent: t('এই উত্তরটা আর নেই।') }));
+                    else thread.remove();
+                    this.answersCount = Math.max(0, this.answersCount - 1);
+                } else {
+                    el?.remove();
+                }
                 if (this.accepted === id) this.accepted = null;
                 this.flash(t('মুছে ফেলা হয়েছে'));
             } catch (e) {
@@ -358,6 +367,84 @@ function community() {
                 if (data.accepted) this.flash(t('সমাধান হিসেবে চিহ্নিত হলো ✓ উত্তরদাতাকে ধন্যবাদ!'));
             } catch (e) {
                 this.flash(e.message);
+            }
+        },
+
+        /** A reply in a thread (`thread` is that thread's Alpine data: replyTo, more, after). */
+        async submitReply(postId, form, thread) {
+            const payload = Object.fromEntries(new FormData(form));
+            this.busy = true;
+            try {
+                const data = await this.call('POST', `/api/posts/${postId}/answers`, payload);
+                this.saveMember(data.member);
+                this.owned[`answer:${data.answer.id}`] = true;
+                if (!document.getElementById(`answer-${data.answer.id}`)) {
+                    document.getElementById(`replies-${data.answer.thread}`)?.insertAdjacentHTML('beforeend', data.html);
+                }
+                thread.replyTo = null;
+                this.$nextTick(() => document.getElementById(`answer-${data.answer.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+                this.flash(t('আপনার জবাব পোস্ট হয়েছে'));
+            } catch (e) {
+                if (!e.cancelled) this.flash(e.message);
+            } finally {
+                this.busy = false;
+            }
+        },
+
+        /** "Show more replies": the next replies of a thread, rendered by the server. */
+        async loadReplies(answerId, thread) {
+            if (this.busy) return;
+            this.busy = true;
+            try {
+                const data = await api('GET', withLang(`/api/answers/${answerId}/replies?after=${thread.after}`));
+                const list = document.getElementById(`replies-${answerId}`);
+                const seen = new Set([...list.querySelectorAll('[data-item]')].map((el) => el.dataset.item));
+                const holder = document.createElement('div');
+                holder.innerHTML = data.html;
+                for (const el of [...holder.children]) if (!seen.has(el.dataset.item)) list.append(el);
+                thread.after = data.last ?? thread.after;
+                thread.more = data.more ? Math.max(1, thread.more - holder.childElementCount) : 0;
+                this.refreshMine();
+            } catch {
+                this.flash(t('আনা গেলো না। ইন্টারনেট দেখে আবার চেষ্টা করুন।'));
+            } finally {
+                this.busy = false;
+            }
+        },
+
+        /** The author saves an edited answer or reply: the server sends it back re-rendered. */
+        async saveAnswer(id, form) {
+            this.busy = true;
+            try {
+                const data = await this.call('PATCH', `/api/answers/${id}`, Object.fromEntries(new FormData(form)));
+                document.getElementById(`answer-${id}`)?.replaceWith(Object.assign(document.createElement('template'), { innerHTML: data.html.trim() }).content.firstChild);
+                this.flash(t('সম্পাদনা সেভ হয়েছে'));
+            } catch (e) {
+                if (!e.cancelled) this.flash(e.message);
+            } finally {
+                this.busy = false;
+            }
+        },
+
+        async savePost(id, form) {
+            this.busy = true;
+            try {
+                const data = await this.call('PATCH', `/api/posts/${id}`, Object.fromEntries(new FormData(form)));
+                const article = form.closest('article');
+                document.getElementById('post-title').textContent = data.title;
+                document.getElementById('post-body').innerHTML = data.body_html;
+                article.querySelector('template[data-raw-title]').innerHTML = '';
+                article.querySelector('template[data-raw-title]').content.append(data.title);
+                article.querySelector('template[data-raw]').innerHTML = '';
+                article.querySelector('template[data-raw]').content.append(data.body ?? '');
+                document.getElementById('post-edited')?.classList.remove('hidden');
+                document.title = `${data.title} — ${document.title.split(' — ').pop()}`;
+                Alpine.$data(article).editing = false;
+                this.flash(t('সম্পাদনা সেভ হয়েছে'));
+            } catch (e) {
+                if (!e.cancelled) this.flash(e.message);
+            } finally {
+                this.busy = false;
             }
         },
 

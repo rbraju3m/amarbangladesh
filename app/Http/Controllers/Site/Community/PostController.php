@@ -31,12 +31,7 @@ class PostController extends Controller
             'area' => ['nullable', Rule::in(array_keys(Taxonomy::areas()))],
             'name' => ['nullable', 'string', 'max:40'],
             'anonymous' => ['nullable', 'boolean'],
-        ], [
-            'title.required' => __('কী জানতে চান, সেটা লিখুন।'),
-            'title.min' => __('আরেকটু খুলে লিখুন, যাতে সবাই বুঝতে পারে।'),
-            'title.max' => __('মূল কথাটা ছোট করে লিখুন (২০০ অক্ষরের মধ্যে), বাকিটা বিস্তারিত অংশে।'),
-            'body.max' => __('বিস্তারিত অংশটা একটু ছোট করুন।'),
-        ]);
+        ], self::messages());
 
         $member = self::named($request->attributes->get('member'), $data['name'] ?? null)->rememberLocale();
         if (Text::linkCount($data['title'].' '.($data['body'] ?? '')) > Text::MAX_LINKS) {
@@ -62,6 +57,41 @@ class PostController extends Controller
         return response()->json(['post' => ['id' => $post->id, 'url' => $post->url()], 'member' => MemberController::present($member)], 201);
     }
 
+    /** The author edits the title and details; the type, topic and area stay. Returns them re-rendered. */
+    public function update(Request $request, Post $post): JsonResponse
+    {
+        abort_unless($post->member_id === $request->attributes->get('member')->id, 403);
+        abort_unless($post->isPublished(), 404);
+        $request->merge(['title' => Text::line($request->input('title')), 'body' => Text::clean($request->input('body'))]);
+        $data = $request->validate([
+            'title' => ['required', 'string', 'min:8', 'max:200'],
+            'body' => ['nullable', 'string', 'max:5000'],
+        ], self::messages());
+        if (Text::linkCount($data['title'].' '.($data['body'] ?? '')) > Text::MAX_LINKS) {
+            throw ValidationException::withMessages(['body' => __('একটা পোস্টে দুটোর বেশি লিংক দেওয়া যাবে না।')]);
+        }
+
+        if ($data['title'] !== $post->title || ($data['body'] ?? null) !== $post->body) {
+            $post->forceFill(['title' => $data['title'], 'body' => $data['body'] ?? null, 'edited_at' => now()])->save();
+        }
+
+        return response()->json([
+            'title' => $post->title,
+            'body' => $post->body,
+            'body_html' => $post->body ? Text::render($post->body)->toHtml() : '',
+        ]);
+    }
+
+    private static function messages(): array
+    {
+        return [
+            'title.required' => __('কী জানতে চান, সেটা লিখুন।'),
+            'title.min' => __('আরেকটু খুলে লিখুন, যাতে সবাই বুঝতে পারে।'),
+            'title.max' => __('মূল কথাটা ছোট করে লিখুন (২০০ অক্ষরের মধ্যে), বাকিটা বিস্তারিত অংশে।'),
+            'body.max' => __('বিস্তারিত অংশটা একটু ছোট করুন।'),
+        ];
+    }
+
     /** The author takes their own post down. */
     public function destroy(Request $request, Post $post): Response
     {
@@ -77,7 +107,7 @@ class PostController extends Controller
         abort_unless($post->member_id === $request->attributes->get('member')->id, 403);
         $data = $request->validate(['answer' => ['nullable', 'integer']]);
 
-        $answer = isset($data['answer']) ? $post->answers()->published()->find($data['answer']) : null;
+        $answer = isset($data['answer']) ? $post->answers()->published()->whereNull('parent_id')->find($data['answer']) : null; // replies can't be the solution
         abort_if(isset($data['answer']) && (! $answer || $answer->member_id === $post->member_id), 422);
         $post->update(['accepted_answer_id' => $answer?->id]);
         if ($answer) {

@@ -33,7 +33,7 @@ class Post extends Model
 
     protected function casts(): array
     {
-        return ['is_anonymous' => 'boolean'];
+        return ['is_anonymous' => 'boolean', 'edited_at' => 'datetime'];
     }
 
     /** The author as the public sees them: null when posted anonymously. */
@@ -76,7 +76,7 @@ class Post extends Model
     /** Re-count from the answers table; called whenever an answer appears, disappears or changes status. */
     public function refreshAnswerCount(): void
     {
-        $this->answers_count = $this->answers()->published()->count();
+        $this->answers_count = $this->answers()->published()->whereNull('parent_id')->count(); // replies aren't answers
         if ($this->accepted_answer_id && ! $this->answers()->published()->whereKey($this->accepted_answer_id)->exists()) {
             $this->accepted_answer_id = null;
         }

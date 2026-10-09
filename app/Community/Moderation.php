@@ -84,6 +84,7 @@ final class Moderation
 
         if ($item instanceof Answer) {
             $item->post->refreshAnswerCount();
+            $item->thread?->refreshReplyCount();
         }
     }
 }

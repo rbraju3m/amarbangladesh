@@ -69,6 +69,7 @@ Route::withoutMiddleware([
 
     Route::prefix('api')->group(function () {
         Route::get('/feed', [PageController::class, 'feedItems'])->middleware('cache.headers:public;max_age=0;s_maxage=20;etag')->name('feed.items');
+        Route::get('/answers/{answer}/replies', [AnswerController::class, 'replies'])->whereNumber('answer')->middleware('cache.headers:public;max_age=0;s_maxage=20;etag')->name('answers.replies');
         Route::get('/posts/similar', [PageController::class, 'similar'])->middleware(['cache.headers:public;max_age=0;s_maxage=60;etag', 'throttle:search'])->name('posts.similar');
         Route::prefix('auth')->group(function () {
             Route::post('/email/register', [AuthController::class, 'emailRegister'])->middleware('throttle:auth')->name('auth.email.register');
@@ -93,9 +94,11 @@ Route::withoutMiddleware([
             Route::patch('/members/me', [MemberController::class, 'update'])->middleware('throttle:community')->name('members.update');
             Route::delete('/members/me', [MemberController::class, 'destroy'])->middleware('throttle:community')->name('members.destroy');
             Route::post('/posts', [PostController::class, 'store'])->middleware('throttle:posts')->name('posts.store');
+            Route::patch('/posts/{post}', [PostController::class, 'update'])->middleware('throttle:community')->name('posts.update');
             Route::delete('/posts/{post}', [PostController::class, 'destroy'])->middleware('throttle:community')->name('posts.destroy');
             Route::post('/posts/{post}/accept', [PostController::class, 'accept'])->middleware('throttle:community')->name('posts.accept');
             Route::post('/posts/{post}/answers', [AnswerController::class, 'store'])->middleware('throttle:answers')->name('answers.store');
+            Route::patch('/answers/{answer}', [AnswerController::class, 'update'])->middleware('throttle:community')->name('answers.update');
             Route::delete('/answers/{answer}', [AnswerController::class, 'destroy'])->middleware('throttle:community')->name('answers.destroy');
             Route::post('/helpful', [SignalController::class, 'helpful'])->middleware('throttle:community')->name('helpful');
             Route::post('/reports', [SignalController::class, 'report'])->middleware('throttle:reports')->name('reports.store');

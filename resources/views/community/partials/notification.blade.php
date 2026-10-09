@@ -5,10 +5,11 @@
     [$emoji, $line] = match ($notification->type) {
         'accepted' => ['✓', __('আপনার উত্তরটি সমাধান হিসেবে বেছে নেওয়া হয়েছে')],
         'need' => ['🙏', __('আপনিও যেটা জানতে চেয়েছিলেন, তার উত্তর দিয়েছেন :name', ['name' => $who])],
+        'reply' => ['↩️', __(':name আপনার কথার জবাব দিয়েছেন', ['name' => $who])],
         default => ['💬', __(':name আপনার পোস্টে উত্তর দিয়েছেন', ['name' => $who])],
     };
 @endphp
-<a href="{{ $notification->post->url() }}#answer-{{ $answer->id }}" @click="track('notification_clicked', { meta: { type: '{{ $notification->type }}' } })"
+<a href="{{ $notification->post->url() }}{{ $answer->thread_id ? '?thread='.$answer->thread_id : '' }}#answer-{{ $answer->id }}" @click="track('notification_clicked', { meta: { type: '{{ $notification->type }}' } })"
     @class(['notice-card', 'is-unread' => ! $notification->read_at])>
     <span class="notice-icon" aria-hidden="true">{{ $emoji }}</span>
     <span class="min-w-0 flex-1">

@@ -97,6 +97,27 @@ final class DemoContent
                     $answers++;
                 }
 
+                // Replies: [answer index, [[body, helpful marks, reply index it answers (null = the answer)], …]]
+                foreach ($data['replies'][$i] ?? [] as [$answerIndex, $thread]) {
+                    $root = Answer::find($ids[$answerIndex]);
+                    $made = [];
+                    foreach ($thread as [$body, $marks, $to]) {
+                        $answerAt = self::later($root->created_at, $now, mt_rand(30, 900) * (count($made) + 1));
+                        $parent = $to === null ? $root : $made[$to];
+                        $reply = Answer::forceCreate([
+                            'post_id' => $post->id, 'parent_id' => $parent->id, 'thread_id' => $root->id,
+                            'member_id' => $members[mt_rand(0, count($members) - 1)]->id,
+                            'body' => $body, 'status' => Post::PUBLISHED, 'created_at' => $answerAt, 'updated_at' => $answerAt,
+                        ]);
+                        self::mark($reply, $marks, $members, $answerAt, $now);
+                        $reply->timestamps = false;
+                        $reply->save();
+                        $made[] = $reply;
+                        $answers++;
+                    }
+                    $root->refreshReplyCount();
+                }
+
                 self::mark($post, $need, $others, $at, $now);
                 $post->timestamps = false;
                 $post->forceFill([
@@ -123,6 +144,7 @@ final class DemoContent
 
         return DB::transaction(function () use ($ids) {
             $touchedPosts = Answer::whereIn('member_id', $ids)->distinct()->pluck('post_id');
+            $touchedThreads = Answer::whereIn('member_id', $ids)->whereNotNull('thread_id')->distinct()->pluck('thread_id');
             $marked = HelpfulMark::whereIn('member_id', $ids)->get(['markable_type', 'markable_id']);
             $posts = Post::whereIn('member_id', $ids)->count();
 
@@ -134,6 +156,9 @@ final class DemoContent
 
             foreach (Post::whereIn('id', $touchedPosts)->get() as $post) {
                 $post->refreshAnswerCount();
+            }
+            foreach (Answer::whereIn('id', $touchedThreads)->get() as $thread) {
+                $thread->refreshReplyCount();
             }
             foreach ($marked->groupBy('markable_type') as $type => $rows) {
                 $model = $type === 'post' ? Post::class : Answer::class;

@@ -7,6 +7,7 @@ use App\Community\Feed;
 use App\Community\Search;
 use App\Community\Taxonomy;
 use App\Http\Controllers\Controller;
+use App\Models\Answer;
 use App\Models\Member;
 use App\Models\Post;
 use Illuminate\Http\JsonResponse;
@@ -19,6 +20,11 @@ class PageController extends Controller
 {
     /** Posts per list on the home page. */
     private const HOME_LIST = 5;
+
+    /** Top-level answers per page on a post, and replies shown under each before "show more". */
+    private const ANSWERS_PAGE = 20;
+
+    private const FIRST_REPLIES = 3;
 
     /** Posts or answers per page on a member's page. */
     private const PROFILE_PAGE = 20;
@@ -86,22 +92,39 @@ class PageController extends Controller
         ]);
     }
 
-    public function show(Post $post): View
+    /**
+     * A post with its discussion: top-level answers 20 at a time (the solution first, then the most
+     * helpful), each with its first replies; `?thread=ID` (from a reply notification) shows a whole thread.
+     * An answer that was taken down stays as a placeholder while it has replies, so they keep their context.
+     */
+    public function show(Request $request, Post $post): View
     {
         abort_unless($post->isPublished(), 404);
         $post->load(['member:id,code,name,deleted_at', 'category', 'area']);
+        $member = 'member:id,code,name,deleted_at';
 
-        $answers = $post->answers()->published()->with('member:id,code,name,deleted_at')
+        $answers = $post->answers()->whereNull('parent_id')
+            ->where(fn ($q) => $q->where('status', Post::PUBLISHED)->orWhere('replies_count', '>', 0))
+            ->with($member)
             ->orderByRaw('id = ? desc', [(int) $post->accepted_answer_id])
             ->orderByDesc('helpful_count')->orderBy('id')
-            ->limit(200)->get();
+            ->paginate(self::ANSWERS_PAGE)->withQueryString();
+
+        // The first replies of every thread on this page in one query (a window per thread).
+        $open = $request->integer('thread');
+        $ranked = Answer::query()->select('answers.*')
+            ->selectRaw('ROW_NUMBER() OVER (PARTITION BY thread_id ORDER BY id) AS position')
+            ->whereIn('thread_id', $answers->pluck('id'))->where('status', Post::PUBLISHED);
+        $replies = Answer::query()->fromSub($ranked, 'answers')
+            ->where(fn ($q) => $q->where('position', '<=', self::FIRST_REPLIES)->orWhere('thread_id', $open))
+            ->with([$member, 'parent.'.$member])->orderBy('id')->get()->groupBy('thread_id');
 
         $related = Post::published()->whereKeyNot($post->id)
             ->when($post->category_id, fn ($q) => $q->where('category_id', $post->category_id))
             ->with(['member:id,code,name,deleted_at', 'category', 'area'])
             ->latest('id')->limit(3)->get();
 
-        return view('community.post', ['post' => $post, 'answers' => $answers, 'related' => $related]);
+        return view('community.post', ['post' => $post, 'answers' => $answers, 'replies' => $replies, 'related' => $related]);
     }
 
     public function ask(Request $request): View

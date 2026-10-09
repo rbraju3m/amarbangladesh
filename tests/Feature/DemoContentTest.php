@@ -27,10 +27,15 @@ class DemoContentTest extends TestCase
         $this->assertSame($posts, Post::count());
         $this->assertSame($answers, Answer::count());
         $this->assertGreaterThanOrEqual(61, $posts); // more than four feed pages, for infinite scroll
+        $this->assertGreaterThan(3, Answer::whereNotNull('thread_id')->groupBy('thread_id')->selectRaw('COUNT(*) AS n')->pluck('n')->max()); // a thread long enough for "show more"
+        $this->assertTrue(Answer::whereColumn('parent_id', '!=', 'thread_id')->exists()); // and a reply to a reply
 
         // Counts match the rows, accepted answers belong to their post, nobody marks their own work.
         foreach (Post::with('answers')->get() as $post) {
-            $this->assertSame($post->answers->count(), $post->answers_count);
+            $this->assertSame($post->answers->whereNull('parent_id')->count(), $post->answers_count);
+            foreach ($post->answers->whereNull('parent_id') as $answer) {
+                $this->assertSame($post->answers->where('thread_id', $answer->id)->count(), $answer->replies_count);
+            }
             $this->assertSame(HelpfulMark::where(['markable_type' => 'post', 'markable_id' => $post->id])->count(), $post->helpful_count);
             if ($post->accepted_answer_id) {
                 $this->assertTrue($post->answers->contains('id', $post->accepted_answer_id));

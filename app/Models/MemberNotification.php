@@ -19,7 +19,7 @@ class MemberNotification extends Model
     public const UPDATED_AT = null;
 
     /** answer: on your post · accepted: your answer solved it · need: a question you also wanted answered */
-    public const TYPES = ['answer', 'accepted', 'need'];
+    public const TYPES = ['answer', 'accepted', 'need', 'reply'];
 
     protected $fillable = ['member_id', 'type', 'post_id', 'answer_id', 'read_at', 'emailed_at'];
 
