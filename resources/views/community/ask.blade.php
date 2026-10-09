@@ -81,11 +81,11 @@
             <span x-text="t('পোস্ট হবে :name নামে', { name: anon ? t('বেনামী') : myName })"></span>
         </p>
 
-        <p x-show="formError" x-cloak class="mt-3 text-sm font-semibold text-flag-red" x-text="formError"></p>
+        <p x-show="formError" x-cloak class="mt-3 text-sm font-semibold text-danger" x-text="formError"></p>
         <button type="submit" class="btn-primary mt-5" :disabled="busy || title.trim().length < 8"
             x-text="busy ? t('পোস্ট হচ্ছে…') : (type === 'question' || type === 'help' ? t('প্রশ্নটা পোস্ট করুন') : t('পোস্ট করুন'))">{{ __('প্রশ্নটা পোস্ট করুন') }}</button>
         <p class="mt-3 text-center text-xs leading-relaxed text-ink-2">{{ __('সম্মান রেখে লিখুন · কারও ফোন নম্বর বা ঠিকানা প্রকাশ্যে দেবেন না') }}</p>
-        <noscript><p class="mt-2 text-center text-sm text-flag-red">{{ __('পোস্ট করতে ব্রাউজারে JavaScript চালু রাখুন।') }}</p></noscript>
+        <noscript><p class="mt-2 text-center text-sm text-danger">{{ __('পোস্ট করতে ব্রাউজারে JavaScript চালু রাখুন।') }}</p></noscript>
     </form>
 </div>
 @endsection

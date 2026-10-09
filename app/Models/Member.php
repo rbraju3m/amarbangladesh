@@ -20,7 +20,7 @@ class Member extends Model
 
     protected function casts(): array
     {
-        return ['blocked_at' => 'datetime', 'deleted_at' => 'datetime', 'password' => 'hashed', 'email_notifications' => 'boolean'];
+        return ['blocked_at' => 'datetime', 'deleted_at' => 'datetime', 'is_demo' => 'boolean', 'password' => 'hashed', 'email_notifications' => 'boolean'];
     }
 
     /** Notification emails go out in the language the member last used the site in. */

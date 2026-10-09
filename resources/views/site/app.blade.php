@@ -1,29 +1,22 @@
-@extends('layouts.site', isset($result) ? [
+@extends('layouts.site', ['siteNav' => true] + (isset($result) ? [
     'ogTitle' => __(':owner বাংলাদেশ হলো :place', ['owner' => $result->display_name ? \App\Support\Lang::possessive($result->display_name) : __('আমার'), 'place' => $result->location->text('name').' '.$result->location->emoji]),
     'ogDescription' => __(':title · ভাইব ম্যাচ :n%। তোমার বাংলাদেশ কোথায়? মাত্র ১ মিনিটে খুঁজে দেখো →', ['title' => $result->location->text('title'), 'n' => \App\Support\Lang::num($result->match_pct)]),
     'ogImage' => $result->location->ogImageUrl(),
     'pageTitle' => __(':place — তোমার বাংলাদেশ কোথায়?', ['place' => $result->location->emoji.' '.$result->location->text('name')]),
     'noindex' => true,
-] : [])
+] : []))
 
 @section('content')
 @php($isShared = isset($boot['shared']))
 <script type="application/json" id="boot">{!! json_encode($boot, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}</script>
 
 <main x-data="quiz(JSON.parse(document.getElementById('boot').textContent))" :style="`--accent: ${accent}`" class="relative overflow-x-clip">
+    {{-- The shared site header; the questions and the reveal are full-screen, so it steps aside there. --}}
+    <x-site.header active="quiz" x-show="!['question', 'reveal'].includes(screen)" />
 
     {{-- ===================== LANDING ===================== --}}
-    <section x-show="screen === 'landing'" @if ($isShared) x-cloak @endif class="screen pb-10 md:max-w-2xl lg:max-w-6xl lg:px-8"
+    <section x-show="screen === 'landing'" @if ($isShared) x-cloak @endif class="screen pt-3 pb-10 md:max-w-2xl lg:max-w-6xl lg:px-8"
         @click="$event.target.closest('[data-place]') || (focusSlug = null)">
-        {{-- One row at any width (checked at 360px in both languages): nothing here may wrap. --}}
-        <header class="flex items-center justify-between gap-2 py-3 whitespace-nowrap lg:py-4">
-            <span class="flex min-w-0 items-center gap-2 text-sm font-semibold tracking-wide">@include('partials.logo', ['class' => 'size-8 shrink-0'])<span class="truncate">{{ __('আমার বাংলাদেশ') }}</span></span>
-            <span class="flex shrink-0 items-center gap-1.5">
-                <a href="{{ lroute('feed', [], false) }}" class="chip !gap-1 !px-2.5 !py-1 transition hover:border-ink-2" @click="trackCommunity('landing_header', 'feed')">{{ __('💬 আলোচনা') }}</a>
-                @include('partials.lang-switch')
-            </span>
-        </header>
-
         <div class="lg:grid lg:flex-1 lg:grid-cols-2 lg:items-center lg:gap-16 lg:py-6">
             {{-- On phones the map's height is capped (400×552, so 25dvh wide ≈ 34dvh tall) to keep the play button above the fold, Messenger's browser included. --}}
             <div class="relative mx-auto -mb-2 w-[min(68%,25dvh)] max-w-64 lg:mb-0 lg:w-[78%] lg:max-w-sm">
@@ -117,10 +110,7 @@
             </div>
         </section>
 
-        <footer class="mt-auto pt-10 text-center text-xs leading-relaxed text-ink-2">
-            {{ __('কুইজ খেলতে কোনো লগইন লাগে না। তোমার নাম, ফোন বা ইমেইল আমরা চাই না।') }}
-            · <a href="{{ lroute('privacy', [], false) }}" class="underline hover:text-ink">{{ __('গোপনীয়তা') }}</a>
-        </footer>
+        <p class="mt-auto pt-10 text-center text-xs leading-relaxed text-ink-2">{{ __('কুইজ খেলতে কোনো লগইন লাগে না। তোমার নাম, ফোন বা ইমেইল আমরা চাই না।') }}</p>
     </section>
 
     {{-- ===================== TEASER (someone shared their result) =====================
@@ -251,12 +241,11 @@
 
     {{-- ===================== RESULT ===================== --}}
     <template x-if="screen === 'result' && result">
-        <section class="screen relative pb-28 md:max-w-2xl lg:grid lg:pb-12 lg:max-w-6xl lg:grid-cols-[5fr_6fr] lg:items-start lg:gap-x-14 lg:px-8">
-            {{-- Brand bar: over the hero on phones, above the columns on desktop --}}
-            <header class="absolute inset-x-0 top-0 z-10 flex items-center justify-between px-4 py-3 text-white lg:static lg:col-span-2 lg:px-0 lg:py-5 lg:text-ink">
-                <a href="{{ lroute('home') }}" @click.prevent="history.pushState({}, '', @js(lroute('home'))); screen = 'landing'; scrollTo(0, 0)" class="flex items-center gap-2 text-sm font-bold tracking-wide drop-shadow lg:drop-shadow-none"><span class="rounded-full bg-card p-0.5 lg:bg-transparent lg:p-0">@include('partials.logo', ['class' => 'block size-6'])</span>{{ __('আমার বাংলাদেশ') }}</a>
-                <button type="button" @click="retake()" class="rounded-full bg-black/25 px-3 py-1.5 text-sm font-semibold backdrop-blur transition hover:bg-black/40 lg:border lg:border-line lg:bg-card lg:backdrop-blur-none lg:hover:bg-paper-2">{{ __('🔁 আবার খেলি') }}</button>
-            </header>
+        <section class="screen relative pb-16 md:max-w-2xl lg:grid lg:pb-12 lg:max-w-6xl lg:grid-cols-[5fr_6fr] lg:items-start lg:gap-x-14 lg:px-8">
+            {{-- Play again: over the hero on phones, above the columns on desktop (the site header is above) --}}
+            <div class="absolute top-3 right-4 z-10 lg:static lg:col-span-2 lg:flex lg:justify-end lg:pt-5 lg:pb-3">
+                <button type="button" @click="retake()" class="rounded-full bg-black/25 px-3 py-1.5 text-sm font-semibold text-white backdrop-blur transition hover:bg-black/40 lg:border lg:border-line lg:bg-card lg:text-ink lg:backdrop-blur-none lg:hover:bg-paper-2">{{ __('🔁 আবার খেলি') }}</button>
+            </div>
 
             {{-- Phone/tablet hero; on desktop the live share card takes this place --}}
             <div class="relative -mx-4 overflow-hidden rounded-b-[2.5rem] bg-accent lg:hidden">
@@ -451,11 +440,16 @@
             <button type="button" class="btn-ghost mt-8 w-full" @click="retake()">{{ __('🔁 আবার খেলি') }}</button>
             <footer class="mt-8 border-t border-line pt-5 text-center text-xs leading-relaxed text-ink-2">
                 <p>{{ __('এটা মজার একটা ভাইব-ম্যাচ, বৈজ্ঞানিক পরীক্ষা না 🙂') }}</p>
-                <p class="mt-1">{{ __('কুইজে কোনো লগইন নেই · তোমার নাম, ফোন বা ইমেইল আমরা চাই না') }} · <a href="{{ lroute('privacy', [], false) }}" class="underline hover:text-ink">{{ __('গোপনীয়তা') }}</a></p>
+                <p class="mt-1">{{ __('কুইজে কোনো লগইন নেই · তোমার নাম, ফোন বা ইমেইল আমরা চাই না') }}</p>
             </footer>
             </div>
         </section>
     </template>
+
+    <div x-show="!['question', 'reveal'].includes(screen)">
+        <x-site.footer class="!mt-0" />
+        <x-site.tabbar active="quiz" />
+    </div>
 
     {{-- ===================== SHARE SHEET ===================== --}}
     <div x-show="sheetOpen" x-cloak x-modal="sheetOpen" class="fixed inset-0 z-40 flex items-end justify-center md:items-center md:p-6" role="dialog" aria-modal="true" aria-label="{{ __('শেয়ার করো') }}" @keydown.escape.window="sheetOpen = false">
@@ -594,7 +588,7 @@
 
     {{-- Phones: once the result's own share button has scrolled away, this one stays in reach --}}
     <div x-show="showFab" x-cloak x-transition:enter="transition duration-200 ease-out" x-transition:enter-start="translate-y-6 opacity-0" x-transition:leave="transition duration-150" x-transition:leave-end="translate-y-6 opacity-0"
-        class="fixed inset-x-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-30 mx-auto max-w-md lg:hidden">
+        class="fixed inset-x-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-30 mx-auto max-w-md md:bottom-6 lg:hidden">
         <button type="button" class="btn-primary shadow-2xl" @click="openSheet()">
             <template x-if="cardUrl"><img :src="cardUrl" alt="" class="-my-1 h-9 rounded-md shadow ring-1 ring-white/40" :class="cardSquare ? 'aspect-square' : 'aspect-[9/16]'"></template>
             {{ __('কার্ডটা শেয়ার করো') }} <span aria-hidden="true">✨</span>
@@ -602,6 +596,6 @@
     </div>
 
     {{-- Toast --}}
-    <div x-show="toast" x-cloak x-transition class="fixed inset-x-4 z-50 mx-auto max-w-sm rounded-2xl bg-ink px-4 py-3 text-center text-sm font-medium text-paper shadow-xl" :class="showFab ? 'bottom-24 lg:bottom-6' : 'bottom-6'" role="status" x-text="toast"></div>
+    <div x-show="toast" x-cloak x-transition class="fixed inset-x-4 z-50 mx-auto max-w-sm rounded-2xl bg-ink px-4 py-3 text-center text-sm font-medium text-paper shadow-xl" :class="showFab ? 'bottom-44 md:bottom-24 lg:bottom-6' : 'bottom-24 md:bottom-6'" role="status" x-text="toast"></div>
 </main>
 @endsection

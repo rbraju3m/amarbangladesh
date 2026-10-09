@@ -75,7 +75,7 @@
             </template>
             @include('community.partials.anon-toggle', ['class' => 'mt-3', 'label' => __('বেনামী হিসেবে উত্তর দিন')])
             <p class="mt-2 text-xs text-ink-2">{{ __('সম্মান রেখে লিখুন · কারও ফোন নম্বর বা ঠিকানা প্রকাশ্যে দেবেন না') }}</p>
-            <p x-show="formError" x-cloak class="mt-2 text-sm font-semibold text-flag-red" x-text="formError"></p>
+            <p x-show="formError" x-cloak class="mt-2 text-sm font-semibold text-danger" x-text="formError"></p>
             <button type="submit" class="btn-primary mt-3" :disabled="busy || body.trim().length < 2" x-text="busy ? t('পাঠাচ্ছি…') : @js($post->isQuestion() ? __('উত্তর দিন') : __('পোস্ট করুন'))">{{ $post->isQuestion() ? __('উত্তর দিন') : __('পোস্ট করুন') }}</button>
             <noscript><p class="mt-2 text-sm text-ink-2">{{ __('উত্তর দিতে ব্রাউজারে JavaScript চালু রাখুন।') }}</p></noscript>
         </form>

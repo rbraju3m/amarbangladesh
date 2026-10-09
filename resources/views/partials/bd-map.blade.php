@@ -2,7 +2,8 @@
     Bangladesh outline (Natural Earth, projected) with one dot per location.
     $mode: 'hero' (decorative, gentle pulse) or 'reveal' (driven by scanSlug / lockedSlug).
 --}}
-<svg viewBox="0 0 400 552" class="{{ $class ?? '' }}" role="img" aria-label="বাংলাদেশের মানচিত্র">
+{{-- With clickable places it is a group of buttons (role="img" would hide them from screen readers). --}}
+<svg viewBox="0 0 400 552" class="{{ $class ?? '' }}" role="{{ $mode === 'reveal' ? 'img' : 'group' }}" aria-label="{{ __('বাংলাদেশের মানচিত্র') }}">
     <defs>
         <linearGradient id="bd-fill-{{ $mode }}" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0" stop-color="#7fbf8f" />
@@ -28,9 +29,12 @@
                 :opacity="lockedSlug && lockedSlug !== '{{ $loc['slug'] }}' ? .3 : 1" />
         @else
             {{-- Hover (mouse) or tap focuses a place; the landing page shows a tooltip and highlights its card. --}}
-            <g data-place class="cursor-pointer" role="button" aria-label="{{ $loc['name'] }}"
+            {{-- Keyboard: Tab focuses a place (tooltip shows), Enter or Space opens it. --}}
+            <g data-place class="cursor-pointer outline-none" role="button" tabindex="0" aria-label="{{ $loc['name'] }}: {{ $loc['title'] }}"
                 @pointerenter="$event.pointerType === 'mouse' && (focusSlug = '{{ $loc['slug'] }}')"
                 @pointerleave="$event.pointerType === 'mouse' && (focusSlug = null)"
+                @focus="focusSlug = '{{ $loc['slug'] }}'" @blur="focusSlug === '{{ $loc['slug'] }}' && (focusSlug = null)"
+                @keydown.enter.prevent="openPlace('{{ $loc['slug'] }}')" @keydown.space.prevent="openPlace('{{ $loc['slug'] }}')"
                 @click="tapDot('{{ $loc['slug'] }}')">
                 <circle x-show="focusSlug === '{{ $loc['slug'] }}'" class="map-pulse" cx="{{ $cx }}" cy="{{ $cy }}" r="10" fill="var(--red)" />
                 <circle cx="{{ $cx }}" cy="{{ $cy }}" r="20" fill="transparent" />

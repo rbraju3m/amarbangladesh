@@ -21,7 +21,7 @@
             @elseif ($post->answers_count)
                 <span class="pill bg-paper-2 text-ink">💬 {{ \App\Support\Lang::choice($post->isQuestion() ? ':nটি উত্তর' : ':nটি মন্তব্য', $post->answers_count) }}</span>
             @elseif ($post->isQuestion())
-                <span class="pill bg-flag-red/10 text-flag-red">{{ __('উত্তর দরকার') }}</span>
+                <span class="pill bg-warn/10 text-warn">{{ __('উত্তর দরকার') }}</span>
             @endif
         </span>
     </div>

@@ -30,3 +30,6 @@ Thumbs.db
 
 # Local planning docs (plans and step-by-step work logs), never committed
 /docs
+
+# Personal Claude Code settings
+/.claude/settings.local.json

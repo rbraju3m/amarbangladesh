@@ -33,6 +33,10 @@
     --line: #e4ddcc;
     --red: #e03a3e;
     --green: #006a4e;
+    /* Roles, so one colour doesn't mean three things: red is the brand and the main action;
+       danger is for errors and destructive steps; warn is "needs attention" (an unanswered question). */
+    --danger: #c0262c;
+    --warn: #9a5b00;
     --green-text: #006a4e;
     --accent: #2f7d4f;
     /* Admin chart series (validated categorical trio, light / dark). */
@@ -50,6 +54,8 @@
         --ink: #f1ede3;
         --ink-2: #a9b5ae;
         --line: #2a3832;
+        --danger: #ff8f8f;
+        --warn: #f2b45c;
         --green-text: #5fd3a4;
         --viz-1: #3987e5;
         --viz-2: #d95926;
@@ -65,6 +71,8 @@
     --ink: #f1ede3;
     --ink-2: #a9b5ae;
     --line: #2a3832;
+    --danger: #ff8f8f;
+    --warn: #f2b45c;
     --green-text: #5fd3a4;
     --viz-1: #3987e5;
     --viz-2: #d95926;
@@ -84,6 +92,8 @@
     --color-flag-red: var(--red);
     --color-flag-green: var(--green);
     --color-green-text: var(--green-text);
+    --color-danger: var(--danger);
+    --color-warn: var(--warn);
     --color-accent: var(--accent);
     --color-viz-1: var(--viz-1);
     --color-viz-2: var(--viz-2);
@@ -268,7 +278,7 @@
     }
 
     .tag-help {
-        @apply border-transparent bg-flag-red/10 text-flag-red;
+        @apply border-transparent bg-warn/10 text-warn;
     }
 
     .avatar {
@@ -330,8 +340,9 @@
         @apply absolute -top-0.5 -right-1 size-2.5 rounded-full bg-flag-red ring-2 ring-card;
     }
 
+    /* Long reading, Bangla first: a size up from body text, with room between lines for the conjuncts. */
     .prose-text {
-        @apply leading-relaxed break-words;
+        @apply text-[1.0625rem] leading-[1.75] break-words;
     }
 
     .composer {

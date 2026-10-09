@@ -1,5 +1,6 @@
 import Alpine from 'alpinejs';
 import { lang, loadDictionary, localeHeaders, num, path, t, withLang } from './i18n';
+import modal from './modal';
 import { copyText, isMobile, shareLinks } from './share';
 import { store, visitorId } from './store';
 import { setTrackingContext, track } from './track';
@@ -509,6 +510,15 @@ function community() {
             }
         },
 
+        // The header's "Me" / "Log in": signed out, sign in right here instead of opening /me first.
+        meClick(e) {
+            if (this.signedIn) return;
+            e.preventDefault();
+            this.openLogin().then(() => this.openMe(), () => {});
+        },
+
+        navClick() {}, // already in the community; only quiz pages count these (site-nav.js)
+
         // /me: the profile of whoever is signed in, or the sign-in sheet.
         openMe() {
             if (this.signedIn) location.replace(path(`/u/${this.me}`));
@@ -523,6 +533,7 @@ function community() {
     };
 }
 
+Alpine.plugin(modal);
 Alpine.data('community', community);
 window.Alpine = Alpine;
 loadDictionary().then(() => Alpine.start());

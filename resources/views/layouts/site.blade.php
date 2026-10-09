@@ -46,6 +46,11 @@
     @vite(['resources/css/app.css', $script ?? 'resources/js/app.js'])
 </head>
 <body @isset($bodyClass) class="{{ $bodyClass }}" @endisset>
-    @yield('content')
+    {{-- Pages without their own member state (the quiz) get it from siteNav for the shared header. --}}
+    @if ($siteNav ?? false)
+        <div x-data="siteNav" class="contents">@yield('content')</div>
+    @else
+        @yield('content')
+    @endif
 </body>
 </html>
