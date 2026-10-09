@@ -2,7 +2,7 @@
 
 A mobile-first Bangla/English community where Bangladeshis ask questions, answer them and find what others already asked, with a one-minute personality quiz ("Where is your Bangladesh?") as a fun way in.
 
-- **Community (home, `/`):** an interactive map of the 8 divisions, latest / unanswered / solved discussions, topics. Ask (questions, discussions, tips, help requests), answer, reply in threads, mark answers helpful, accept a solution, search, notifications on the site and by email. Reading is open; writing needs a login (Google, Facebook, phone code or email) and can be anonymous. Reports, auto-hide and moderation keep it civil.
+- **Community (home, `/`):** an interactive map of the 8 divisions, latest / unanswered / solved discussions, topics. Ask (questions, discussions, tips, help requests), answer with simple formatting (bold, lists, links), reply in threads, mark answers helpful, accept a solution, search, notifications on the site and by email. Reading is open; writing needs a login (Google, Facebook, phone code or email) and can be anonymous. Reports, auto-hide and moderation keep it civil.
 - **Quiz (`/quiz`):** 8 questions → one of 9 places, a share card (story or square, 4 designs × 6 colour themes), and friend links (`/r/{code}`) that show how much two friends match.
 - **Languages:** Bangla at `/…`, English at `/en/…`. Public pages are cookieless and cacheable.
 
