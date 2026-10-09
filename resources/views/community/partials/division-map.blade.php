@@ -5,13 +5,13 @@
     JavaScript each division is a link to its feed. $spots: App\Community\DivisionMap::spots().
 --}}
 <div class="relative mx-auto w-full max-w-[min(100%,26rem)]">
-    <svg viewBox="0 0 400 552" class="division-map w-full drop-shadow-[0_18px_30px_rgb(0_106_78/0.22)]" role="group" aria-label="{{ __('বাংলাদেশের মানচিত্র') }}">
-        @foreach ($spots as $s)
+    <svg viewBox="0 0 400 552" class="division-map w-full drop-shadow-[0_18px_30px_rgb(0_106_78/0.22)]" :class="spot && 'has-spot'" role="group" aria-label="{{ __('বাংলাদেশের মানচিত্র') }}">
+        @foreach ($spots as $i => $s)
             <a href="{{ lroute('feed', ['area' => $s['slug']], false) }}" class="division-link" @click.prevent="pick('{{ $s['slug'] }}')"
                 @pointerenter="$event.pointerType === 'mouse' && (hover = '{{ $s['slug'] }}')" @pointerleave="hover === '{{ $s['slug'] }}' && (hover = null)"
                 @focus="$el.matches(':focus-visible') && (hover = '{{ $s['slug'] }}')" @blur="hover === '{{ $s['slug'] }}' && (hover = null)"
                 aria-label="{{ __(':name বিভাগ', ['name' => $s['name']]) }}: {{ \App\Support\Lang::choice(':nটি আলোচনা', $s['count']) }}">
-                <path d="{{ $s['path'] }}" class="division level-{{ $s['level'] }}" :class="{ 'is-on': spot === '{{ $s['slug'] }}', 'is-hover': hover === '{{ $s['slug'] }}' }" />
+                <path d="{{ $s['path'] }}" style="--i: {{ $i }}" class="division level-{{ $s['level'] }}" :class="{ 'is-on': spot === '{{ $s['slug'] }}', 'is-hover': hover === '{{ $s['slug'] }}' }" />
             </a>
         @endforeach
         {{-- Padma, Jamuna and Meghna, as on the quiz map --}}
@@ -23,8 +23,8 @@
     </svg>
 
     {{-- Each division's name on its shape; a pulsing dot where people posted this week --}}
-    @foreach ($spots as $s)
-        <span class="map-name" style="left: {{ $s['x'] }}%; top: {{ $s['y'] }}%" :class="(spot === '{{ $s['slug'] }}' || hover === '{{ $s['slug'] }}') && 'is-on'" aria-hidden="true">
+    @foreach ($spots as $i => $s)
+        <span class="map-name" style="left: {{ $s['x'] }}%; top: {{ $s['y'] }}%; --i: {{ $i }}" :class="(spot === '{{ $s['slug'] }}' || hover === '{{ $s['slug'] }}') && 'is-on'" aria-hidden="true">
             @if ($s['recent'])<span class="map-live"><span class="map-ping"></span></span>@endif{{ $s['name'] }}
         </span>
     @endforeach

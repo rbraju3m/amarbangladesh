@@ -34,6 +34,7 @@ class LayoutTest extends TestCase
                 $this->assertStringContainsString('aria-label="'.($prefix ? 'Footer' : 'ফুটার').'"', $html, "footer on {$url}");
                 $this->assertStringContainsString('href="'.$prefix.'/feed"', $html, "community link on {$url}");
                 $this->assertStringContainsString('href="'.$prefix.'/quiz"', $html, "quiz link on {$url}");
+                $this->assertSame(2, substr_count($html, "localStorage.getItem('bd.member')"), "signed-in state set before paint (header + tab bar) on {$url}");
             }
         }
     }

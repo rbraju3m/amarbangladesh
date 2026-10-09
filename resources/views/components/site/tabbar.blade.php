@@ -12,13 +12,14 @@
                 </a>
             @elseif ($item['key'] === 'me')
                 <a href="{{ $item['href'] }}" @click="meClick($event)" @class(['tab-link', 'is-on' => $on]) @if ($on) aria-current="page" @endif>
-                    <span x-show="signedIn" x-cloak class="relative"><span class="avatar size-6 bg-flag-green text-xs" x-text="(myName || '?').slice(0, 1)"></span><span x-show="unread" class="notice-dot"></span></span>
-                    <span x-show="!signedIn">{!! \App\Support\SiteNav::icon($item['icon']) !!}</span>
-                    <span class="max-w-16 truncate" x-text="signedIn ? (myName || @js(__('আমি'))) : @js(__('লগইন'))">{{ __('লগইন') }}</span><span x-show="unread" x-cloak class="sr-only">{{ __('নতুন নোটিফিকেশন আছে') }}</span>
+                    <span x-show="signedIn" x-cloak data-me="in" class="relative"><span class="avatar size-6 bg-flag-green text-xs" data-me="letter" x-text="(myName || '?').slice(0, 1)"></span><span x-show="unread" class="notice-dot"></span></span>
+                    <span x-show="!signedIn" data-me="out">{!! \App\Support\SiteNav::icon($item['icon']) !!}</span>
+                    <span class="max-w-16 truncate" data-me="name" x-text="signedIn ? (myName || @js(__('আমি'))) : @js(__('লগইন'))">{{ __('লগইন') }}</span><span x-show="unread" x-cloak class="sr-only">{{ __('নতুন নোটিফিকেশন আছে') }}</span>
                 </a>
             @else
                 <a href="{{ $item['href'] }}" @click="navClick(@js($item['key']))" @class(['tab-link', 'is-on' => $on]) @if ($on) aria-current="page" @endif>{!! \App\Support\SiteNav::icon($item['icon']) !!}<span>{{ __($item['label']) }}</span></a>
             @endif
         @endforeach
+        @include('partials.me-prefill')
     </div>
 </nav>

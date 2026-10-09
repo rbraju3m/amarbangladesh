@@ -361,14 +361,18 @@
     }
 
     /* Home page map: divisions shaded by how much people talk there (level 0–4), hover lifts,
-       picked = brand red. Counts sit at each division's headquarters. */
+       picked = brand red (the others dim). Divisions rise in one by one and the names follow. */
     .division {
         fill: var(--div-0);
         stroke: var(--card);
         stroke-width: 1.6;
         stroke-linejoin: round;
         cursor: pointer;
-        transition: fill 0.18s ease, opacity 0.18s ease;
+        transform-box: fill-box;
+        transform-origin: center;
+        transition: fill 0.25s ease, opacity 0.3s ease, filter 0.25s ease;
+        animation: division-in 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+        animation-delay: calc(var(--i, 0) * 70ms);
     }
 
     .division.level-1 { fill: var(--div-1); }
@@ -378,10 +382,18 @@
 
     .division.is-hover {
         fill: var(--div-hover);
+        filter: drop-shadow(0 4px 6px rgb(20 33 27 / 0.25));
     }
 
     .division.is-on {
         fill: var(--red);
+        animation: division-in 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both, picked 2.4s ease-in-out 0.2s infinite;
+        animation-delay: calc(var(--i, 0) * 70ms), 0.2s;
+    }
+
+    /* A picked division stays bright, the rest step back. */
+    .division-map.has-spot .division:not(.is-on, .is-hover) {
+        opacity: 0.5;
     }
 
     .division-link {
@@ -395,6 +407,8 @@
 
     .map-name {
         @apply pointer-events-none absolute flex h-6 -translate-x-1/2 -translate-y-1/2 items-center gap-1 rounded-full bg-card/90 px-2 text-[0.6875rem] font-bold whitespace-nowrap text-ink shadow-md transition duration-150;
+        animation: pop 0.45s cubic-bezier(0.3, 1.5, 0.5, 1) both;
+        animation-delay: calc(550ms + var(--i, 0) * 60ms);
     }
 
     .map-name.is-on {
@@ -531,7 +545,71 @@
     }
 
     .ask-prompt {
-        @apply flex items-center gap-3 rounded-3xl border-2 border-line bg-card p-3 transition hover:border-flag-red/50 active:scale-[0.99];
+        @apply flex items-center gap-3 rounded-3xl border-2 border-line bg-card p-3 shadow-[0_10px_30px_-18px_rgb(20_33_27/0.35)] transition hover:-translate-y-0.5 hover:border-flag-red/50 hover:shadow-[0_16px_36px_-18px_rgb(224_58_62/0.45)] active:scale-[0.99];
+    }
+
+    /* Home page */
+    .home-hero {
+        @apply relative isolate;
+    }
+
+    .home-glow {
+        @apply pointer-events-none absolute -top-10 -left-16 -z-10 size-72 rounded-full opacity-60 blur-3xl;
+        background: radial-gradient(circle, color-mix(in oklab, var(--green) 28%, transparent), transparent 70%);
+    }
+
+    .home-sun {
+        @apply pointer-events-none absolute -top-3 -right-2 -z-10 size-16 rounded-full opacity-15 md:top-2 md:right-0 md:size-32;
+        background: var(--red);
+        animation: sun-float 9s ease-in-out infinite;
+    }
+
+    .home-eyebrow {
+        @apply inline-flex items-center gap-2 rounded-full border border-line bg-card/80 py-1 ps-1.5 pe-3 text-xs font-semibold text-ink-2 shadow-sm backdrop-blur;
+    }
+
+    .mini-flag {
+        @apply relative h-3.5 w-5 shrink-0 overflow-hidden rounded-[3px] bg-flag-green;
+    }
+
+    .mini-flag::after {
+        @apply absolute top-1/2 left-[45%] size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-flag-red content-[''];
+    }
+
+    .home-in {
+        animation: rise 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    }
+
+    .home-cards > * {
+        animation: rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    }
+
+    .home-cards > :nth-child(2) { animation-delay: 60ms; }
+    .home-cards > :nth-child(3) { animation-delay: 120ms; }
+    .home-cards > :nth-child(4) { animation-delay: 180ms; }
+    .home-cards > :nth-child(5) { animation-delay: 240ms; }
+
+    .live-dot {
+        @apply relative size-2.5 shrink-0 rounded-full bg-flag-red;
+    }
+
+    .live-dot::after {
+        @apply absolute inset-0 animate-ping rounded-full bg-flag-red/60 content-[''];
+    }
+
+    .map-card {
+        @apply relative overflow-hidden rounded-[2rem] border border-line p-5 text-center shadow-[0_20px_50px_-30px_rgb(0_106_78/0.45)];
+        background:
+            radial-gradient(120% 70% at 50% 45%, color-mix(in oklab, var(--green) 9%, transparent), transparent 70%),
+            var(--card);
+    }
+
+    .topic-tile {
+        @apply flex min-h-12 items-center gap-2 rounded-2xl border border-line bg-card px-2.5 text-sm font-semibold transition duration-150 hover:-translate-y-0.5 hover:border-flag-green/40 hover:shadow-md active:scale-[0.98];
+    }
+
+    .topic-emoji {
+        @apply flex size-8 shrink-0 items-center justify-center rounded-xl bg-paper-2 text-base;
     }
 
     .quiz-promo {
@@ -595,6 +673,37 @@
 @keyframes flow {
     to {
         stroke-dashoffset: -320;
+    }
+}
+
+@keyframes division-in {
+    from {
+        opacity: 0;
+        transform: translateY(14px) scale(0.94);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes picked {
+    0%,
+    100% {
+        filter: drop-shadow(0 0 0 rgb(224 58 62 / 0));
+    }
+    50% {
+        filter: drop-shadow(0 0 10px rgb(224 58 62 / 0.55));
+    }
+}
+
+@keyframes sun-float {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(10px);
     }
 }
 
