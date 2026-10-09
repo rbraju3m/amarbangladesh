@@ -21,7 +21,7 @@
     <p x-show="!signedIn" x-cloak class="mt-3 rounded-2xl bg-flag-green/10 px-4 py-2.5 text-sm text-green-text">🔐 {{ __('পোস্ট করার সময় লগইন করতে বলা হবে। আগে লিখে ফেলুন, লেখা হারাবে না।') }}</p>
 
     <form class="mt-5" data-draft @submit.prevent="submitPost($el)"
-        x-data="{ type: @js($prefill['type']), title: '', details: false, anon: false, category: @js($prefill['category']), ex: 0, examples: @js($examples) }"
+        x-data="{ type: @js($prefill['type']), title: @js($prefill['title']), details: false, anon: false, category: @js($prefill['category']), ex: 0, examples: @js($examples) }"
         x-init="setInterval(() => title || (ex = (ex + 1) % examples.length), 3500)">
 
         <div class="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]" role="radiogroup" aria-label="{{ __('পোস্টের ধরন') }}">
@@ -37,6 +37,12 @@
         <div class="mt-1 flex justify-between text-xs text-ink-2">
             <span x-text="type === 'question' || type === 'help' ? t('এক লাইনে মূল প্রশ্নটা লিখুন') : t('এক লাইনে মূল কথাটা লিখুন')"></span>
             <span class="tabular-nums" x-text="`${bn(title.length)}/${bn(200)}`"></span>
+        </div>
+
+        {{-- Has this been asked? Close titles appear while typing (they open in a new tab, the draft stays). --}}
+        <div x-data="similarQuestions" x-effect="lookup(title)" x-show="count" x-cloak class="mt-3 rounded-2xl border border-warn/30 bg-warn/5 p-3" aria-live="polite">
+            <p class="text-sm font-bold">{{ __('এমন প্রশ্ন আগে হয়েছে কি না দেখে নিন') }}</p>
+            <div x-html="html" @click="$event.target.closest('a') && track('similar_clicked')"></div>
         </div>
 
         <button type="button" x-show="!details" @click="details = true; $nextTick(() => $refs.body.focus())" class="mt-3 text-sm font-semibold text-green-text">{{ __('＋ আরও বিস্তারিত লিখুন') }} <span class="font-medium text-ink-2">{{ __('(ঐচ্ছিক)') }}</span></button>

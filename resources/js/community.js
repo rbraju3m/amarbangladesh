@@ -1,5 +1,6 @@
 import Alpine from 'alpinejs';
 import { lang, loadDictionary, localeHeaders, num, path, t, withLang } from './i18n';
+import infinite from './infinite';
 import modal from './modal';
 import { copyText, isMobile, shareLinks } from './share';
 import { store, visitorId } from './store';
@@ -397,27 +398,6 @@ function community() {
             }
         },
 
-        // "More" is a real link (works without JS); with JS the next page's cards are appended in place.
-        async loadMore(link, listSelector) {
-            if (this.busy) return;
-            const url = new URL(link.href);
-            url.pathname = '/api/feed'; // the next-page link points at /feed or /en/feed
-            if (lang === 'en') url.searchParams.set('lang', 'en');
-            this.busy = true;
-            link.textContent = t('আনছি…');
-            try {
-                const data = await api('GET', url.pathname + url.search);
-                document.querySelector(listSelector).insertAdjacentHTML('beforeend', data.html);
-                if (data.next) link.href = data.next;
-                else link.remove();
-            } catch {
-                this.flash(t('আনা গেলো না। ইন্টারনেট দেখে আবার চেষ্টা করুন।'));
-            } finally {
-                link.textContent = t('আরও দেখুন');
-                this.busy = false;
-            }
-        },
-
         async sharePost(title, url) {
             track('post_shared', { meta: { channel: 'native' } });
             if (navigator.share && isMobile()) {
@@ -566,8 +546,35 @@ function divisionMap(divisions) {
     };
 }
 
+/** Ask page: questions like the title being typed, so people find an answer before asking again. */
+function similarQuestions() {
+    return {
+        html: '',
+        count: 0,
+        shown: false,
+        lookup(title) {
+            clearTimeout(this._timer);
+            const q = title.trim();
+            if (q.length < 12) return Object.assign(this, { html: '', count: 0 });
+            this._timer = setTimeout(async () => {
+                try {
+                    const data = await api('GET', withLang(`/api/posts/similar?q=${encodeURIComponent(q)}`));
+                    if (q !== this.title.trim()) return; // typed on meanwhile
+                    Object.assign(this, { html: data.html, count: data.count });
+                    if (data.count && !this.shown) {
+                        this.shown = true; // once per page: how often the box helps, not how often it updates
+                        track('similar_shown', { meta: { results: data.count } });
+                    }
+                } catch {}
+            }, 500);
+        },
+    };
+}
+
 Alpine.plugin(modal);
 Alpine.data('community', community);
 Alpine.data('divisionMap', divisionMap);
+Alpine.data('infinite', infinite);
+Alpine.data('similarQuestions', similarQuestions);
 window.Alpine = Alpine;
 loadDictionary().then(() => Alpine.start());

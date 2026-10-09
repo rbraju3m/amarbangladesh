@@ -48,6 +48,7 @@ Route::withoutMiddleware([
             Route::get('/feed', [PageController::class, 'feed'])->name('feed');
             Route::get('/p/{post}', [PageController::class, 'show'])->whereNumber('post')->name('posts.show');
             Route::get('/u/{member}', [PageController::class, 'member'])->name('members.show');
+            Route::get('/search', [PageController::class, 'search'])->name('search');
         });
         Route::middleware('cache.headers:public;max_age=300;s_maxage=600;etag')->group(function () {
             Route::get('/ask', [PageController::class, 'ask'])->name('ask');
@@ -68,6 +69,7 @@ Route::withoutMiddleware([
 
     Route::prefix('api')->group(function () {
         Route::get('/feed', [PageController::class, 'feedItems'])->middleware('cache.headers:public;max_age=0;s_maxage=20;etag')->name('feed.items');
+        Route::get('/posts/similar', [PageController::class, 'similar'])->middleware(['cache.headers:public;max_age=0;s_maxage=60;etag', 'throttle:search'])->name('posts.similar');
         Route::prefix('auth')->group(function () {
             Route::post('/email/register', [AuthController::class, 'emailRegister'])->middleware('throttle:auth')->name('auth.email.register');
             Route::post('/email/login', [AuthController::class, 'emailLogin'])->middleware('throttle:auth')->name('auth.email.login');

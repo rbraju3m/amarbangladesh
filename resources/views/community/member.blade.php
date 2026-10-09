@@ -59,34 +59,34 @@
         </form>
     </div>
 
-    <section class="mt-8">
-        <h2 class="text-lg font-bold">{{ __('পোস্ট') }}</h2>
-        <div class="mt-3 space-y-3">
-            @forelse ($posts as $post)
-                @include('community.partials.post-card', ['post' => $post, 'compact' => true])
-            @empty
-                <p class="rounded-2xl border border-dashed border-line px-4 py-5 text-center text-sm text-ink-2">{{ __('এখনো কোনো পোস্ট নেই।') }}</p>
-            @endforelse
-        </div>
-    </section>
+    {{-- Posts / answers: one list at a time, endless with JavaScript --}}
+    <nav class="mt-8 flex gap-1 border-b border-line" aria-label="{{ __('তালিকা') }}">
+        @foreach (['posts' => 'পোস্ট', 'answers' => 'উত্তর'] as $key => $label)
+            <a href="{{ lroute('members.show', ['member' => $member] + ($key === 'posts' ? [] : ['tab' => $key]), false) }}" @class(['feed-tab', 'is-on' => $tab === $key]) @if ($tab === $key) aria-current="page" @endif>
+                {{ __($label) }} <span class="tabular-nums text-ink-2">{{ \App\Support\Lang::num($stats[$key]) }}</span>
+            </a>
+        @endforeach
+    </nav>
 
-    <section class="mt-8">
-        <h2 class="text-lg font-bold">{{ __('উত্তর') }}</h2>
-        <div class="mt-3 space-y-3">
-            @forelse ($answers as $answer)
-                <a href="{{ $answer->post->url() }}#answer-{{ $answer->id }}" class="block rounded-3xl border border-line bg-card p-4 transition hover:border-ink-2">
-                    <p class="text-sm text-ink-2">{{ __('উত্তর দিয়েছেন:') }} <span class="font-semibold text-ink">{{ $answer->post->title }}</span></p>
-                    <p class="mt-1 line-clamp-2">{{ \App\Community\Text::excerpt($answer->body) }}</p>
+    <div id="member-list" class="mt-4 space-y-3">
+        @forelse ($items as $item)
+            @if ($tab === 'posts')
+                @include('community.partials.post-card', ['post' => $item, 'compact' => true])
+            @else
+                <a href="{{ $item->post->url() }}#answer-{{ $item->id }}" data-item="answer:{{ $item->id }}" class="block rounded-3xl border border-line bg-card p-4 transition hover:border-ink-2">
+                    <p class="text-sm text-ink-2">{{ __('উত্তর দিয়েছেন:') }} <span class="font-semibold text-ink">{{ $item->post->title }}</span></p>
+                    <p class="mt-1 line-clamp-2">{{ \App\Community\Text::excerpt($item->body) }}</p>
                     <p class="mt-2 flex gap-3 text-xs text-ink-2">
-                        <span>{{ \App\Support\Lang::ago($answer->created_at) }}</span>
-                        @if ($answer->helpful_count)<span>🙏 {{ \App\Support\Lang::num($answer->helpful_count) }}</span>@endif
-                        @if ($answer->post->accepted_answer_id === $answer->id)<span class="font-semibold text-green-text">{{ __('✓ সমাধান') }}</span>@endif
+                        <span>{{ \App\Support\Lang::ago($item->created_at) }}</span>
+                        @if ($item->helpful_count)<span>🙏 {{ \App\Support\Lang::num($item->helpful_count) }}</span>@endif
+                        @if ($item->post->accepted_answer_id === $item->id)<span class="font-semibold text-green-text">{{ __('✓ সমাধান') }}</span>@endif
                     </p>
                 </a>
-            @empty
-                <p class="rounded-2xl border border-dashed border-line px-4 py-5 text-center text-sm text-ink-2">{{ __('এখনো কোনো উত্তর নেই।') }}</p>
-            @endforelse
-        </div>
-    </section>
+            @endif
+        @empty
+            <p class="rounded-2xl border border-dashed border-line px-4 py-5 text-center text-sm text-ink-2">{{ $tab === 'posts' ? __('এখনো কোনো পোস্ট নেই।') : __('এখনো কোনো উত্তর নেই।') }}</p>
+        @endforelse
+    </div>
+    @include('community.partials.more', ['list' => '#member-list', 'href' => $items->nextPageUrl()])
 </div>
 @endsection

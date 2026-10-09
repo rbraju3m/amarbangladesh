@@ -39,6 +39,7 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('answers', fn (Request $request) => [Limit::perMinute(6)->by('m'.$request->ip()), Limit::perHour(60)->by('h'.$request->ip())]);
         RateLimiter::for('community', fn (Request $request) => Limit::perMinute(60)->by($request->ip()));
         RateLimiter::for('reports', fn (Request $request) => Limit::perHour(30)->by($request->ip()));
+        RateLimiter::for('search', fn (Request $request) => Limit::perMinute(40)->by($request->ip())); // similar questions while typing
 
         Event::listen(MigrationsEnded::class, ProvisionSuperAdminAfterMigrations::class);
         $this->autoProvisionSuperAdmin();

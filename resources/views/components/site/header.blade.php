@@ -24,6 +24,7 @@
                 @endif
             @endforeach
         </nav>
-        @include('partials.lang-switch', ['class' => 'ml-auto shrink-0 md:ml-2'])
+        <a href="{{ lroute('search', [], false) }}" @class(['ml-auto flex size-10 shrink-0 items-center justify-center rounded-full text-ink-2 transition hover:bg-paper-2 hover:text-ink md:ml-2', 'bg-paper-2 text-ink' => $active === 'search']) aria-label="{{ __('খুঁজুন') }}" @if ($active === 'search') aria-current="page" @endif>{!! \App\Support\SiteNav::icon('M21 21l-4.3-4.3M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z', 'size-5') !!}</a>
+        @include('partials.lang-switch', ['class' => 'shrink-0'])
     </div>
 </header>

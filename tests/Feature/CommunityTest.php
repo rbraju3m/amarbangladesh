@@ -190,7 +190,7 @@ class CommunityTest extends TestCase
         $this->as($askerToken)->postJson("/api/posts/{$post->id}/accept", ['answer' => $answerId])->assertJson(['accepted' => $answerId]);
 
         $this->get('/feed')->assertSee('সমাধান হয়েছে');
-        $this->get("/u/{$helper->code}")->assertOk()->assertSee('নাদিয়া')->assertSee($post->title);
+        $this->get("/u/{$helper->code}?tab=answers")->assertOk()->assertSee('নাদিয়া')->assertSee($post->title);
         $this->assertSame(1, Post::published()->whereIn('accepted_answer_id', Answer::select('id')->where('member_id', $helper->id))->count());
 
         $this->as($askerToken)->postJson("/api/posts/{$post->id}/accept", ['answer' => null])->assertJson(['accepted' => null]);
@@ -278,6 +278,37 @@ class CommunityTest extends TestCase
         $this->assertNull($next['next']);
 
         $this->assertSame(3, $this->getJson('/api/feed?limit=3&compact=1')->json('count'));
+
+        // The page itself carries the next page for the endless list; later pages aren't indexed.
+        $page = $this->get('/feed')->getContent();
+        $this->assertSame(15, substr_count($page, 'data-item="post:'));
+        $this->assertMatchesRegularExpression('~<a data-next href="(/feed\?cursor=[^"]+)"~', $page);
+        $this->assertStringNotContainsString('noindex', $page);
+        preg_match('~<a data-next href="([^"]+)"~', $page, $m);
+        $second = $this->get(html_entity_decode($m[1]))->assertOk()->assertSee('noindex', false)->getContent();
+        $this->assertSame(5, substr_count($second, 'data-item="post:'));
+        $this->assertStringNotContainsString('data-next', $second);
+    }
+
+    public function test_the_solved_tab_and_profile_lists_page(): void
+    {
+        [$member] = $this->member();
+        [$helper] = $this->member('Helper');
+        foreach (range(1, 22) as $i) {
+            $post = Post::create(['member_id' => $member->id, 'title' => "Profile paging question {$i} here"]);
+            $answer = Answer::create(['post_id' => $post->id, 'member_id' => $helper->id, 'body' => "Answer {$i}"]);
+            $post->update(['answers_count' => 1, 'accepted_answer_id' => $i <= 2 ? $answer->id : null]);
+        }
+
+        $this->assertSame(2, substr_count($this->get('/feed?tab=solved')->assertOk()->getContent(), 'data-item="post:'));
+
+        $posts = $this->get("/u/{$member->code}")->assertOk()->getContent();
+        $this->assertSame(20, substr_count($posts, 'data-item="post:'));
+        $this->assertStringContainsString('data-next', $posts);
+        $answers = $this->get("/u/{$helper->code}?tab=answers")->assertOk()->getContent();
+        $this->assertSame(20, substr_count($answers, 'data-item="answer:'));
+        preg_match('~<a data-next href="([^"]+)"~', $answers, $m);
+        $this->assertSame(2, substr_count($this->get(html_entity_decode($m[1]))->getContent(), 'data-item="answer:'));
     }
 
     public function test_identity_can_be_restored_and_renamed(): void

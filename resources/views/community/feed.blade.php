@@ -3,6 +3,8 @@
     'pageTitle' => __(':title · আমার বাংলাদেশ', ['title' => $feed->area ? __(':place-এর আলোচনা', ['place' => $feed->area['name']]) : ($feed->category ? __(':topic — আলোচনা', ['topic' => $feed->category['name']]) : __('আলোচনা'))]),
     'ogTitle' => __('বাংলাদেশে এখন মানুষ কী নিয়ে কথা বলছে?'),
     'canonical' => lroute('feed', $feed->query(), true),
+    // Later pages are reachable for crawlers through the links but not indexed themselves.
+    'noindex' => request()->filled('cursor') ?: null,
 ])
 
 @section('main')
@@ -79,10 +81,7 @@
             </div>
         @endif
 
-        @if ($posts->nextPageUrl())
-            <a href="{{ lroute('feed', $feed->query(['cursor' => $posts->nextCursor()->encode()]), false) }}" class="btn-ghost mt-5 w-full"
-                @click.prevent="loadMore($el, '#feed-list')">{{ __('আরও দেখুন') }}</a>
-        @endif
+        @include('community.partials.more', ['list' => '#feed-list', 'href' => $posts->nextCursor() ? lroute('feed', $feed->query(['cursor' => $posts->nextCursor()->encode()]), false) : null])
     </div>
 
     <aside class="hidden lg:block">

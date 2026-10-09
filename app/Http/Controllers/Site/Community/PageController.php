@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Site\Community;
 
 use App\Community\DivisionMap;
 use App\Community\Feed;
+use App\Community\Search;
 use App\Community\Taxonomy;
 use App\Http\Controllers\Controller;
 use App\Models\Member;
@@ -18,6 +19,9 @@ class PageController extends Controller
 {
     /** Posts per list on the home page. */
     private const HOME_LIST = 5;
+
+    /** Posts or answers per page on a member's page. */
+    private const PROFILE_PAGE = 20;
 
     /** Change when the privacy page's content changes. */
     public const PRIVACY_UPDATED = '2026-10-09';
@@ -47,6 +51,25 @@ class PageController extends Controller
             'categories' => Taxonomy::categories(),
             'districts' => Taxonomy::districtsByDivision(),
             'divisions' => array_filter(Taxonomy::areas(), fn ($a) => $a['type'] === 'division'),
+        ]);
+    }
+
+    /** Search results (not indexed by search engines: endless combinations of the same posts). */
+    public function search(Request $request): View
+    {
+        $query = mb_substr(trim((string) $request->query('q')), 0, 100);
+
+        return view('community.search', ['query' => $query, 'posts' => $query === '' ? null : Search::posts($query)]);
+    }
+
+    /** "Has this been asked?" while writing a question: a few close titles, as HTML. */
+    public function similar(Request $request): JsonResponse
+    {
+        $posts = Search::similar(mb_substr((string) $request->query('q'), 0, 200));
+
+        return response()->json([
+            'count' => $posts->count(),
+            'html' => $posts->isEmpty() ? '' : view('community.partials.similar', ['posts' => $posts])->render(),
         ]);
     }
 
@@ -91,22 +114,28 @@ class PageController extends Controller
                 'type' => array_key_exists($request->query('type'), Post::TYPES) ? $request->query('type') : 'question',
                 'category' => array_key_exists($request->query('category'), Taxonomy::categories()) ? $request->query('category') : '',
                 'area' => array_key_exists($request->query('area'), Taxonomy::areas()) ? $request->query('area') : '',
+                'title' => mb_substr(trim((string) $request->query('title')), 0, 200), // from search: "ask this"
             ],
         ]);
     }
 
     /** A member's public page. Anonymous posts and answers are left out entirely, counts included. */
-    public function member(Member $member): View
+    public function member(Request $request, Member $member): View
     {
         abort_if($member->isDeleted(), 404);
         $posts = fn () => $member->posts()->published()->where('is_anonymous', false);
         $answers = fn () => $member->answers()->published()->where('is_anonymous', false);
+        $tab = $request->query('tab') === 'answers' ? 'answers' : 'posts';
+
+        // One list at a time, keyset-paginated like the feed (endless with JavaScript).
+        $items = $tab === 'answers'
+            ? $answers()->whereHas('post', fn ($q) => $q->published())->with('post:id,title,type,accepted_answer_id')
+            : $posts()->with(['member:id,code,name,deleted_at', 'category', 'area']);
 
         return view('community.member', [
             'member' => $member,
-            'posts' => $posts()->with(['member:id,code,name,deleted_at', 'category', 'area'])->latest('id')->limit(30)->get(),
-            'answers' => $answers()->whereHas('post', fn ($q) => $q->published())
-                ->with('post:id,title,type,accepted_answer_id')->latest('id')->limit(30)->get(),
+            'tab' => $tab,
+            'items' => $items->orderByDesc('id')->cursorPaginate(self::PROFILE_PAGE)->withQueryString(),
             'stats' => [
                 'posts' => $posts()->count(),
                 'answers' => $answers()->count(),

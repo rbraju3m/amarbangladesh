@@ -1,6 +1,6 @@
 {{-- A post in a list. The title link is stretched over the whole card; tags and the author link sit above it. --}}
 @php($compact = $compact ?? false)
-<article class="post-card group">
+<article class="post-card group" data-item="post:{{ $post->id }}">
     @include('community.partials.tags', ['post' => $post])
     <h3 @class(['mt-2 font-bold leading-snug', 'text-lg' => ! $compact, 'text-base' => $compact])>
         <a href="{{ $post->url() }}" class="after:absolute after:inset-0 after:rounded-3xl group-hover:text-green-text">{{ $post->title }}</a>
