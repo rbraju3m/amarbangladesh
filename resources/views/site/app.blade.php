@@ -251,7 +251,7 @@
 
     {{-- ===================== RESULT ===================== --}}
     <template x-if="screen === 'result' && result">
-        <section class="screen relative pb-12 md:max-w-2xl lg:grid lg:max-w-6xl lg:grid-cols-[5fr_6fr] lg:items-start lg:gap-x-14 lg:px-8">
+        <section class="screen relative pb-28 md:max-w-2xl lg:grid lg:pb-12 lg:max-w-6xl lg:grid-cols-[5fr_6fr] lg:items-start lg:gap-x-14 lg:px-8">
             {{-- Brand bar: over the hero on phones, above the columns on desktop --}}
             <header class="absolute inset-x-0 top-0 z-10 flex items-center justify-between px-4 py-3 text-white lg:static lg:col-span-2 lg:px-0 lg:py-5 lg:text-ink">
                 <a href="{{ lroute('home') }}" @click.prevent="history.pushState({}, '', @js(lroute('home'))); screen = 'landing'; scrollTo(0, 0)" class="flex items-center gap-2 text-sm font-bold tracking-wide drop-shadow lg:drop-shadow-none"><span class="rounded-full bg-card p-0.5 lg:bg-transparent lg:p-0">@include('partials.logo', ['class' => 'block size-6'])</span>{{ __('আমার বাংলাদেশ') }}</a>
@@ -273,7 +273,12 @@
                 <button type="button" @click="openSheet()" class="group relative mx-auto block overflow-hidden rounded-[2rem] bg-paper-2 shadow-2xl ring-1 ring-line transition hover:-translate-y-1"
                     :class="cardSquare ? 'aspect-square w-full' : 'aspect-[9/16] h-[min(78dvh,40rem)]'" aria-label="{{ __('কার্ডটা শেয়ার করো') }}">
                     <template x-if="cardUrl"><img :src="cardUrl" alt="{{ __('তোমার শেয়ার কার্ড') }}" class="size-full object-cover transition-opacity" :class="cardBusy && 'opacity-70'"></template>
-                    <span x-show="!cardUrl" class="absolute inset-0 animate-pulse bg-gradient-to-b from-paper-2 to-line"></span>
+                    {{-- Until the card is drawn: the place itself, in its colour, so the column never sits empty --}}
+                    <span x-show="!cardUrl" class="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-accent p-8 text-white">
+                        <img :src="result.location.illustration" alt="" class="w-4/5 rounded-2xl shadow-xl">
+                        <span class="text-3xl font-bold" x-text="`${result.location.emoji} ${result.location.name}`"></span>
+                        <span class="animate-pulse text-sm font-semibold opacity-85">{{ __('কার্ড বানাচ্ছি…') }}</span>
+                    </span>
                     <span class="absolute inset-x-4 bottom-4 rounded-2xl bg-ink/85 px-4 py-3 text-center text-sm font-semibold text-paper opacity-0 backdrop-blur transition group-hover:opacity-100">{{ __('🎨 ডিজাইন ও রং বদলাও · শেয়ার করো') }}</span>
                 </button>
                 <p class="mt-3 text-center text-sm text-ink-2">{{ __('এটাই তোমার শেয়ার কার্ড — নাম লিখলেই বদলে যাবে ✨') }}</p>
@@ -304,6 +309,21 @@
                     </div>
                 </div>
             </div>
+
+            {{-- Played from a friend's link: how well they match comes first, with a way to send this result straight back. --}}
+            <template x-if="result.friend">
+                <div class="animate-rise mt-6 rounded-3xl bg-flag-red/10 p-4">
+                    <div class="flex items-center gap-4">
+                        <div class="text-5xl font-bold text-flag-red tabular-nums" x-text="`${bn(result.friend.pct)}%`"></div>
+                        <div class="min-w-0 leading-relaxed">
+                            <p class="font-bold" x-text="t(':owner সাথে তোমার মিল', { owner: result.friend.name ? possessive(result.friend.name) : t('তোমার বন্ধুর'), name: result.friend.name || t('তোমার বন্ধু') })"></p>
+                            <p class="text-sm text-ink-2" x-text="result.friend.same ? t('দুজনেরই বাংলাদেশ :place! 🤝', { place: result.friend.location.name }) : t('ওর বাংলাদেশ :friend, তোমার :mine।', { friend: `${result.friend.location.emoji} ${result.friend.location.name}`, mine: result.location.name })"></p>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-ghost mt-3 w-full bg-card !font-semibold" @click="replyToFriend()"
+                        x-text="result.friend.name ? t(':name-কে তোমারটা পাঠাও 💌', { name: result.friend.name }) : t('বন্ধুকে তোমারটা পাঠাও 💌')"></button>
+                </div>
+            </template>
 
             {{-- Your card: name + share in one block --}}
             <div class="mt-6 rounded-3xl border border-line bg-card p-4 shadow-[0_8px_30px_-12px_rgb(20_33_27/0.18)]">
@@ -336,7 +356,7 @@
                     </div>
                 </div>
 
-                <button type="button" class="btn-primary mt-4" @click="openSheet()">
+                <button type="button" class="btn-primary mt-4" @click="openSheet()" x-init="watchShareButton($el)">
                     {{ __('কার্ডটা শেয়ার করো') }} <span aria-hidden="true">✨</span>
                 </button>
                 <div class="mt-4 grid grid-cols-4 gap-2 border-t border-line pt-4">
@@ -346,17 +366,6 @@
                     <button type="button" class="share-btn" @click="copyLink()"><span class="bg-ink !text-paper">@include('partials.icon', ['name' => 'link'])</span><span>{{ __('লিংক কপি') }}</span></button>
                 </div>
             </div>
-
-            {{-- Friend comparison --}}
-            <template x-if="result.friend">
-                <div class="mt-4 flex items-center gap-4 rounded-3xl bg-flag-red/10 p-4">
-                    <div class="text-4xl font-bold text-flag-red" x-text="`${bn(result.friend.pct)}%`"></div>
-                    <div class="text-sm leading-relaxed">
-                        <p class="font-semibold" x-text="t(':owner সাথে তোমার মিল', { owner: result.friend.name ? possessive(result.friend.name) : t('তোমার বন্ধুর'), name: result.friend.name || t('তোমার বন্ধু') })"></p>
-                        <p class="text-ink-2" x-text="result.friend.same ? t('দুজনেরই বাংলাদেশ :place! 🤝', { place: result.friend.location.name }) : t('ওর বাংলাদেশ :friend, তোমার :mine।', { friend: `${result.friend.location.emoji} ${result.friend.location.name}`, mine: result.location.name })"></p>
-                    </div>
-                </div>
-            </template>
 
             {{-- Why --}}
             <div class="mt-8">
@@ -449,10 +458,10 @@
     </template>
 
     {{-- ===================== SHARE SHEET ===================== --}}
-    <div x-show="sheetOpen" x-cloak class="fixed inset-0 z-40 flex items-end justify-center md:items-center md:p-6" role="dialog" aria-modal="true" aria-label="{{ __('শেয়ার করো') }}" @keydown.escape.window="sheetOpen = false">
+    <div x-show="sheetOpen" x-cloak x-modal="sheetOpen" class="fixed inset-0 z-40 flex items-end justify-center md:items-center md:p-6" role="dialog" aria-modal="true" aria-label="{{ __('শেয়ার করো') }}" @keydown.escape.window="sheetOpen = false">
         <div class="absolute inset-0 bg-black/50" x-show="sheetOpen" x-transition.opacity @click="sheetOpen = false"></div>
         <div x-show="sheetOpen" x-transition:enter="transition duration-300 ease-out" x-transition:enter-start="translate-y-full md:translate-y-8 md:opacity-0" x-transition:leave="transition duration-200" x-transition:leave-end="translate-y-full md:translate-y-8 md:opacity-0"
-            class="relative max-h-[94dvh] w-full max-w-md overflow-y-auto rounded-t-[2rem] bg-paper px-4 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] md:max-w-lg md:rounded-[2rem] md:px-6 md:pt-6 md:pb-6 md:shadow-2xl">
+            tabindex="-1" data-autofocus class="relative max-h-[94dvh] w-full max-w-md overflow-y-auto overscroll-contain rounded-t-[2rem] bg-paper px-4 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] outline-none md:max-w-lg md:rounded-[2rem] md:px-6 md:pt-6 md:pb-6 md:shadow-2xl">
             <div class="mx-auto mb-3 h-1.5 w-12 rounded-full bg-line md:hidden"></div>
 
             <form class="mb-4 md:pr-10" @submit.prevent="saveName()">
@@ -531,12 +540,12 @@
     </div>
 
     {{-- ===================== PLACE SHEET ===================== --}}
-    <div x-show="placeView" x-cloak class="fixed inset-0 z-40 flex items-end justify-center md:items-center md:p-6" role="dialog" aria-modal="true" :aria-label="placeView?.name"
+    <div x-show="placeView" x-cloak x-modal="placeView" class="fixed inset-0 z-40 flex items-end justify-center md:items-center md:p-6" role="dialog" aria-modal="true" :aria-label="placeView?.name"
         @keydown.escape.window="placeSlug = null" @keydown.right.window="placeView && stepPlace(1)" @keydown.left.window="placeView && stepPlace(-1)">
         <div class="absolute inset-0 bg-black/50" x-show="placeView" x-transition.opacity @click="placeSlug = null"></div>
         <template x-if="placeView">
             <div x-show="placeView" x-transition:enter="transition duration-300 ease-out" x-transition:enter-start="translate-y-full md:translate-y-8 md:opacity-0"
-                class="relative max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-t-[2rem] bg-paper pb-[max(1.25rem,env(safe-area-inset-bottom))] md:rounded-[2rem] md:shadow-2xl" :style="`--accent: ${placeView.accent}`">
+                tabindex="-1" data-autofocus class="relative max-h-[90dvh] w-full max-w-md overflow-y-auto overscroll-contain rounded-t-[2rem] bg-paper outline-none pb-[max(1.25rem,env(safe-area-inset-bottom))] md:rounded-[2rem] md:shadow-2xl" :style="`--accent: ${placeView.accent}`">
                 <div class="relative h-44 overflow-hidden rounded-t-[2rem] md:h-52">
                     <img :src="placeView.illustration" alt="" class="size-full object-cover">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent"></div>
@@ -583,7 +592,16 @@
         </template>
     </div>
 
+    {{-- Phones: once the result's own share button has scrolled away, this one stays in reach --}}
+    <div x-show="showFab" x-cloak x-transition:enter="transition duration-200 ease-out" x-transition:enter-start="translate-y-6 opacity-0" x-transition:leave="transition duration-150" x-transition:leave-end="translate-y-6 opacity-0"
+        class="fixed inset-x-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-30 mx-auto max-w-md lg:hidden">
+        <button type="button" class="btn-primary shadow-2xl" @click="openSheet()">
+            <template x-if="cardUrl"><img :src="cardUrl" alt="" class="-my-1 h-9 rounded-md shadow ring-1 ring-white/40" :class="cardSquare ? 'aspect-square' : 'aspect-[9/16]'"></template>
+            {{ __('কার্ডটা শেয়ার করো') }} <span aria-hidden="true">✨</span>
+        </button>
+    </div>
+
     {{-- Toast --}}
-    <div x-show="toast" x-cloak x-transition class="fixed inset-x-4 bottom-6 z-50 mx-auto max-w-sm rounded-2xl bg-ink px-4 py-3 text-center text-sm font-medium text-paper shadow-xl" role="status" x-text="toast"></div>
+    <div x-show="toast" x-cloak x-transition class="fixed inset-x-4 z-50 mx-auto max-w-sm rounded-2xl bg-ink px-4 py-3 text-center text-sm font-medium text-paper shadow-xl" :class="showFab ? 'bottom-24 lg:bottom-6' : 'bottom-6'" role="status" x-text="toast"></div>
 </main>
 @endsection

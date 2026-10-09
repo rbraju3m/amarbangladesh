@@ -38,7 +38,11 @@
     <meta name="twitter:description" content="{{ $ogDescription }}">
     <meta name="twitter:image" content="{{ $ogImage }}">
 
-    <link rel="preload" href="{{ Vite::asset('resources/fonts/anek-bangla-bengali-500-700.woff2') }}" as="font" type="font/woff2" crossorigin>
+    {{-- Both halves of the font show above the fold on Bangla pages (%, "personality"); English pages need only the Latin one. --}}
+    @unless (\App\Support\Lang::isEnglish())
+        <link rel="preload" href="{{ Vite::asset('resources/fonts/anek-bangla-bengali-500-700.woff2') }}" as="font" type="font/woff2" crossorigin>
+    @endunless
+    <link rel="preload" href="{{ Vite::asset('resources/fonts/anek-bangla-latin-500-700.woff2') }}" as="font" type="font/woff2" crossorigin>
     @vite(['resources/css/app.css', $script ?? 'resources/js/app.js'])
 </head>
 <body @isset($bodyClass) class="{{ $bodyClass }}" @endisset>

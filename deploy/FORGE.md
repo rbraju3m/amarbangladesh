@@ -58,6 +58,34 @@ $FORGE_PHP artisan optimize
 $FORGE_PHP artisan cache:clear   # drops the cached quiz content so new content/URLs show up
 ```
 
+## Static file caching (Site → Edit Nginx Configuration)
+
+Forge's default config sends no cache headers for static files, so phones re-check the CSS, JS and
+the 130 KB of fonts on every visit. Add these two blocks inside the `server { … }` that has
+`root …/public`, above `location / {`. Forge tests and reloads nginx on save. To check, open any
+page's source, copy a `/build/assets/….js` URL and run `curl -sI <url>`: it should say `immutable`.
+
+```nginx
+# Vite output (JS, CSS, fonts) is content-hashed: a new build gets new names, so cache it for ever.
+# `^~` so the image rule below doesn't take hashed SVGs/PNGs from it.
+location ^~ /build/assets/ {
+    add_header Cache-Control "public, max-age=31536000, immutable";
+    access_log off;
+    try_files $uri =404;
+}
+
+# Illustrations, OG images and icons keep their names when replaced, so a week, not for ever.
+location ~* \.(?:png|jpg|jpeg|webp|svg|ico)$ {
+    add_header Cache-Control "public, max-age=604800";
+    access_log off;
+    try_files $uri /index.php?$query_string;
+}
+```
+
+Pages and the API set their own `Cache-Control` in Laravel (`routes/web.php`). Behind Cloudflare
+these headers are also what its edge cache follows. `deploy/nginx.conf` (for a plain server) has the
+same rules.
+
 ## First deploy only
 
 After the first successful deploy, run once (Site → Commands):

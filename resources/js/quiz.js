@@ -63,6 +63,7 @@ export default function quiz(boot) {
         cardUrl: null,
         cardBlob: null,
         cardBusy: false,
+        shareBtnPassed: false, // phones: the result's share button has scrolled up out of view
         toast: '',
         inApp: isInAppBrowser(),
 
@@ -369,6 +370,49 @@ export default function quiz(boot) {
         },
 
         // ---------- sharing ----------
+
+        // The floating share button shows once the in-page one has scrolled up out of view (not while
+        // it is still below: the player hasn't reached it yet), and never over a sheet. A scroll check,
+        // not an IntersectionObserver: a fast fling can jump from below the button to past it.
+        watchShareButton(el) {
+            removeEventListener('scroll', this._onShareScroll);
+            let queued = false;
+            this._onShareScroll = () => {
+                if (queued) return;
+                queued = true;
+                requestAnimationFrame(() => {
+                    queued = false;
+                    this.shareBtnPassed = el.isConnected && el.getBoundingClientRect().bottom < 0;
+                });
+            };
+            addEventListener('scroll', this._onShareScroll, { passive: true });
+            this._onShareScroll();
+        },
+
+        get showFab() {
+            return this.screen === 'result' && this.shareBtnPassed && !this.sheetOpen && !this.placeSlug;
+        },
+
+        // Played from a friend's link: send this result back to them, with how well the two match.
+        async replyToFriend() {
+            this.persistName();
+            track('share_clicked', { result: this.result.code, meta: { channel: 'friend' } });
+            const r = this.result;
+            const text = t('আমাদের ভাইব :n% মিলেছে! 🤝 আমার বাংলাদেশ :place। দেখো 👉', { n: num(r.friend.pct), place: `${r.location.name} ${r.location.emoji}` });
+            if (navigator.share && !this.inApp) {
+                try {
+                    await navigator.share({ text, url: r.url });
+                } catch {}
+                return;
+            }
+            // Messenger's own browser (where most friend links are opened) can hand the link straight back.
+            if (this.inApp && isMobile()) {
+                location.href = shareLinks.messenger(text, r.url);
+                return;
+            }
+            const ok = await copyText(`${text} ${r.url}`);
+            this.flash(ok ? t('লিংক কপি হয়েছে! এখন যেকোনো জায়গায় পেস্ট করো ✨') : t('কপি করা গেলো না।'));
+        },
 
         get shareText() {
             const r = this.result;
