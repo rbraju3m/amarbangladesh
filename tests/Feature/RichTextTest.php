@@ -66,6 +66,12 @@ class RichTextTest extends TestCase
         $this->assertNull(RichText::clean('<p></p><p><strong> </strong></p><ul><li></li></ul>'));
     }
 
+    public function test_the_editors_own_markup_is_tidied(): void
+    {
+        $this->assertSame('<p>প্রথম <strong>বোল্ড</strong></p><ul><li>এক</li><li><p>দুই</p><p>তিন</p></li></ul>',
+            RichText::clean('<p>প্রথম <strong>বোল্ড</strong></p><ul><li><p>এক</p></li><li><p>দুই</p><p>তিন</p></li></ul><p></p>'));
+    }
+
     public function test_the_plain_text_copy_keeps_lines_and_list_items(): void
     {
         $text = RichText::toText('<h3>কাগজপত্র</h3><p>যা লাগবে:<br />সব মূল কপি</p><ul><li>জন্ম নিবন্ধন</li><li>এনআইডি &amp; ছবি</li></ul><p>শেষ কথা</p>');
@@ -105,6 +111,7 @@ class RichTextTest extends TestCase
         $answer = Answer::latest('id')->first();
         $this->assertSame('ধাপ<ol><li>অনলাইনে আবেদন</li><li>ব্যাংকে ফি</li></ol>', $answer->body_html);
         $this->assertStringContainsString('<ol><li>অনলাইনে আবেদন</li>', $html);
+        $this->assertStringContainsString("count: counts['answer:{$answer->id}'] ?? 0 })", $html); // a new answer's counts are 0, not empty
 
         $this->as($token)->postJson("/api/posts/{$post->id}/answers", ['parent' => $answer->id, 'format' => 'html', 'body' => '<p><strong>আরেকটা</strong> কথা</p>'])->assertCreated();
         $reply = Answer::latest('id')->first();

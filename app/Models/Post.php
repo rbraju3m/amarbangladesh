@@ -31,6 +31,9 @@ class Post extends Model
 
     protected $fillable = ['member_id', 'is_anonymous', 'type', 'title', 'body', 'body_html', 'category_id', 'area_id', 'status', 'accepted_answer_id'];
 
+    /** The columns' defaults, so a just-created model renders its counts without a reload. */
+    protected $attributes = ['answers_count' => 0, 'helpful_count' => 0, 'reports_count' => 0];
+
     protected function casts(): array
     {
         return ['is_anonymous' => 'boolean', 'edited_at' => 'datetime'];

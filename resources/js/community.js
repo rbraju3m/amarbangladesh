@@ -667,6 +667,30 @@ function similarQuestions() {
 }
 
 Alpine.plugin(modal);
+/**
+ * `x-rich` on a composer's textarea (`x-rich="'post'"` adds the heading button): turns it into the
+ * formatting editor (resources/js/editor.js, its own ~120 kB chunk) on the first touch or focus, or
+ * once the browser is idle with `.eager` (the Ask page, where people came to write). Without JS, or
+ * until then, the plain textarea works and is sent as plain text. `el._rich.focus()` focuses the editor.
+ */
+Alpine.directive('rich', (el, { expression, modifiers }, { evaluate }) => {
+    const headings = expression ? evaluate(expression) === 'post' : false;
+    let started = false;
+    const start = () => {
+        if (started) return;
+        started = true;
+        import('./editor')
+            .then(({ mountEditor }) => {
+                el._rich = mountEditor(el, { headings });
+                if (document.activeElement === el) el._rich.focus();
+            })
+            .catch(() => (started = false)); // offline: the textarea keeps working
+    };
+    el.addEventListener('pointerdown', start, { once: true });
+    el.addEventListener('focus', start, { once: true });
+    if (modifiers.includes('eager')) (window.requestIdleCallback ?? ((fn) => setTimeout(fn, 1500)))(start, { timeout: 4000 });
+});
+
 Alpine.data('community', community);
 Alpine.data('divisionMap', divisionMap);
 Alpine.data('infinite', infinite);

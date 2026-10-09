@@ -462,5 +462,16 @@
     "🔒 লগইন লাগবে না": "🔒 No login needed",
     "🙏 কাজে লেগেছে": "🙏 Helpful",
     "🙏 যে উত্তর কাজে লাগে, সেটায় “কাজে লেগেছে” দিন। লাইক না, কাজের কথাটাই ওপরে ওঠে।": "🙏 Mark answers that help as “Helpful”. Not likes — useful answers rise to the top.",
-    "🚩 খারাপ কিছু দেখলে রিপোর্ট করুন, আমরা দেখি।": "🚩 See something wrong? Report it and we'll review it."
+    "🚩 খারাপ কিছু দেখলে রিপোর্ট করুন, আমরা দেখি।": "🚩 See something wrong? Report it and we'll review it.",
+    "বোল্ড": "Bold",
+    "ইটালিক": "Italic",
+    "ছোট শিরোনাম": "Heading",
+    "বুলেট তালিকা": "Bulleted list",
+    "নম্বর তালিকা": "Numbered list",
+    "আগের অবস্থায় ফেরান": "Undo",
+    "আবার করুন": "Redo",
+    "লেখার ফরম্যাট": "Formatting",
+    "লিংকের ঠিকানা": "Link address",
+    "যোগ করুন": "Add",
+    "সরান": "Remove"
 }

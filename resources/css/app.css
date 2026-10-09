@@ -460,6 +460,48 @@
         @apply font-semibold text-green-text underline underline-offset-2 [overflow-wrap:anywhere];
     }
 
+    /* The formatting composer (resources/js/editor.js): looks like a .field with a toolbar on top. */
+    .rich {
+        @apply mt-1 overflow-hidden rounded-2xl border-2 border-line bg-paper transition focus-within:border-accent;
+    }
+
+    .rich-bar {
+        @apply flex flex-wrap items-center gap-0.5 border-b border-line px-1.5 py-1;
+    }
+
+    .rich-btn {
+        @apply flex size-10 items-center justify-center rounded-xl text-[0.9375rem] text-ink-2 transition hover:bg-paper-2 hover:text-ink disabled:opacity-35 disabled:hover:bg-transparent;
+    }
+
+    .rich-btn[aria-pressed='true'] {
+        @apply bg-ink text-paper hover:bg-ink hover:text-paper;
+    }
+
+    .rich-link {
+        @apply flex items-center gap-1.5 border-b border-line p-1.5;
+    }
+
+    .rich-link[hidden] {
+        display: none;
+    }
+
+    .rich-link input {
+        @apply min-w-0 flex-1 rounded-xl border border-line bg-card px-3 py-2 text-sm outline-none focus:border-accent;
+    }
+
+    .rich-link button {
+        @apply rounded-xl px-3 py-2 text-sm font-semibold text-green-text hover:bg-paper-2;
+    }
+
+    .rich-text {
+        @apply min-h-32 px-3.5 py-3 text-base outline-none;
+    }
+
+    .rich-text p.is-editor-empty:first-child::before {
+        @apply pointer-events-none float-left h-0 text-ink-2/70;
+        content: attr(data-placeholder);
+    }
+
     .composer {
         @apply rounded-3xl border border-line bg-card p-4 md:p-5;
     }

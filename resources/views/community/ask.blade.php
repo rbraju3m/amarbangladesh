@@ -45,10 +45,11 @@
             <div x-html="html" @click="$event.target.closest('a') && track('similar_clicked')"></div>
         </div>
 
-        <button type="button" x-show="!details" @click="details = true; $nextTick(() => $refs.body.focus())" class="mt-3 text-sm font-semibold text-green-text">{{ __('＋ আরও বিস্তারিত লিখুন') }} <span class="font-medium text-ink-2">{{ __('(ঐচ্ছিক)') }}</span></button>
+        <button type="button" x-show="!details" @click="details = true; $nextTick(() => ($refs.body._rich ?? $refs.body).focus())" class="mt-3 text-sm font-semibold text-green-text">{{ __('＋ আরও বিস্তারিত লিখুন') }} <span class="font-medium text-ink-2">{{ __('(ঐচ্ছিক)') }}</span></button>
         <div x-show="details" x-cloak class="mt-3">
             <label for="ask-body" class="text-sm font-semibold">{{ __('বিস্তারিত') }}</label>
-            <textarea id="ask-body" name="body" x-ref="body" rows="5" maxlength="5000" class="field mt-1" placeholder="{{ __('কী চেষ্টা করেছেন, কোথায় আটকে আছেন, বাজেট কত — যা জানালে উত্তর দিতে সুবিধা হয়') }}"></textarea>
+            <input type="hidden" name="format" value="">
+            <textarea id="ask-body" name="body" x-ref="body" x-rich.eager="'post'" rows="5" maxlength="20000" class="field mt-1" placeholder="{{ __('কী চেষ্টা করেছেন, কোথায় আটকে আছেন, বাজেট কত — যা জানালে উত্তর দিতে সুবিধা হয়') }}"></textarea>
         </div>
 
         <fieldset class="mt-5">

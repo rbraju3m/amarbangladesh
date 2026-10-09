@@ -49,6 +49,7 @@ final class RichText
         $html = self::purifier($headings)->purify((string) $html);
         $html = preg_replace('~<a>(.*?)</a>~su', '$1', $html); // a link whose address was refused
         $html = preg_replace('~<p>(?:\s|&nbsp;|<br />)*</p>~u', '', $html);
+        $html = preg_replace('~<li><p>((?:(?!</?p>).)*)</p></li>~su', '<li>$1</li>', $html); // the editor wraps list items in <p>
         $html = trim($html);
 
         return self::toText($html) === null ? null : $html;

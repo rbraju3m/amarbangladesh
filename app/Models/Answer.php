@@ -15,6 +15,9 @@ class Answer extends Model
 {
     protected $fillable = ['post_id', 'parent_id', 'thread_id', 'member_id', 'is_anonymous', 'body', 'body_html', 'status'];
 
+    /** The columns' defaults, so a just-created model renders its counts without a reload. */
+    protected $attributes = ['helpful_count' => 0, 'replies_count' => 0, 'reports_count' => 0];
+
     protected function casts(): array
     {
         return ['is_anonymous' => 'boolean', 'edited_at' => 'datetime'];

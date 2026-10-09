@@ -84,7 +84,8 @@
         {{-- Answer composer --}}
         <form class="composer mt-5" data-draft @submit.prevent="submitAnswer({{ $post->id }}, $el)" x-data="{ body: '', anon: false }">
             <label for="answer-body" class="font-bold">{{ $post->isQuestion() ? __('✍️ আপনার উত্তর') : __('✍️ আপনার মত') }}</label>
-            <textarea id="answer-body" name="body" x-model="body" rows="4" maxlength="5000" required class="field mt-2"
+            <input type="hidden" name="format" value="">
+            <textarea id="answer-body" name="body" x-model="body" x-rich rows="4" maxlength="20000" required class="field mt-2"
                 placeholder="{{ $post->isQuestion() ? __('নিজের অভিজ্ঞতা বা জানা তথ্য থেকে লিখুন…') : __('আপনার অভিজ্ঞতা বা মতামত লিখুন…') }}"></textarea>
             <template x-if="signedIn && !myName">
                 <div class="mt-2">
