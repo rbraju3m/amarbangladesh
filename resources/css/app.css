@@ -393,20 +393,24 @@
         stroke-width: 3;
     }
 
-    .map-count {
-        @apply pointer-events-none absolute flex h-7 min-w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-card px-1.5 text-xs font-bold text-ink tabular-nums shadow-md transition duration-150;
+    .map-name {
+        @apply pointer-events-none absolute flex h-6 -translate-x-1/2 -translate-y-1/2 items-center gap-1 rounded-full bg-card/90 px-2 text-[0.6875rem] font-bold whitespace-nowrap text-ink shadow-md transition duration-150;
     }
 
-    .map-count.is-on {
+    .map-name.is-on {
         @apply scale-110 bg-ink text-paper;
     }
 
+    .map-live {
+        @apply relative size-1.5 shrink-0 rounded-full bg-flag-red;
+    }
+
     .map-ping {
-        @apply absolute inset-0 animate-ping rounded-full bg-flag-red/40;
+        @apply absolute inset-0 animate-ping rounded-full bg-flag-red/60;
     }
 
     .map-tip {
-        @apply pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-[calc(100%+20px)] rounded-2xl bg-card px-3 py-2 text-center whitespace-nowrap shadow-xl ring-1 ring-line;
+        @apply pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-[calc(100%+18px)] rounded-2xl bg-card px-3 py-2 text-center whitespace-nowrap shadow-xl ring-1 ring-line;
     }
 
     .notice-card {

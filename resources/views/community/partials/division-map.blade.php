@@ -1,7 +1,7 @@
 {{--
     The home page's interactive Bangladesh: eight division shapes, shaded by how much people talk
     there. Hover (or keyboard focus) shows a label; tap / Enter picks a division, whose latest posts the
-    page shows in `partials/division-posts` (the `divisionMap` component in community.js). Without
+    page shows in `partials/division-posts`. Names sit on the shapes; counts only in the hover label (the `divisionMap` component in community.js). Without
     JavaScript each division is a link to its feed. $spots: App\Community\DivisionMap::spots().
 --}}
 <div class="relative mx-auto w-full max-w-[min(100%,26rem)]">
@@ -22,11 +22,10 @@
         </g>
     </svg>
 
-    {{-- Counts at each division's headquarters; a pulse where people posted this week --}}
+    {{-- Each division's name on its shape; a pulsing dot where people posted this week --}}
     @foreach ($spots as $s)
-        <span class="map-count" style="left: {{ $s['x'] }}%; top: {{ $s['y'] }}%" :class="(spot === '{{ $s['slug'] }}' || hover === '{{ $s['slug'] }}') && 'is-on'" aria-hidden="true">
-            @if ($s['recent'])<span class="map-ping"></span>@endif
-            <span class="relative">{{ \App\Support\Lang::num($s['count']) }}</span>
+        <span class="map-name" style="left: {{ $s['x'] }}%; top: {{ $s['y'] }}%" :class="(spot === '{{ $s['slug'] }}' || hover === '{{ $s['slug'] }}') && 'is-on'" aria-hidden="true">
+            @if ($s['recent'])<span class="map-live"><span class="map-ping"></span></span>@endif{{ $s['name'] }}
         </span>
     @endforeach
 

@@ -9,22 +9,22 @@ use Illuminate\Support\Facades\Cache;
  * The eight divisions on the home page's interactive map. Shapes come from geoBoundaries (CC0),
  * projected into the same 400×552 viewBox and Mercator projection as `partials/bd-map` by
  * `scripts/build-division-map.py` (→ `resources/data/bd-divisions.php`). Label positions are % of
- * the map: each division's headquarters city.
+ * the map: the centre of each division's main shape (its centroid), where the name sits.
  */
 final class DivisionMap
 {
     public const COUNTS_KEY = 'community.division_counts.v2';
 
-    /** [x %, y %] by division slug. */
+    /** [x %, y %] by division slug: where the name is written. */
     public const POSITIONS = [
-        'rangpur-division' => [27.8, 15.4],
-        'mymensingh-division' => [51.9, 32.2],
-        'sylhet-division' => [82.3, 29.7],
-        'rajshahi-division' => [13.7, 38.5],
-        'dhaka-division' => [51.7, 47.9],
-        'khulna-division' => [33.4, 64.0],
-        'barishal-division' => [50.5, 66.4],
-        'chattogram-division' => [80.5, 72.0],
+        'rangpur-division' => [23.1, 15.0],
+        'mymensingh-division' => [51.6, 30.5],
+        'sylhet-division' => [78.1, 32.5],
+        'rajshahi-division' => [23.2, 35.1],
+        'dhaka-division' => [48.3, 47.6],
+        'khulna-division' => [28.4, 63.3],
+        'barishal-division' => [48.4, 70.3],
+        'chattogram-division' => [80.3, 66.1],
     ];
 
     /** Posts this recent make a division pulse ("people are talking here now"). */
