@@ -296,6 +296,23 @@
         @apply border-2 border-flag-green;
     }
 
+    /* Long-form text (the privacy page) */
+    .privacy h2 {
+        @apply mt-8 text-lg font-bold;
+    }
+
+    .privacy p {
+        @apply mt-2 leading-relaxed;
+    }
+
+    .privacy ul {
+        @apply mt-2 list-disc space-y-1.5 pl-5 leading-relaxed;
+    }
+
+    .privacy a {
+        @apply font-semibold text-green-text underline;
+    }
+
     .notice-card {
         @apply flex items-start gap-3 rounded-2xl border border-line bg-card p-3.5 transition active:scale-[0.99];
     }

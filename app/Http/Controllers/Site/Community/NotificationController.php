@@ -31,7 +31,7 @@ class NotificationController extends Controller
 
         $items = $member->notifications()->visible()
             ->when($data['before'] ?? null, fn ($q, $before) => $q->where('id', '<', $before))
-            ->with(['post:id,title,type', 'answer:id,post_id,member_id,is_anonymous,body', 'answer.member:id,code,name'])
+            ->with(['post:id,title,type', 'answer:id,post_id,member_id,is_anonymous,body', 'answer.member:id,code,name,deleted_at'])
             ->latest('id')->limit(self::PER_PAGE + 1)->get();
         $more = $items->count() > self::PER_PAGE;
         $items = $items->take(self::PER_PAGE);

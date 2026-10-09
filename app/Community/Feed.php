@@ -45,7 +45,7 @@ final class Feed
         }
 
         return Post::published()
-            ->with(['member:id,code,name', 'category:id,slug,name_bn,name_en,emoji', 'area:id,slug,name_bn,name_en'])
+            ->with(['member:id,code,name,deleted_at', 'category:id,slug,name_bn,name_en,emoji', 'area:id,slug,name_bn,name_en'])
             ->when($this->tab === 'unanswered', fn ($q) => $q->where('answers_count', 0)->whereIn('type', ['question', 'help']))
             ->when($this->category, fn ($q) => $q->where('category_id', $this->category['id']))
             ->when($areaIds, fn ($q) => $q->whereIn('area_id', $areaIds))

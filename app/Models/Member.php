@@ -14,13 +14,13 @@ use Illuminate\Support\Str;
  */
 class Member extends Model
 {
-    protected $fillable = ['code', 'name', 'password', 'email', 'email_notifications', 'locale', 'blocked_at'];
+    protected $fillable = ['code', 'name', 'password', 'email', 'email_notifications', 'locale', 'blocked_at', 'deleted_at'];
 
     protected $hidden = ['password', 'email'];
 
     protected function casts(): array
     {
-        return ['blocked_at' => 'datetime', 'password' => 'hashed', 'email_notifications' => 'boolean'];
+        return ['blocked_at' => 'datetime', 'deleted_at' => 'datetime', 'password' => 'hashed', 'email_notifications' => 'boolean'];
     }
 
     /** Notification emails go out in the language the member last used the site in. */
@@ -76,8 +76,18 @@ class Member extends Model
         return $this->blocked_at !== null;
     }
 
+    /** Deleted their account; only kept as the author of posts and answers they left up. */
+    public function isDeleted(): bool
+    {
+        return $this->deleted_at !== null;
+    }
+
     public function displayName(): string
     {
+        if ($this->isDeleted()) {
+            return __('মুছে ফেলা অ্যাকাউন্ট');
+        }
+
         return $this->name ?: __('একজন বাংলাদেশি');
     }
 

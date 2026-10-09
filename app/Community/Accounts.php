@@ -103,6 +103,37 @@ final class Accounts
         });
     }
 
+    /**
+     * Deletes an account: every way to sign in, the email and password, all devices, notifications,
+     * helpful marks and reports (with the counts they added). Posts and answers are deleted too
+     * when asked; otherwise they stay with the author shown as "মুছে ফেলা অ্যাকাউন্ট" and no profile.
+     */
+    public static function delete(Member $member, bool $withContent = false): void
+    {
+        DB::transaction(function () use ($member, $withContent) {
+            if ($withContent) {
+                foreach ([...$member->answers()->where('status', '!=', Post::DELETED)->get(), ...$member->posts()->where('status', '!=', Post::DELETED)->get()] as $item) {
+                    Moderation::setStatus($item, Post::DELETED);
+                }
+            }
+            foreach ([HelpfulMark::class => ['markable', 'helpful_count'], Report::class => ['reportable', 'reports_count']] as $model => [$prefix, $counter]) {
+                foreach ($model::where('member_id', $member->id)->get() as $row) {
+                    Moderation::find($row->{"{$prefix}_type"}, $row->{"{$prefix}_id"})?->newQuery()
+                        ->whereKey($row->{"{$prefix}_id"})->where($counter, '>', 0)->decrement($counter);
+                    $row->delete();
+                }
+            }
+            $member->identities()->delete();
+            $member->tokens()->delete();
+            $member->notifications()->delete();
+            $member->update([
+                'name' => null, 'password' => null, 'email' => null, 'email_notifications' => false,
+                'code' => 'x'.Str::lower(Str::random(11)), // the old profile URL stops working
+                'deleted_at' => now(),
+            ]);
+        });
+    }
+
     /** "01712345678", "+8801712345678", "8801712345678" → "+8801712345678"; null if not a Bangladeshi mobile. */
     public static function normalizePhone(?string $phone): ?string
     {

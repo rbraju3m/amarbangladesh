@@ -119,6 +119,7 @@
 
         <footer class="mt-auto pt-10 text-center text-xs leading-relaxed text-ink-2">
             {{ __('কুইজ খেলতে কোনো লগইন লাগে না। তোমার নাম, ফোন বা ইমেইল আমরা চাই না।') }}
+            · <a href="{{ lroute('privacy', [], false) }}" class="underline hover:text-ink">{{ __('গোপনীয়তা') }}</a>
         </footer>
     </section>
 
@@ -441,7 +442,7 @@
             <button type="button" class="btn-ghost mt-8 w-full" @click="retake()">{{ __('🔁 আবার খেলি') }}</button>
             <footer class="mt-8 border-t border-line pt-5 text-center text-xs leading-relaxed text-ink-2">
                 <p>{{ __('এটা মজার একটা ভাইব-ম্যাচ, বৈজ্ঞানিক পরীক্ষা না 🙂') }}</p>
-                <p class="mt-1">{{ __('কুইজে কোনো লগইন নেই · তোমার নাম, ফোন বা ইমেইল আমরা চাই না') }}</p>
+                <p class="mt-1">{{ __('কুইজে কোনো লগইন নেই · তোমার নাম, ফোন বা ইমেইল আমরা চাই না') }} · <a href="{{ lroute('privacy', [], false) }}" class="underline hover:text-ink">{{ __('গোপনীয়তা') }}</a></p>
             </footer>
             </div>
         </section>

@@ -43,6 +43,11 @@
 
     @yield('main')
 
+    <footer class="mx-auto max-w-5xl px-4 pt-12 text-center text-xs text-ink-2">
+        <a href="{{ lroute('privacy', [], false) }}" class="underline hover:text-ink">{{ __('গোপনীয়তা') }}</a>
+        · <a href="{{ lroute('home') }}" class="underline hover:text-ink">{{ __('তোমার বাংলাদেশ কোথায়?') }}</a>
+    </footer>
+
     {{-- Phone tab bar: thumb-reachable, with "ask" as the raised centre action. --}}
     <nav class="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden" aria-label="{{ __('প্রধান') }}">
         <div class="mx-auto grid max-w-md grid-cols-4">

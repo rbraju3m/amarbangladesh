@@ -2,13 +2,17 @@
 
 namespace App\Http\Controllers\Site\Community;
 
+use App\Community\Accounts;
 use App\Http\Controllers\Controller;
+use App\Models\AnalyticsEvent;
 use App\Models\Answer;
 use App\Models\Member;
 use App\Models\Post;
 use App\Support\Bangla;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Validation\Rule;
 
 class MemberController extends Controller
 {
@@ -47,6 +51,18 @@ class MemberController extends Controller
         $member->update(['name' => $name]);
 
         return response()->json(['member' => self::present($member)]);
+    }
+
+    /** Deletes the signed-in account; `confirm` must be its code, so a stray request can't do it. */
+    public function destroy(Request $request): Response
+    {
+        $member = $request->attributes->get('member');
+        $data = $request->validate(['confirm' => ['required', 'string', Rule::in([$member->code])], 'content' => ['nullable', 'boolean']]);
+
+        Accounts::delete($member, (bool) ($data['content'] ?? false));
+        AnalyticsEvent::server('account_deleted', $request, ['content' => (int) ($data['content'] ?? false)]);
+
+        return response()->noContent();
     }
 
     public static function present(Member $member): array

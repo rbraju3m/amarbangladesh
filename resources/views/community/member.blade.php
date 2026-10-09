@@ -26,7 +26,7 @@
     </dl>
 
     {{-- Owner tools (decided in the browser) --}}
-    <div x-show="me === '{{ $member->code }}'" x-cloak class="mt-5 rounded-3xl border border-line bg-card p-4" x-data="{ editing: false, recovery: false }">
+    <div x-show="me === '{{ $member->code }}'" x-cloak class="mt-5 rounded-3xl border border-line bg-card p-4" x-data="{ editing: false, recovery: false, removing: false }">
         <div class="flex items-center justify-between gap-2">
             <p class="font-bold">{{ __('এটা আপনি 👋') }}</p>
             <button type="button" class="act-quiet" @click="editing = !editing">{{ __('✏️ নাম বদলান') }}</button>
@@ -39,7 +39,24 @@
             <input name="name" maxlength="20" :value="myName" class="field min-w-0 flex-1" aria-label="{{ __('নতুন নাম') }}">
             <button class="btn-primary !min-h-11 !w-auto !text-base" :disabled="busy">{{ __('সেভ') }}</button>
         </form>
-        <button type="button" class="act-quiet mt-2 !px-0" @click="logout()">↩ {{ __('লগ আউট') }}</button>
+        <div class="mt-2 flex flex-wrap items-center justify-between gap-2">
+            <button type="button" class="act-quiet !px-0" @click="logout()">↩ {{ __('লগ আউট') }}</button>
+            <button type="button" class="act-quiet !px-0 text-ink-2" @click="removing = !removing" :aria-expanded="removing">{{ __('অ্যাকাউন্ট মুছে ফেলুন') }}</button>
+        </div>
+        {{-- Two steps, so one stray tap can't delete an account --}}
+        <form x-show="removing" x-cloak class="mt-3 rounded-2xl border border-flag-red/40 p-3.5 text-sm" @submit.prevent="deleteAccount($el.content.checked)">
+            <p class="font-bold">{{ __('অ্যাকাউন্ট মুছে ফেলবেন?') }}</p>
+            <p class="mt-1 leading-relaxed text-ink-2">{{ __('আপনার লগইন, ইমেইল, ফোন নম্বর, নোটিফিকেশন আর “কাজে লেগেছে” চিহ্ন মুছে যাবে। পোস্ট আর উত্তর থেকে যাবে, লেখক দেখাবে “মুছে ফেলা অ্যাকাউন্ট”। এটা ফেরানো যাবে না।') }}
+                <a href="{{ lroute('privacy', [], false) }}#delete" class="font-semibold underline hover:text-ink">{{ __('বিস্তারিত') }}</a></p>
+            <label class="mt-3 flex items-start gap-2">
+                <input type="checkbox" name="content" class="mt-1 size-4 accent-flag-red">
+                <span>{{ __('আমার পোস্ট আর উত্তরও মুছে দিন') }}</span>
+            </label>
+            <div class="mt-3 flex gap-2">
+                <button class="btn-primary !min-h-11 !w-auto !text-base" :disabled="busy">{{ __('হ্যাঁ, মুছে ফেলুন') }}</button>
+                <button type="button" class="btn-ghost !min-h-11 !w-auto !text-base" @click="removing = false">{{ __('থাক') }}</button>
+            </div>
+        </form>
     </div>
 
     <section class="mt-8">

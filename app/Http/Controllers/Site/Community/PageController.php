@@ -9,11 +9,15 @@ use App\Models\Member;
 use App\Models\Post;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 
 /** Server-rendered community pages: indexable, cookieless, and they work before any JS runs. */
 class PageController extends Controller
 {
+    /** Change when the privacy page's content changes. */
+    public const PRIVACY_UPDATED = '2026-10-09';
+
     public function feed(Request $request): View
     {
         $feed = Feed::fromRequest($request->query());
@@ -43,16 +47,16 @@ class PageController extends Controller
     public function show(Post $post): View
     {
         abort_unless($post->isPublished(), 404);
-        $post->load(['member:id,code,name', 'category', 'area']);
+        $post->load(['member:id,code,name,deleted_at', 'category', 'area']);
 
-        $answers = $post->answers()->published()->with('member:id,code,name')
+        $answers = $post->answers()->published()->with('member:id,code,name,deleted_at')
             ->orderByRaw('id = ? desc', [(int) $post->accepted_answer_id])
             ->orderByDesc('helpful_count')->orderBy('id')
             ->limit(200)->get();
 
         $related = Post::published()->whereKeyNot($post->id)
             ->when($post->category_id, fn ($q) => $q->where('category_id', $post->category_id))
-            ->with(['member:id,code,name', 'category', 'area'])
+            ->with(['member:id,code,name,deleted_at', 'category', 'area'])
             ->latest('id')->limit(3)->get();
 
         return view('community.post', ['post' => $post, 'answers' => $answers, 'related' => $related]);
@@ -75,12 +79,13 @@ class PageController extends Controller
     /** A member's public page. Anonymous posts and answers are left out entirely, counts included. */
     public function member(Member $member): View
     {
+        abort_if($member->isDeleted(), 404);
         $posts = fn () => $member->posts()->published()->where('is_anonymous', false);
         $answers = fn () => $member->answers()->published()->where('is_anonymous', false);
 
         return view('community.member', [
             'member' => $member,
-            'posts' => $posts()->with(['member:id,code,name', 'category', 'area'])->latest('id')->limit(30)->get(),
+            'posts' => $posts()->with(['member:id,code,name,deleted_at', 'category', 'area'])->latest('id')->limit(30)->get(),
             'answers' => $answers()->whereHas('post', fn ($q) => $q->published())
                 ->with('post:id,title,type,accepted_answer_id')->latest('id')->limit(30)->get(),
             'stats' => [
@@ -96,6 +101,15 @@ class PageController extends Controller
     public function me(): View
     {
         return view('community.me');
+    }
+
+    /** What we keep and why. The long text lives in one view per language (`community/privacy/{bn,en}`). */
+    public function privacy(): View
+    {
+        return view('community.privacy', [
+            'email' => config('admin.privacy_email'),
+            'updated' => Carbon::parse(self::PRIVACY_UPDATED),
+        ]);
     }
 
     /** A shell: the list is fetched with the member token (`NotificationController`). */

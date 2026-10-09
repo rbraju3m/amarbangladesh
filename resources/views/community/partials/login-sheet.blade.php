@@ -31,7 +31,8 @@
                 <button type="button" class="login-btn" @click="loginStep = 'phone'; $nextTick(() => document.getElementById('login-phone')?.focus())">📱 {{ __('মোবাইল নম্বর দিয়ে') }}</button>
             @endif
             <button type="button" class="login-btn" @click="loginStep = 'email-login'; $nextTick(() => document.getElementById('login-email')?.focus())">✉️ {{ __('ইমেইল দিয়ে') }}</button>
-            <p class="mt-2 text-center text-xs leading-relaxed text-ink-2">{{ __('চাইলে পরে পোস্ট “বেনামী” হিসেবেও দিতে পারবেন।') }}</p>
+            <p class="mt-2 text-center text-xs leading-relaxed text-ink-2">{{ __('চাইলে পরে পোস্ট “বেনামী” হিসেবেও দিতে পারবেন।') }}
+                <a href="{{ lroute('privacy', [], false) }}" class="font-semibold underline hover:text-ink">{{ __('আমরা কী রাখি →') }}</a></p>
         </div>
 
         {{-- Step: phone number --}}

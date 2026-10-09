@@ -24,4 +24,7 @@ return [
         'auto_provision_interval' => (int) env('SUPER_ADMIN_AUTO_PROVISION_INTERVAL', 3600),
     ],
 
+    // Shown on /privacy for privacy questions and deletion requests from people who lost access.
+    'privacy_email' => env('PRIVACY_EMAIL', env('SUPER_ADMIN_EMAIL', 'rbraju3m@gmail.com')),
+
 ];

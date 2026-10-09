@@ -45,6 +45,7 @@ class AnswerNotice extends Mailable
             with: [
                 'url' => url($this->post->url()).'#answer-'.$this->notifications->first()->answer_id,
                 'settingsUrl' => url(Lang::path('/notifications')),
+                'privacyUrl' => url(Lang::path('/privacy')),
                 'unsubscribeUrl' => $this->unsubscribeUrl(),
             ],
         );

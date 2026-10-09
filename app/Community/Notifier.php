@@ -4,6 +4,7 @@ namespace App\Community;
 
 use App\Models\Answer;
 use App\Models\HelpfulMark;
+use App\Models\Member;
 use App\Models\MemberNotification;
 
 /**
@@ -29,14 +30,16 @@ final class Notifier
                 });
         }
 
-        foreach ($recipients as $memberId => $type) {
+        // Deleted accounts stay only as the author of what they left up; nobody reads their notices.
+        $deleted = Member::whereKey(array_keys($recipients))->whereNotNull('deleted_at')->pluck('id')->flip();
+        foreach (array_diff_key($recipients, $deleted->all()) as $memberId => $type) {
             MemberNotification::firstOrCreate(['member_id' => $memberId, 'type' => $type, 'answer_id' => $answer->id], ['post_id' => $post->id]);
         }
     }
 
     public static function accepted(Answer $answer): void
     {
-        if ($answer->member_id !== $answer->post->member_id) {
+        if ($answer->member_id !== $answer->post->member_id && ! $answer->member->isDeleted()) {
             MemberNotification::firstOrCreate(['member_id' => $answer->member_id, 'type' => 'accepted', 'answer_id' => $answer->id], ['post_id' => $answer->post_id]);
         }
     }

@@ -48,6 +48,7 @@ Route::withoutMiddleware([
             Route::get('/ask', [PageController::class, 'ask'])->name('ask');
             Route::get('/me', [PageController::class, 'me'])->name('me');
             Route::get('/notifications', [PageController::class, 'notifications'])->name('notifications');
+            Route::get('/privacy', [PageController::class, 'privacy'])->name('privacy');
             Route::get('/auth/done', [PageController::class, 'authDone'])->name('auth.done');
             Route::get('/reset-password', [PageController::class, 'resetPassword'])->name('password.reset.page');
         });
@@ -83,6 +84,7 @@ Route::withoutMiddleware([
         // Every community write needs a signed-in account.
         Route::middleware('member:account')->group(function () {
             Route::patch('/members/me', [MemberController::class, 'update'])->middleware('throttle:community')->name('members.update');
+            Route::delete('/members/me', [MemberController::class, 'destroy'])->middleware('throttle:community')->name('members.destroy');
             Route::post('/posts', [PostController::class, 'store'])->middleware('throttle:posts')->name('posts.store');
             Route::delete('/posts/{post}', [PostController::class, 'destroy'])->middleware('throttle:community')->name('posts.destroy');
             Route::post('/posts/{post}/accept', [PostController::class, 'accept'])->middleware('throttle:community')->name('posts.accept');

@@ -33,7 +33,8 @@
     <p style="margin:16px 0 0;font-size:12px;color:#4b5a52;line-height:1.6;">
         {{ __('আপনি আমার বাংলাদেশে লগইন করেছেন বলে এই ইমেইল পাচ্ছেন।') }}
         <a href="{{ $unsubscribeUrl }}" style="color:#4b5a52;">{{ __('এমন ইমেইল বন্ধ করুন') }}</a> ·
-        <a href="{{ $settingsUrl }}" style="color:#4b5a52;">{{ __('নোটিফিকেশন') }}</a>
+        <a href="{{ $settingsUrl }}" style="color:#4b5a52;">{{ __('নোটিফিকেশন') }}</a> ·
+        <a href="{{ $privacyUrl }}" style="color:#4b5a52;">{{ __('গোপনীয়তা') }}</a>
     </p>
 </div>
 </body>

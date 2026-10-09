@@ -88,6 +88,12 @@ function community() {
             if (event) track(event[1]);
             this.refreshMine();
             this.refreshUnread();
+            const url = new URL(location.href);
+            if (url.searchParams.has('deleted')) {
+                url.searchParams.delete('deleted');
+                history.replaceState(null, '', url);
+                this.$nextTick(() => this.flash(t('আপনার অ্যাকাউন্ট মুছে ফেলা হয়েছে।')));
+            }
         },
 
         get me() {
@@ -446,6 +452,23 @@ function community() {
             } finally {
                 this.busy = false;
             }
+        },
+
+        /** Deletes the account (the server checks `confirm` is its code), then forgets it on this browser. */
+        async deleteAccount(withContent) {
+            if (this.busy) return;
+            this.busy = true;
+            try {
+                await this.call('DELETE', '/api/members/me', { confirm: this.me, content: withContent });
+            } catch (e) {
+                this.busy = false;
+                return this.flash(e.message);
+            }
+            this.member = null;
+            this.owned = {};
+            store.set(MEMBER, null);
+            store.set(MARKS, []);
+            location.href = path('/feed?deleted=1');
         },
 
         // ---------- notifications ----------
