@@ -21,6 +21,7 @@ const MARKS = 'bd.helpful'; // ['post:12', 'answer:40', …]
 const CANCELLED = Object.assign(new Error(''), { cancelled: true });
 
 const PAGE_EVENTS = [
+    [/^\/?$/, 'home_view'],
     [/^\/feed/, 'feed_view'],
     [/^\/p\//, 'post_view'],
     [/^\/ask/, 'ask_view'],
@@ -533,7 +534,40 @@ function community() {
     };
 }
 
+/**
+ * The home page's map: picking a division (a spot or a chip) shows its latest posts, rendered by the
+ * server like every other card. Spots and chips are links to the division's feed without JavaScript.
+ */
+function divisionMap(divisions) {
+    return {
+        spot: null,
+        html: '',
+        state: 'idle', // loading | ready | empty | error
+        get name() {
+            return divisions[this.spot]?.name ?? '';
+        },
+        get feedUrl() {
+            return divisions[this.spot]?.url ?? path('/feed');
+        },
+        async pick(slug) {
+            if (this.spot === slug) return;
+            this.spot = slug;
+            this.state = 'loading';
+            track('community_clicked', { meta: { from: 'home_map', to: 'division', area: slug } });
+            try {
+                const data = await api('GET', withLang(`/api/feed?limit=3&compact=1&area=${encodeURIComponent(slug)}`));
+                if (this.spot !== slug) return; // picked another meanwhile
+                this.html = data.html;
+                this.state = data.count ? 'ready' : 'empty';
+            } catch {
+                if (this.spot === slug) this.state = 'error';
+            }
+        },
+    };
+}
+
 Alpine.plugin(modal);
 Alpine.data('community', community);
+Alpine.data('divisionMap', divisionMap);
 window.Alpine = Alpine;
 loadDictionary().then(() => Alpine.start());

@@ -12,7 +12,7 @@ use Illuminate\Contracts\Pagination\CursorPaginator;
  */
 final class Feed
 {
-    public const TABS = ['latest' => 'নতুন', 'unanswered' => 'উত্তর দরকার'];
+    public const TABS = ['latest' => 'নতুন', 'unanswered' => 'উত্তর দরকার', 'solved' => 'সমাধান হয়েছে'];
 
     public const PER_PAGE = 15;
 
@@ -47,6 +47,7 @@ final class Feed
         return Post::published()
             ->with(['member:id,code,name,deleted_at', 'category:id,slug,name_bn,name_en,emoji', 'area:id,slug,name_bn,name_en'])
             ->when($this->tab === 'unanswered', fn ($q) => $q->where('answers_count', 0)->whereIn('type', ['question', 'help']))
+            ->when($this->tab === 'solved', fn ($q) => $q->whereNotNull('accepted_answer_id'))
             ->when($this->category, fn ($q) => $q->where('category_id', $this->category['id']))
             ->when($areaIds, fn ($q) => $q->whereIn('area_id', $areaIds))
             ->orderByDesc('id')

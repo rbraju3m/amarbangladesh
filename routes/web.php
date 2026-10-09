@@ -30,9 +30,14 @@ Route::withoutMiddleware([
 ])->group(function () {
     // Every page twice: Bangla at /…, English at /en/… (names prefixed "en."). See App\Support\Lang.
     $pages = function () {
-        Route::get('/', [QuizController::class, 'index'])
-            ->middleware('cache.headers:public;max_age=300;s_maxage=600;etag')
+        // Home is the community; the quiz has its own page (result and friend links stay at /r/{code}).
+        Route::get('/', [PageController::class, 'home'])
+            ->middleware('cache.headers:public;max_age=0;s_maxage=20;etag')
             ->name('home');
+
+        Route::get('/quiz', [QuizController::class, 'index'])
+            ->middleware('cache.headers:public;max_age=300;s_maxage=600;etag')
+            ->name('quiz');
 
         Route::get('/r/{result}', [QuizController::class, 'show'])
             ->middleware('cache.headers:public;max_age=60;s_maxage=120;etag')

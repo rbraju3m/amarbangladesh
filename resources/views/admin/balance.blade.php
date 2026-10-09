@@ -66,7 +66,7 @@
             </section>
             <section class="panel text-sm text-ink-2">
                 <h2 class="mb-1 font-bold text-ink">Fixing an imbalance</h2>
-                Nudge the place's trait profile in <a href="{{ route('admin.locations.index') }}" class="font-semibold text-ink underline">Locations</a>, or an answer's place bonus in <a href="{{ route('admin.questions.index') }}" class="font-semibold text-ink underline">Questions</a>, then come back here.
+                Nudge the place's trait profile in <a href="{{ route('admin.locations.index') }}" class="font-semibold text-ink underline">Places</a>, or an answer's place bonus in <a href="{{ route('admin.questions.index') }}" class="font-semibold text-ink underline">Questions</a>, then come back here.
             </section>
         </aside>
     </div>

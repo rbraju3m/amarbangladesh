@@ -32,7 +32,7 @@
         <p>@yield('message')</p>
         @hasSection('noLink')
         @else
-            <a href="{{ \App\Support\Lang::path('/') }}">{{ __('কুইজটা খেলো →') }}</a>
+            <a href="{{ \App\Support\Lang::path('/quiz') }}">{{ __('কুইজটা খেলো →') }}</a>
         @endif
     </main>
 </body>

@@ -137,7 +137,7 @@ class GrowthTest extends TestCase
         $this->assertSame(0, Location::whereNull('area_slug')->count());
 
         // The quiz page's boot data carries it, for the result page's links.
-        $this->get('/')->assertOk()->assertSee('"area":"bandarban"', false);
+        $this->get('/quiz')->assertOk()->assertSee('"area":"bandarban"', false);
     }
 
     public function test_the_area_can_be_changed_in_admin(): void
@@ -181,7 +181,7 @@ class GrowthTest extends TestCase
 
     public function test_the_quiz_promo_links_to_the_quiz_in_the_pages_language(): void
     {
-        $this->get('/en/feed')->assertOk()->assertSee('href="/en" @click="track(\'community_clicked\'', false);
-        $this->get('/feed')->assertOk()->assertSee('href="/" @click="track(\'community_clicked\'', false);
+        $this->get('/en/feed')->assertOk()->assertSee('href="/en/quiz" @click="track(\'community_clicked\'', false);
+        $this->get('/feed')->assertOk()->assertSee('href="/quiz" @click="track(\'community_clicked\'', false);
     }
 }

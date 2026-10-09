@@ -56,7 +56,7 @@ class LocaleTest extends TestCase
 
     public function test_the_quiz_plays_in_english_with_english_content(): void
     {
-        $this->get('/en')->assertOk()
+        $this->get('/en/quiz')->assertOk()
             ->assertSee('Where is your', false)
             ->assertSee('"prompt":"A 3-day holiday! Where are you packing your bag for?"', false)
             ->assertSee('"title":"The calm mind of the tea gardens"', false);

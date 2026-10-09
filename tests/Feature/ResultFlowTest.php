@@ -34,7 +34,7 @@ class ResultFlowTest extends TestCase
 
     public function test_landing_page_is_cookieless_and_cacheable(): void
     {
-        $response = $this->get('/')->assertOk()->assertSee('তোমার বাংলাদেশ', false);
+        $response = $this->get('/quiz')->assertOk()->assertSee('তোমার বাংলাদেশ', false);
 
         $this->assertEmpty($response->headers->getCookies());
         $this->assertStringContainsString('public', $response->headers->get('Cache-Control'));
@@ -43,11 +43,11 @@ class ResultFlowTest extends TestCase
 
     public function test_cached_quiz_content_does_not_bake_in_the_host(): void
     {
-        $this->get('/')->assertOk();
+        $this->get('/quiz')->assertOk();
         config(['app.url' => 'https://other.example']);
         url()->forceRootUrl('https://other.example');
 
-        $this->get('/')->assertOk()
+        $this->get('/quiz')->assertOk()
             ->assertSee('"illustration":"/images/locations/', false)
             ->assertDontSee('localhost', false);
     }
@@ -203,10 +203,10 @@ class ResultFlowTest extends TestCase
 
     public function test_landing_shows_the_play_count_only_once_it_is_convincing(): void
     {
-        $this->get('/')->assertOk()->assertDontSee('জন এর মধ্যেই খুঁজে পেয়েছে');
+        $this->get('/quiz')->assertOk()->assertDontSee('জন এর মধ্যেই খুঁজে পেয়েছে');
 
         cache()->put('quiz.total_plays', 1234, 600);
-        $this->get('/')->assertSee('১২৩৪ জন এর মধ্যেই খুঁজে পেয়েছে');
+        $this->get('/quiz')->assertSee('১২৩৪ জন এর মধ্যেই খুঁজে পেয়েছে');
     }
 
     public function test_replay_rescores_each_players_latest_answers_with_current_content(): void

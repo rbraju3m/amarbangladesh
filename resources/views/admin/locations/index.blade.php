@@ -1,8 +1,8 @@
 @extends('layouts.admin')
-@section('title', 'Locations')
+@section('title', 'Places')
 @section('content')
 <header class="mb-6">
-    <h1 class="text-2xl font-bold md:text-3xl">Locations</h1>
+    <h1 class="text-2xl font-bold md:text-3xl">Places</h1>
     <p class="mt-1 text-sm text-ink-2">The {{ $locations->count() }} places a player can get. Edit the text, colour and trait profile of each.</p>
 </header>
 

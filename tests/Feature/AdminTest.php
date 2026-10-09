@@ -40,7 +40,7 @@ class AdminTest extends TestCase
     {
         $this->actingAs(User::factory()->create());
         $question = Question::with('options')->first();
-        $this->get('/'); // warm the cache
+        $this->get('/quiz'); // warm the cache
 
         $options = $question->options->map(fn ($o) => [
             'id' => $o->id, 'label_bn' => $o->label_bn, 'emoji' => $o->emoji, 'reason_bn' => $o->reason_bn,
@@ -53,7 +53,7 @@ class AdminTest extends TestCase
         ])->assertRedirect();
 
         $this->assertSame(4, $question->options()->count());
-        $this->get('/')->assertSee('নতুন প্রশ্ন?', false);
+        $this->get('/quiz')->assertSee('নতুন প্রশ্ন?', false);
     }
 
     public function test_editing_a_location_profile(): void
@@ -88,8 +88,8 @@ class AdminTest extends TestCase
         ])->assertRedirect();
 
         $this->assertSame(['One', 'Two'], $location->fresh()->badges_en);
-        $this->get('/en')->assertSee('"title":"An edited English title"', false);
-        $this->get('/')->assertSee('"title":"'.$location->title_bn.'"', false)->assertDontSee('An edited English title');
+        $this->get('/en/quiz')->assertSee('"title":"An edited English title"', false);
+        $this->get('/quiz')->assertSee('"title":"'.$location->title_bn.'"', false)->assertDontSee('An edited English title');
     }
 
     public function test_login_page_shows_a_clear_error_for_wrong_credentials(): void

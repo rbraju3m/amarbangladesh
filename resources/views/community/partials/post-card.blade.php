@@ -8,8 +8,9 @@
     @if ($post->body && ! $compact)
         <p class="mt-1 line-clamp-2 text-ink-2">{{ \App\Community\Text::excerpt($post->body) }}</p>
     @endif
-    <div class="mt-3 flex items-center gap-2 text-sm text-ink-2">
-        @include('community.partials.author', ['item' => $post, 'linkClass' => 'relative z-10 !font-semibold text-ink-2 hover:text-ink', 'avatarClass' => 'size-6 text-xs'])
+    {{-- Wraps on narrow cards (the badges drop to their own line) so the author's name never shrinks to a letter. --}}
+    <div class="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-sm text-ink-2">
+        @include('community.partials.author', ['item' => $post, 'linkClass' => 'relative z-10 !min-w-[5.5rem] !font-semibold text-ink-2 hover:text-ink', 'avatarClass' => 'size-6 text-xs'])
         <span aria-hidden="true">·</span>
         <time datetime="{{ $post->created_at->toIso8601String() }}" class="shrink-0">{{ \App\Support\Lang::ago($post->created_at) }}</time>
         <span class="ml-auto flex shrink-0 items-center gap-2">

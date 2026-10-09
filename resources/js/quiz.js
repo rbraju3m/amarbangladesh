@@ -100,7 +100,7 @@ export default function quiz(boot) {
             });
 
             addEventListener('popstate', () => {
-                if (location.pathname === path('/') && this.screen === 'result') this.screen = 'landing';
+                if (location.pathname === path('/quiz') && this.screen === 'result') this.screen = 'landing';
             });
         },
 
@@ -365,7 +365,7 @@ export default function quiz(boot) {
 
         retake() {
             track('retake_clicked', { result: this.result?.code });
-            history.pushState({}, '', path('/'));
+            history.pushState({}, '', path('/quiz'));
             this.start();
         },
 

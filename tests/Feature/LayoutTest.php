@@ -26,14 +26,14 @@ class LayoutTest extends TestCase
         $member = Member::where('is_demo', true)->whereHas('posts', fn ($q) => $q->where('is_anonymous', false))->value('code');
 
         foreach (['', '/en'] as $prefix) {
-            foreach (['/', "/r/{$result}", '/feed', "/p/{$post}", '/ask', "/u/{$member}", '/me', '/notifications', '/privacy'] as $path) {
+            foreach (['/', '/quiz', "/r/{$result}", '/feed', "/p/{$post}", '/ask', "/u/{$member}", '/me', '/notifications', '/privacy'] as $path) {
                 $url = $prefix.($path === '/' && $prefix ? '' : $path);
                 $html = $this->get($url)->assertOk()->getContent();
 
                 $this->assertSame(1, substr_count($html, '<header class="sticky top-0'), "header on {$url}");
                 $this->assertStringContainsString('aria-label="'.($prefix ? 'Footer' : 'ফুটার').'"', $html, "footer on {$url}");
                 $this->assertStringContainsString('href="'.$prefix.'/feed"', $html, "community link on {$url}");
-                $this->assertStringContainsString('href="'.($prefix ?: '/').'"', $html, "quiz link on {$url}");
+                $this->assertStringContainsString('href="'.$prefix.'/quiz"', $html, "quiz link on {$url}");
             }
         }
     }

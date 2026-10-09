@@ -22,7 +22,7 @@ class AnalyticsEvent extends Model
         'landing_view', 'share_page_view', 'quiz_started', 'question_answered', 'result_viewed',
         'share_clicked', 'card_saved', 'link_copied', 'name_added', 'retake_clicked', 'place_opened',
         // community (post_created and answer_created are recorded server-side)
-        'community_clicked', 'feed_view', 'post_view', 'ask_view', 'post_shared',
+        'community_clicked', 'home_view', 'feed_view', 'post_view', 'ask_view', 'post_shared',
         'notifications_view', 'notification_clicked',
     ];
 

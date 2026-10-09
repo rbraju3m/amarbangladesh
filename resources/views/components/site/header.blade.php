@@ -4,7 +4,8 @@
     Without JavaScript it still works as plain links ("Me" then offers sign-in).
 --}}
 @props(['active' => null])
-@php($items = \App\Support\SiteNav::items())
+{{-- Desktop order: sections, then the "ask" button, then the member. --}}
+@php($items = collect(\App\Support\SiteNav::items())->sortBy(fn ($i) => ['ask' => 1, 'me' => 2][$i['key']] ?? 0)->values())
 <header {{ $attributes->merge(['class' => 'sticky top-0 z-30 border-b border-line bg-paper/90 backdrop-blur']) }}>
     <div class="mx-auto flex max-w-5xl items-center gap-3 px-4 py-2.5">
         <a href="{{ lroute('home') }}" class="flex min-w-0 items-center gap-2 font-bold tracking-wide">@include('partials.logo', ['class' => 'size-8 shrink-0'])<span class="truncate">{{ __('আমার বাংলাদেশ') }}</span></a>

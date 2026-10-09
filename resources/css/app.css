@@ -323,6 +323,19 @@
         @apply font-semibold text-green-text underline;
     }
 
+    /* A division on the home page's map: its discussion count, picked = brand red. */
+    .map-spot {
+        @apply absolute flex h-8 min-w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-card px-1.5 text-xs font-bold text-ink tabular-nums shadow-md ring-2 ring-flag-green/40 transition duration-150 hover:scale-110;
+    }
+
+    .map-spot::before {
+        @apply absolute -inset-1.5 content-[''];
+    }
+
+    .map-spot.is-on {
+        @apply scale-110 bg-flag-red text-white ring-white;
+    }
+
     .notice-card {
         @apply flex items-start gap-3 rounded-2xl border border-line bg-card p-3.5 transition active:scale-[0.99];
     }

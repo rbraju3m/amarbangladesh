@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Community\Accounts;
 use App\Community\Moderation;
+use App\Community\Taxonomy;
 use App\Models\Answer;
 use App\Models\Area;
 use App\Models\Member;
@@ -60,13 +61,24 @@ class CommunityTest extends TestCase
         $this->get('/feed?category=health')->assertSee('এখানে এখনো কোনো পোস্ট নেই');
     }
 
-    public function test_quiz_landing_still_leads_with_the_quiz_and_links_to_the_community(): void
+    public function test_home_is_the_community_and_the_quiz_has_its_own_page(): void
     {
-        $html = $this->get('/')->assertOk()->getContent();
+        $member = Accounts::signIn('email', 'a@example.test', 'Rashed');
+        $areas = Taxonomy::areas();
+        Post::create(['member_id' => $member->id, 'title' => 'Where to renew a passport in Sylhet?', 'area_id' => $areas['sylhet']['id']]);
+        Post::create(['member_id' => $member->id, 'title' => 'Best tea garden near Sreemangal?', 'area_id' => $areas['moulvibazar']['id']]);
 
-        $this->assertLessThan(strpos($html, 'community-title'), strpos($html, 'আমার বাংলাদেশ খুঁজে দেখি'), 'the play button comes before the community block');
-        $this->assertStringContainsString('href="/feed"', $html);
-        $this->assertStringContainsString('communityPreview', $html);
+        $html = $this->get('/')->assertOk()->assertHeader('Cache-Control')->getContent();
+        $this->assertLessThan(strpos($html, 'map-title'), strpos($html, 'Where to renew a passport'), 'posts come before the map');
+        $this->assertStringContainsString('href="/ask"', $html);
+        $this->assertStringContainsString('href="/quiz"', $html);
+        $this->assertMatchesRegularExpression('~class="map-spot"[^>]*>২</a>~u', $html); // two posts in Sylhet division, districts included
+        $this->assertStringNotContainsString('আমার বাংলাদেশ খুঁজে দেখি', $html);
+
+        $quiz = $this->get('/quiz')->assertOk()->getContent();
+        $this->assertStringContainsString('আমার বাংলাদেশ খুঁজে দেখি', $quiz);
+        $this->assertStringNotContainsString('community-title', $quiz);
+        $this->get('/en')->assertOk()->assertSee('href="/en/quiz"', false);
     }
 
     public function test_writing_needs_a_signed_in_account(): void

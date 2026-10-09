@@ -60,7 +60,7 @@ class ProductionTest extends TestCase
     {
         $this->get('/r/doesnotexist')->assertNotFound()
             ->assertSee('এই লিংকে কিছু নেই', false)
-            ->assertSee('href="/"', false);
+            ->assertSee('href="/quiz"', false);
 
         $this->getJson('/api/nothing')->assertNotFound()->assertJsonStructure(['message']);
     }

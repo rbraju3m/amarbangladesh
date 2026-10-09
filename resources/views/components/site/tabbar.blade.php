@@ -2,7 +2,7 @@
 @props(['active' => null])
 <div class="h-[calc(4.5rem+env(safe-area-inset-bottom))] md:hidden" aria-hidden="true"></div>
 <nav {{ $attributes->merge(['class' => 'fixed inset-x-0 bottom-0 z-30 border-t border-line bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden']) }} aria-label="{{ __('প্রধান') }}">
-    <div class="mx-auto grid max-w-md grid-cols-4">
+    <div class="mx-auto grid max-w-md grid-cols-5">
         @foreach (\App\Support\SiteNav::items() as $item)
             @php($on = $active === $item['key'])
             @if ($item['key'] === 'ask')

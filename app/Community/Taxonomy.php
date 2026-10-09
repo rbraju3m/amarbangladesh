@@ -24,7 +24,7 @@ final class Taxonomy
     /** @return array<string, array{id: int, slug: string, name: string, division: ?string}> by slug, divisions first */
     public static function areas(): array
     {
-        return self::localize(Cache::rememberForever('community.areas.v2', function () {
+        return self::localize(Cache::rememberForever('community.areas.v3', function () {
             $all = Area::orderBy('sort_order')->orderBy('name_bn')->get();
             $divisions = $all->where('type', 'division')->keyBy('id');
 
@@ -32,6 +32,7 @@ final class Taxonomy
                 ->mapWithKeys(fn (Area $a) => [$a->slug => [
                     'id' => $a->id, 'slug' => $a->slug, 'type' => $a->type, 'name_bn' => $a->name_bn, 'name_en' => $a->name_en,
                     'division_bn' => $divisions[$a->parent_id]->name_bn ?? null, 'division_en' => $divisions[$a->parent_id]->name_en ?? null,
+                    'division_slug' => $a->type === 'division' ? $a->slug : ($divisions[$a->parent_id]->slug ?? null),
                 ]])->all();
         }));
     }
@@ -66,6 +67,6 @@ final class Taxonomy
     public static function forget(): void
     {
         Cache::forget('community.categories.v2');
-        Cache::forget('community.areas.v2');
+        Cache::forget('community.areas.v3');
     }
 }

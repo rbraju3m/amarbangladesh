@@ -87,29 +87,6 @@
             </div>
         </div>
 
-        {{-- The community, below the quiz: the quiz stays the first thing anyone sees. --}}
-        <section class="mt-14 rounded-[2rem] border border-line bg-card p-5 md:p-7 lg:grid lg:grid-cols-[5fr_6fr] lg:gap-10 lg:p-9" aria-labelledby="community-title">
-            <div>
-                <p class="text-sm font-semibold text-green-text">{{ __('🇧🇩 আমার বাংলাদেশ · আলোচনা') }}</p>
-                <h2 id="community-title" class="mt-1 text-2xl leading-snug font-bold lg:text-3xl">{{ __('বাংলাদেশিদের প্রশ্ন,') }}<br>{{ __('বাংলাদেশিরাই উত্তর দেয়') }}</h2>
-                <p class="mt-2 text-ink-2">{{ __('ডাক্তার, পড়াশোনা, চাকরি, সরকারি কাজ, ঘোরাঘুরি — যা জানতে চাও জিজ্ঞেস করো, জানা থাকলে উত্তর দাও।') }}</p>
-                <a href="{{ lroute('ask', [], false) }}" class="ask-prompt mt-5" @click="trackCommunity('landing', 'ask')">
-                    <span class="flex size-10 shrink-0 items-center justify-center rounded-full bg-flag-red/10 text-xl" aria-hidden="true">✍️</span>
-                    <span class="flex-1 text-ink-2">{{ __('কী জানতে চাও?') }}</span>
-                    <span class="pill bg-flag-red px-3 py-1.5 text-sm text-white">{{ __('জিজ্ঞেস করো') }}</span>
-                </a>
-            </div>
-            <div class="mt-6 lg:mt-0" x-data="communityPreview(3)">
-                <p class="mb-3 text-sm font-semibold text-ink-2">{{ __('এখন যা নিয়ে কথা হচ্ছে') }}</p>
-                <div x-show="count === null" class="space-y-3" aria-hidden="true">
-                    <div class="h-24 animate-pulse rounded-3xl bg-paper-2"></div><div class="h-24 animate-pulse rounded-3xl bg-paper-2"></div>
-                </div>
-                <div x-show="count" x-cloak class="space-y-3" x-html="html"></div>
-                <p x-show="count === 0" x-cloak class="rounded-3xl border border-dashed border-line px-4 py-6 text-center text-ink-2">{{ __('🌱 আলোচনা সবে শুরু হচ্ছে, প্রথম প্রশ্নটা তোমার হোক!') }}</p>
-                <a href="{{ lroute('feed', [], false) }}" class="btn-ghost mt-3 w-full" @click="trackCommunity('landing', 'feed')">{{ __('সব আলোচনা দেখো →') }}</a>
-            </div>
-        </section>
-
         <p class="mt-auto pt-10 text-center text-xs leading-relaxed text-ink-2">{{ __('কুইজ খেলতে কোনো লগইন লাগে না। তোমার নাম, ফোন বা ইমেইল আমরা চাই না।') }}</p>
     </section>
 

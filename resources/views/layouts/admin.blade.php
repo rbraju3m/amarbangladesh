@@ -13,16 +13,26 @@
     @yield('content')
 @else
     @php
-        // [route, label, active pattern, svg path (24px, stroked)]
-        $nav = [
-            ['admin.dashboard', 'Analytics', 'admin.dashboard', 'M4 19V9m6 10V5m6 14v-7m4 7H2'],
-            ['admin.plays', 'Plays', 'admin.plays', 'M5 4l14 8-14 8V4Z'],
-            ['admin.questions.index', 'Questions', 'admin.questions.*', 'M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01'],
-            ['admin.locations.index', 'Locations', 'admin.locations.*', 'M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21Zm0-9a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z'],
-            ['admin.community', 'Community', 'admin.community', 'M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.4A8 8 0 1 1 21 12Z'],
-            ['admin.balance', 'Balance', 'admin.balance', 'M12 4v16M5 8h14M5 8l-3 7a3.5 3.5 0 0 0 6 0L5 8Zm14 0-3 7a3.5 3.5 0 0 0 6 0l-3-7ZM8 20h8'],
-            ['admin.password.edit', 'Password', 'admin.password.*', 'M7 11V8a5 5 0 0 1 10 0v3M5 11h14v10H5V11Zm7 4v2'],
+        // Grouped by module: the community is the main product, the quiz has its own section.
+        // group => [[route, label, active pattern, svg path (24px, stroked)], ...]
+        $groups = [
+            'Overview' => [
+                ['admin.dashboard', 'Analytics', 'admin.dashboard', 'M4 19V9m6 10V5m6 14v-7m4 7H2'],
+            ],
+            'Community' => [
+                ['admin.community', 'Moderation', 'admin.community', 'M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.4A8 8 0 1 1 21 12Z'],
+            ],
+            'Quiz' => [
+                ['admin.plays', 'Plays', 'admin.plays', 'M5 4l14 8-14 8V4Z'],
+                ['admin.questions.index', 'Questions', 'admin.questions.*', 'M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01'],
+                ['admin.locations.index', 'Places', 'admin.locations.*', 'M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21Zm0-9a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z'],
+                ['admin.balance', 'Balance', 'admin.balance', 'M12 4v16M5 8h14M5 8l-3 7a3.5 3.5 0 0 0 6 0L5 8Zm14 0-3 7a3.5 3.5 0 0 0 6 0l-3-7ZM8 20h8'],
+            ],
+            'Account' => [
+                ['admin.password.edit', 'Password', 'admin.password.*', 'M7 11V8a5 5 0 0 1 10 0v3M5 11h14v10H5V11Zm7 4v2'],
+            ],
         ];
+        $nav = array_merge(...array_values($groups));
         $icon = fn ($d) => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="'.$d.'"/></svg>';
     @endphp
     @auth
@@ -33,9 +43,14 @@
                     @include('partials.logo', ['class' => 'size-10 shrink-0'])
                     <span class="leading-tight"><span class="block font-bold">আমার বাংলাদেশ</span><span class="text-xs text-ink-2">Admin panel</span></span>
                 </a>
-                <nav class="space-y-1">
-                    @foreach ($nav as [$route, $label, $pattern, $path])
-                        <a href="{{ route($route) }}" @class(['nav-link', 'is-on' => request()->routeIs($pattern)])>{!! $icon($path) !!}{{ $label }}</a>
+                <nav class="space-y-5">
+                    @foreach ($groups as $group => $items)
+                        <div class="space-y-1">
+                            <p class="px-3 text-xs font-semibold tracking-wide text-ink-2 uppercase">{{ $group }}</p>
+                            @foreach ($items as [$route, $label, $pattern, $path])
+                                <a href="{{ route($route) }}" @class(['nav-link', 'is-on' => request()->routeIs($pattern)])>{!! $icon($path) !!}{{ $label }}</a>
+                            @endforeach
+                        </div>
                     @endforeach
                 </nav>
                 <div class="mt-auto space-y-1 border-t border-line pt-4">

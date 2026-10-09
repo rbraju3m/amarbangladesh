@@ -3,7 +3,7 @@
     $mode: 'hero' (decorative, gentle pulse) or 'reveal' (driven by scanSlug / lockedSlug).
 --}}
 {{-- With clickable places it is a group of buttons (role="img" would hide them from screen readers). --}}
-<svg viewBox="0 0 400 552" class="{{ $class ?? '' }}" role="{{ $mode === 'reveal' ? 'img' : 'group' }}" aria-label="{{ __('বাংলাদেশের মানচিত্র') }}">
+<svg viewBox="0 0 400 552" class="{{ $class ?? '' }}" role="{{ $mode === 'hero' ? 'group' : 'img' }}" aria-label="{{ __('বাংলাদেশের মানচিত্র') }}">
     <defs>
         <linearGradient id="bd-fill-{{ $mode }}" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0" stop-color="#7fbf8f" />

@@ -63,7 +63,7 @@ final class Funnel
         ];
     }
 
-    public const COMMUNITY_VIEWS = ['feed_view', 'post_view', 'ask_view', 'notifications_view'];
+    public const COMMUNITY_VIEWS = ['home_view', 'feed_view', 'post_view', 'ask_view', 'notifications_view'];
 
     public const COMMUNITY_WRITES = ['post_created', 'answer_created'];
 

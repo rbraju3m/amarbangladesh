@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Site\Community;
 
+use App\Community\DivisionMap;
 use App\Community\Feed;
 use App\Community\Taxonomy;
 use App\Http\Controllers\Controller;
@@ -15,8 +16,26 @@ use Illuminate\View\View;
 /** Server-rendered community pages: indexable, cookieless, and they work before any JS runs. */
 class PageController extends Controller
 {
+    /** Posts per list on the home page. */
+    private const HOME_LIST = 5;
+
     /** Change when the privacy page's content changes. */
     public const PRIVACY_UPDATED = '2026-10-09';
+
+    /** The home page: the community first (ask, the map by division, what's new / unanswered / solved), the quiz as a teaser. */
+    public function home(): View
+    {
+        $lists = [];
+        foreach (array_keys(Feed::TABS) as $tab) {
+            $lists[$tab] = (new Feed($tab))->posts(self::HOME_LIST)->getCollection();
+        }
+
+        return view('community.home', [
+            'lists' => $lists,
+            'spots' => DivisionMap::spots(),
+            'categories' => Taxonomy::categories(),
+        ]);
+    }
 
     public function feed(Request $request): View
     {
