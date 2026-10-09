@@ -431,6 +431,31 @@
         @apply text-[1.0625rem] leading-[1.75] break-words;
     }
 
+    /* Formatted posts and answers (App\Community\RichText): paragraphs, a small heading, lists, links. */
+    .prose-text :where(p, ul, ol, h3) + :where(p, ul, ol, h3) {
+        margin-top: 0.75em;
+    }
+
+    .prose-text h3 {
+        @apply text-[1.125em] leading-snug font-bold;
+    }
+
+    .prose-text ul {
+        @apply list-disc ps-[1.4em];
+    }
+
+    .prose-text ol {
+        @apply list-decimal ps-[1.4em];
+    }
+
+    .prose-text li + li {
+        margin-top: 0.25em;
+    }
+
+    .prose-text a {
+        @apply font-semibold text-green-text underline underline-offset-2 [overflow-wrap:anywhere];
+    }
+
     .composer {
         @apply rounded-3xl border border-line bg-card p-4 md:p-5;
     }

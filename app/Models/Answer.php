@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class Answer extends Model
 {
-    protected $fillable = ['post_id', 'parent_id', 'thread_id', 'member_id', 'is_anonymous', 'body', 'status'];
+    protected $fillable = ['post_id', 'parent_id', 'thread_id', 'member_id', 'is_anonymous', 'body', 'body_html', 'status'];
 
     protected function casts(): array
     {

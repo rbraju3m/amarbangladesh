@@ -29,7 +29,7 @@ class Post extends Model
 
     public const DELETED = 'deleted';  // deleted by its author
 
-    protected $fillable = ['member_id', 'is_anonymous', 'type', 'title', 'body', 'category_id', 'area_id', 'status', 'accepted_answer_id'];
+    protected $fillable = ['member_id', 'is_anonymous', 'type', 'title', 'body', 'body_html', 'category_id', 'area_id', 'status', 'accepted_answer_id'];
 
     protected function casts(): array
     {

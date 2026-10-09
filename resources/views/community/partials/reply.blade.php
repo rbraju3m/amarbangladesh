@@ -14,7 +14,7 @@
         <a href="#answer-{{ $reply->parent_id }}" class="mt-1 inline-block text-xs font-semibold text-ink-2 hover:text-ink">{{ __('↪ :name-কে', ['name' => $reply->parent->publicName()]) }}</a>
     @endif
     <template data-raw>{{ $reply->body }}</template>
-    <div x-show="!editing" class="prose-text mt-1.5">{{ \App\Community\Text::render($reply->body) }}</div>
+    <div x-show="!editing" class="prose-text mt-1.5">{{ \App\Community\RichText::render($reply) }}</div>
     @include('community.partials.edit-form', ['id' => $reply->id, 'type' => 'answer'])
     <div x-show="!editing" class="mt-1.5 flex flex-wrap items-center gap-1">
         <button type="button" class="act-quiet !min-h-9 !px-2" :aria-pressed="marked('answer:{{ $reply->id }}')" x-show="!mine('answer', {{ $reply->id }})"

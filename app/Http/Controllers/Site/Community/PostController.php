@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Site\Community;
 
 use App\Community\Moderation;
 use App\Community\Notifier;
+use App\Community\RichText;
 use App\Community\Taxonomy;
 use App\Community\Text;
 use App\Http\Controllers\Controller;
@@ -22,7 +23,8 @@ class PostController extends Controller
 {
     public function store(Request $request): JsonResponse
     {
-        $request->merge(['title' => Text::line($request->input('title')), 'body' => Text::clean($request->input('body'))]);
+        [$body, $html] = RichText::input($request, headings: true);
+        $request->merge(['title' => Text::line($request->input('title')), 'body' => $body]);
         $data = $request->validate([
             'type' => ['nullable', Rule::in(array_keys(Post::TYPES))],
             'title' => ['required', 'string', 'min:8', 'max:200'],
@@ -34,9 +36,7 @@ class PostController extends Controller
         ], self::messages());
 
         $member = self::named($request->attributes->get('member'), $data['name'] ?? null)->rememberLocale();
-        if (Text::linkCount($data['title'].' '.($data['body'] ?? '')) > Text::MAX_LINKS) {
-            throw ValidationException::withMessages(['body' => __('একটা পোস্টে দুটোর বেশি লিংক দেওয়া যাবে না।')]);
-        }
+        self::checkLinks($data['title'], $data['body'] ?? null, $html);
 
         // A double tap or a retry after a slow network should not post twice.
         $post = Post::where('member_id', $member->id)->where('title', $data['title'])->where('created_at', '>=', now()->subMinutes(10))->first()
@@ -46,6 +46,7 @@ class PostController extends Controller
                 'type' => $data['type'] ?? 'question',
                 'title' => $data['title'],
                 'body' => $data['body'] ?? null,
+                'body_html' => $html,
                 'category_id' => Taxonomy::categories()[$data['category'] ?? '']['id'] ?? null,
                 'area_id' => Taxonomy::areas()[$data['area'] ?? '']['id'] ?? null,
             ]);
@@ -62,24 +63,35 @@ class PostController extends Controller
     {
         abort_unless($post->member_id === $request->attributes->get('member')->id, 403);
         abort_unless($post->isPublished(), 404);
-        $request->merge(['title' => Text::line($request->input('title')), 'body' => Text::clean($request->input('body'))]);
+        [$body, $html] = RichText::input($request, headings: true);
+        $request->merge(['title' => Text::line($request->input('title')), 'body' => $body]);
         $data = $request->validate([
             'title' => ['required', 'string', 'min:8', 'max:200'],
             'body' => ['nullable', 'string', 'max:5000'],
         ], self::messages());
-        if (Text::linkCount($data['title'].' '.($data['body'] ?? '')) > Text::MAX_LINKS) {
-            throw ValidationException::withMessages(['body' => __('একটা পোস্টে দুটোর বেশি লিংক দেওয়া যাবে না।')]);
-        }
+        self::checkLinks($data['title'], $data['body'] ?? null, $html);
 
-        if ($data['title'] !== $post->title || ($data['body'] ?? null) !== $post->body) {
-            $post->forceFill(['title' => $data['title'], 'body' => $data['body'] ?? null, 'edited_at' => now()])->save();
+        if ($data['title'] !== $post->title || ($data['body'] ?? null) !== $post->body || $html !== $post->body_html) {
+            $post->forceFill(['title' => $data['title'], 'body' => $data['body'] ?? null, 'body_html' => $html, 'edited_at' => now()])->save();
         }
 
         return response()->json([
             'title' => $post->title,
             'body' => $post->body,
-            'body_html' => $post->body ? Text::render($post->body)->toHtml() : '',
+            'body_html' => $post->body ? RichText::render($post)->toHtml() : '',
         ]);
+    }
+
+    /** At most Text::MAX_LINKS links in the title and details together; formatted details count their <a> tags. */
+    private static function checkLinks(string $title, ?string $body, ?string $html): void
+    {
+        $links = Text::linkCount($title) + ($html !== null ? RichText::linkCount($html) : Text::linkCount($body));
+        if ($links > Text::MAX_LINKS) {
+            throw ValidationException::withMessages(['body' => __('একটা পোস্টে দুটোর বেশি লিংক দেওয়া যাবে না।')]);
+        }
+        if ($html !== null && mb_strlen($html) > RichText::MAX_HTML) {
+            throw ValidationException::withMessages(['body' => __('বিস্তারিত অংশটা একটু ছোট করুন।')]);
+        }
     }
 
     private static function messages(): array

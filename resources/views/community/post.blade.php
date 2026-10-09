@@ -26,7 +26,7 @@
             <time datetime="{{ $post->created_at->toIso8601String() }}" class="text-ink-2">{{ \App\Support\Lang::ago($post->created_at) }}</time>
             <span id="post-edited" @class(['text-xs text-ink-2', 'hidden' => ! $post->edited_at])>{{ __('(সম্পাদিত)') }}</span>
         </div>
-        <div x-show="!editing" id="post-body" class="prose-text mt-4 text-lg empty:hidden">@if ($post->body){{ \App\Community\Text::render($post->body) }}@endif</div>
+        <div x-show="!editing" id="post-body" class="prose-text mt-4 text-lg empty:hidden">@if ($post->body){{ \App\Community\RichText::render($post) }}@endif</div>
 
         {{-- The author edits title and details in place --}}
         <template x-if="editing">

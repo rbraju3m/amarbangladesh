@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Site\Community;
 
 use App\Community\Moderation;
 use App\Community\Notifier;
+use App\Community\RichText;
 use App\Community\Text;
 use App\Http\Controllers\Controller;
 use App\Models\AnalyticsEvent;
@@ -23,7 +24,8 @@ class AnswerController extends Controller
     public function store(Request $request, Post $post): JsonResponse
     {
         abort_unless($post->isPublished(), 404);
-        $request->merge(['body' => Text::clean($request->input('body'))]);
+        [$body, $html] = RichText::input($request, rich: ! $request->filled('parent')); // replies stay plain
+        $request->merge(['body' => $body]);
         $data = $request->validate([
             'body' => ['required', 'string', 'min:2', 'max:5000'],
             'name' => ['nullable', 'string', 'max:40'],
@@ -35,16 +37,14 @@ class AnswerController extends Controller
         ]);
 
         $member = PostController::named($request->attributes->get('member'), $data['name'] ?? null)->rememberLocale();
-        if (Text::linkCount($data['body']) > Text::MAX_LINKS) {
-            throw ValidationException::withMessages(['body' => __('একটা উত্তরে দুটোর বেশি লিংক দেওয়া যাবে না।')]);
-        }
+        self::checkLinks($data['body'], $html);
 
         // A reply keeps what it answers (`parent_id`) and the top-level answer it sits under (`thread_id`).
         $parent = isset($data['parent']) ? $post->answers()->published()->findOrFail($data['parent']) : null;
         $thread = $parent ? ($parent->thread_id ?? $parent->id) : null;
 
         $answer = Answer::where(['post_id' => $post->id, 'parent_id' => $parent?->id, 'member_id' => $member->id, 'body' => $data['body']])->where('created_at', '>=', now()->subMinutes(10))->first()
-            ?? Answer::create(['post_id' => $post->id, 'parent_id' => $parent?->id, 'thread_id' => $thread, 'member_id' => $member->id, 'is_anonymous' => (bool) ($data['anonymous'] ?? false), 'body' => $data['body'], 'status' => Post::PUBLISHED]);
+            ?? Answer::create(['post_id' => $post->id, 'parent_id' => $parent?->id, 'thread_id' => $thread, 'member_id' => $member->id, 'is_anonymous' => (bool) ($data['anonymous'] ?? false), 'body' => $data['body'], 'body_html' => $html, 'status' => Post::PUBLISHED]);
 
         if ($answer->wasRecentlyCreated) {
             if ($parent) {
@@ -74,20 +74,30 @@ class AnswerController extends Controller
     {
         abort_unless($answer->member_id === $request->attributes->get('member')->id, 403);
         abort_unless($answer->isPublished() && $answer->post->isPublished(), 404);
-        $request->merge(['body' => Text::clean($request->input('body'))]);
+        [$body, $html] = RichText::input($request, rich: ! $answer->isReply());
+        $request->merge(['body' => $body]);
         $data = $request->validate(['body' => ['required', 'string', 'min:2', 'max:5000']]);
-        if (Text::linkCount($data['body']) > Text::MAX_LINKS) {
-            throw ValidationException::withMessages(['body' => __('একটা উত্তরে দুটোর বেশি লিংক দেওয়া যাবে না।')]);
-        }
+        self::checkLinks($data['body'], $html);
 
-        if ($data['body'] !== $answer->body) {
-            $answer->forceFill(['body' => $data['body'], 'edited_at' => now()])->save();
+        if ($data['body'] !== $answer->body || $html !== $answer->body_html) {
+            $answer->forceFill(['body' => $data['body'], 'body_html' => $html, 'edited_at' => now()])->save();
         }
         $answer->load(['member:id,code,name,deleted_at', 'parent.member:id,code,name,deleted_at']);
 
         return response()->json(['html' => view($answer->isReply() ? 'community.partials.reply' : 'community.partials.answer', [
             'answer' => $answer, 'reply' => $answer, 'post' => $answer->post,
         ])->render()]);
+    }
+
+    /** At most Text::MAX_LINKS links; formatted answers count their <a> tags. */
+    private static function checkLinks(string $body, ?string $html): void
+    {
+        if (($html !== null ? RichText::linkCount($html) : Text::linkCount($body)) > Text::MAX_LINKS) {
+            throw ValidationException::withMessages(['body' => __('একটা উত্তরে দুটোর বেশি লিংক দেওয়া যাবে না।')]);
+        }
+        if ($html !== null && mb_strlen($html) > RichText::MAX_HTML) {
+            throw ValidationException::withMessages(['body' => __('উত্তরটা একটু ছোট করুন।')]);
+        }
     }
 
     /** More replies in a thread (after the first few shown on the page), as HTML. */
