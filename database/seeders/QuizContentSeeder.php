@@ -42,6 +42,7 @@ class QuizContentSeeder extends Seeder
                     'profile' => array_combine($traitKeys, $location['profile']),
                     'map_x' => $x,
                     'map_y' => $y,
+                    'area_slug' => $data['areas'][$location['slug']] ?? null,
                     'sort_order' => $i + 1,
                 ]);
             }

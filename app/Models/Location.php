@@ -14,7 +14,7 @@ class Location extends Model
 
     protected $fillable = [
         'slug', 'name_bn', 'name_en', 'emoji', 'title_bn', 'title_en', 'tagline_bn', 'tagline_en', 'description_bn', 'description_en', 'reason_tail_bn', 'reason_tail_en', 'badges_en',
-        'badges', 'profile', 'accent_color', 'map_x', 'map_y', 'illustration', 'og_image', 'sort_order', 'is_active',
+        'badges', 'profile', 'accent_color', 'map_x', 'map_y', 'area_slug', 'illustration', 'og_image', 'sort_order', 'is_active',
     ];
 
     protected function casts(): array

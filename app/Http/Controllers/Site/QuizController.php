@@ -68,6 +68,7 @@ class QuizController extends Controller
                     'x' => $l->map_x,
                     'y' => $l->map_y,
                     'illustration' => $l->illustrationUrl(),
+                    'area' => $l->area_slug,
                 ])->all(),
         ]);
     }

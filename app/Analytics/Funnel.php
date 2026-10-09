@@ -63,6 +63,67 @@ final class Funnel
         ];
     }
 
+    public const COMMUNITY_VIEWS = ['feed_view', 'post_view', 'ask_view', 'notifications_view'];
+
+    public const COMMUNITY_WRITES = ['post_created', 'answer_created'];
+
+    /**
+     * Quiz → community: of the period's quiz players, who went on to each community step (each
+     * step a subset of the one before, so rates stay ≤ 100%), plus the community side seen on its
+     * own: visitors, sign-ups, writers, and how many of them played the quiz. People, by visitor id.
+     */
+    public function community(): array
+    {
+        $ids = fn (Builder $q) => $q->whereNotNull('visitor_id')->distinct()->pluck('visitor_id')->flip();
+        $players = $ids($this->results());
+        $clicked = $players->intersectByKeys($ids($this->events()->where('name', 'community_clicked')));
+        $viewed = $clicked->intersectByKeys($viewers = $ids($this->events()->whereIn('name', self::COMMUNITY_VIEWS)));
+        $joined = $viewed->intersectByKeys($signups = $ids($this->events()->where('name', 'signed_up')));
+        $wrote = $joined->intersectByKeys($writers = $ids($this->events()->whereIn('name', self::COMMUNITY_WRITES)));
+
+        $everPlayed = fn ($set) => $set->isEmpty() ? 0
+            : QuizResult::whereIn('visitor_id', $set->keys())->distinct()->count('visitor_id');
+
+        return [
+            'steps' => [
+                ['key' => 'players', 'label' => 'Played the quiz', 'count' => $players->count()],
+                ['key' => 'clicked', 'label' => 'Clicked into the community', 'count' => $clicked->count()],
+                ['key' => 'viewed', 'label' => 'Viewed community pages', 'count' => $viewed->count()],
+                ['key' => 'joined', 'label' => 'Signed up', 'count' => $joined->count()],
+                ['key' => 'wrote', 'label' => 'Posted or answered', 'count' => $wrote->count()],
+            ],
+            'viewers' => $viewers->count(),
+            'viewers_played' => $everPlayed($viewers),
+            'signups' => $this->events()->where('name', 'signed_up')->count(),
+            'writers' => $writers->count(),
+            'writers_played' => $everPlayed($writers),
+            'returning' => $this->returningVisitors(),
+            'visitors' => $this->events()->whereNotNull('visitor_id')->distinct()->count('visitor_id'),
+            'by_place' => $this->communityClicksByPlace(),
+        ];
+    }
+
+    /** Clicks from the result page and place sheet into a place's discussions, most first. */
+    public function communityClicksByPlace(): array
+    {
+        $names = Location::pluck('name_bn', 'slug');
+
+        return $this->events()->where('name', 'community_clicked')->whereNotNull('meta->place')
+            ->selectRaw("JSON_UNQUOTE(JSON_EXTRACT(meta, '$.place')) as place, COUNT(DISTINCT visitor_id) as people")
+            ->groupBy('place')->orderByDesc('people')->get()
+            ->map(fn ($row) => ['name' => $names[$row->place] ?? $row->place, 'people' => (int) $row->people])->all();
+    }
+
+    /** Visitors seen on two or more different days (Dhaka time) within the period. */
+    public function returningVisitors(): int
+    {
+        return (int) DB::query()->fromSub(
+            $this->events()->whereNotNull('visitor_id')->groupBy('visitor_id')
+                ->havingRaw('COUNT(DISTINCT DATE(created_at)) >= 2')->select('visitor_id'),
+            'returning'
+        )->count();
+    }
+
     /**
      * Start rate by how people arrived: the landing page or a friend's shared result.
      * A starter counts for an entry only if they also viewed it this period, so rates stay ≤ 100%.

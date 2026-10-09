@@ -12,7 +12,6 @@ use App\Models\Answer;
 use App\Models\Member;
 use App\Models\Post;
 use App\Support\Bangla;
-use App\Support\Device;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -57,7 +56,7 @@ class PostController extends Controller
             ]);
 
         if ($post->wasRecentlyCreated) {
-            AnalyticsEvent::create(['name' => 'post_created', 'device' => Device::fromUserAgent($request->userAgent()), 'meta' => ['type' => $post->type, 'anon' => $post->is_anonymous ? 1 : 0]]);
+            AnalyticsEvent::server('post_created', $request, ['type' => $post->type, 'anon' => $post->is_anonymous ? 1 : 0]);
         }
 
         return response()->json(['post' => ['id' => $post->id, 'url' => $post->url()], 'member' => MemberController::present($member)], 201);

@@ -425,14 +425,16 @@
                 </div>
             </div>
 
-            {{-- After the result (never before it): what other Bangladeshis are asking. --}}
-            <div class="mt-8 rounded-3xl border border-line bg-card p-4" x-data="communityPreview(2)">
-                <h2 class="text-lg font-bold">{{ __('🇧🇩 বাংলাদেশিরা এখন কী জিজ্ঞেস করছে') }}</h2>
-                <p class="text-sm text-ink-2">{{ __('জানা থাকলে উত্তর দাও, না হলে নিজেই কিছু জিজ্ঞেস করো।') }}</p>
+            {{-- After the result (never before it): what Bangladeshis are asking about this player's place. --}}
+            <div class="mt-8 rounded-3xl border border-line bg-card p-4" x-data="communityPreview(2, () => placeArea(result?.location?.slug))">
+                <h2 class="text-lg font-bold" x-text="t('🇧🇩 :place নিয়ে বাংলাদেশিরা কী জিজ্ঞেস করছে', { place: result.location.name })"></h2>
+                <p x-show="areaCount !== 0" class="text-sm text-ink-2">{{ __('জানা থাকলে উত্তর দাও, না হলে নিজেই কিছু জিজ্ঞেস করো।') }}</p>
+                <p x-show="areaCount === 0" x-cloak class="mt-1 rounded-2xl bg-paper-2 px-3 py-2 text-sm" x-text="t('🌱 :place নিয়ে এখনো কেউ কিছু জিজ্ঞেস করেনি। প্রথম প্রশ্নটা তুমিই করো!', { place: result.location.name })"></p>
+                <p x-show="areaCount === 0 && count" x-cloak class="mt-4 text-xs font-semibold text-ink-2">{{ __('এখন যা নিয়ে কথা হচ্ছে') }}</p>
                 <div x-show="count" x-cloak class="mt-3 space-y-3" x-html="html"></div>
                 <div class="mt-3 grid grid-cols-2 gap-2">
-                    <a href="{{ lroute('feed', [], false) }}" class="btn-ghost !px-2" @click="trackCommunity('result', 'feed')">{{ __('💬 আলোচনা দেখো') }}</a>
-                    <a href="{{ lroute('ask', [], false) }}" class="btn-ghost !px-2" @click="trackCommunity('result', 'ask')">{{ __('✍️ জিজ্ঞেস করো') }}</a>
+                    <a :href="communityLink('feed', result.location.slug)" href="{{ lroute('feed', [], false) }}" class="btn-ghost !px-2 text-center" @click="trackCommunity('result', 'feed', result.location.slug)" x-text="t('💬 :place নিয়ে আলোচনা', { place: result.location.name })">{{ __('💬 আলোচনা দেখো') }}</a>
+                    <a :href="communityLink('ask', result.location.slug)" href="{{ lroute('ask', [], false) }}" class="btn-ghost !px-2 text-center" @click="trackCommunity('result', 'ask', result.location.slug)" x-text="t('✍️ :place নিয়ে জিজ্ঞেস করো', { place: result.location.name })">{{ __('✍️ জিজ্ঞেস করো') }}</a>
                 </div>
             </div>
 
@@ -566,6 +568,8 @@
 
                     <p x-show="placeView.tagline" class="mt-4 font-semibold" x-text="placeView.tagline"></p>
                     <p x-show="placeView.description" class="mt-1 leading-relaxed text-ink-2" x-text="placeView.description"></p>
+                    <a x-show="placeView.area" :href="communityLink('feed', placeView.slug)" class="mt-3 inline-block text-sm font-semibold text-green-text hover:underline"
+                        @click="trackCommunity('place_sheet', 'feed', placeView.slug)" x-text="t('💬 :place নিয়ে আলোচনা দেখো →', { place: placeView.name })"></a>
 
                     <div class="mt-5 flex items-center gap-2">
                         <button type="button" class="btn-ghost size-12 !px-0" @click="stepPlace(-1)" aria-label="{{ __('আগের জায়গা') }}">‹</button>

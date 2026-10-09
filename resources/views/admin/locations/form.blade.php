@@ -47,6 +47,23 @@
                         <input name="accent_color" value="{{ old('accent_color', $location->accent_color) }}" required pattern="#[0-9a-fA-F]{6}" class="input font-mono">
                     </span>
                 </label>
+                <label><span class="field-label">Community area <span class="normal-case">the result page shows questions from here</span></span>
+                    <select name="area_slug" class="input">
+                        <option value="">None (latest posts)</option>
+                        @foreach (\App\Community\Taxonomy::areas() as $a)
+                            @if ($a['type'] === 'division')
+                                <option value="{{ $a['slug'] }}" @selected(old('area_slug', $location->area_slug) === $a['slug'])>{{ $a['name_en'] }} division (all districts)</option>
+                            @endif
+                        @endforeach
+                        @foreach (\App\Community\Taxonomy::districtsByDivision() as $division => $list)
+                            <optgroup label="{{ $division }}">
+                                @foreach ($list as $a)
+                                    <option value="{{ $a['slug'] }}" @selected(old('area_slug', $location->area_slug) === $a['slug'])>{{ $a['name_en'] }} · {{ $a['name_bn'] }}</option>
+                                @endforeach
+                            </optgroup>
+                        @endforeach
+                    </select>
+                </label>
                 <label><span class="field-label">Sort order</span><input type="number" name="sort_order" value="{{ old('sort_order', $location->sort_order) }}" class="input"></label>
                 <label><span class="field-label">Illustration path</span><input name="illustration" value="{{ old('illustration', $location->illustration) }}" placeholder="images/locations/{{ $location->slug }}.svg" class="input"></label>
                 <label><span class="field-label">Preview image path</span><input name="og_image" value="{{ old('og_image', $location->og_image) }}" placeholder="images/og/{{ $location->slug }}.png" class="input"></label>

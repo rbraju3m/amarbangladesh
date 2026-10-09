@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Site\Community;
 
 use App\Community\Accounts;
 use App\Http\Controllers\Controller;
+use App\Models\AnalyticsEvent;
 use App\Support\Bangla;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Str;
@@ -20,7 +21,7 @@ class SocialAuthController extends Controller
     public function redirect(string $provider): RedirectResponse
     {
         abort_unless(in_array($provider, Accounts::providers(), true), 404);
-        session(['auth.lang' => request()->query('lang') === 'en' ? 'en' : 'bn']);
+        session(['auth.lang' => request()->query('lang') === 'en' ? 'en' : 'bn', 'auth.visitor' => is_string(request()->query('v')) ? request()->query('v') : null]);
 
         return Socialite::driver($provider)->redirect();
     }
@@ -44,6 +45,9 @@ class SocialAuthController extends Controller
             return redirect($done.'#error=blocked');
         }
 
+        if ($member->wasRecentlyCreated) {
+            AnalyticsEvent::server('signed_up', request(), ['method' => $provider], session()->pull('auth.visitor'));
+        }
         if ($member->locale !== $locale) {
             $member->update(['locale' => $locale]);
         }

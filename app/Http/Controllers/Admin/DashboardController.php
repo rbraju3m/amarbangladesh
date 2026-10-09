@@ -27,6 +27,7 @@ class DashboardController extends Controller
             'summary' => $funnel->summary(),
             'previous' => $previous->summary(),
             'entries' => $funnel->startRateByEntry(),
+            'community' => $funnel->community(),
             'trend' => $trend->trend(),
             'hourly' => $funnel->hourly(),
             'distribution' => $funnel->resultDistribution(),

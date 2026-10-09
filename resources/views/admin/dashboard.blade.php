@@ -81,6 +81,37 @@
     </div>
 </section>
 
+{{-- Quizzes bring people in; does the community keep some of them? --}}
+@php($c = $community)
+<section class="panel mt-4">
+    <h2 class="panel-title">Quiz → community <small>quiz players who went on, each step out of the one before</small></h2>
+    <ol class="space-y-3 text-sm">
+        @foreach ($c['steps'] as $i => $step)
+            @php($base = $c['steps'][0]['count'] ?: 1)
+            @php($prev = $i ? ($c['steps'][$i - 1]['count'] ?: 0) : null)
+            <li>
+                <div class="flex justify-between gap-2">
+                    <span>{{ $step['label'] }}</span>
+                    <span class="tabular-nums text-ink-2"><b class="text-ink">{{ $fmt($step['count']) }}</b>@if ($i) · {{ $prev ? round(100 * $step['count'] / $prev, 1) : 0 }}%@endif</span>
+                </div>
+                <div class="mt-1.5 h-2 rounded-full bg-paper-2"><div class="h-full rounded-full bg-flag-green" style="width: {{ round(100 * $step['count'] / $base, 1) }}%"></div></div>
+            </li>
+        @endforeach
+    </ol>
+    <div class="mt-5 grid grid-cols-2 gap-3 border-t border-line pt-4 text-sm lg:grid-cols-4">
+        <div><div class="text-xs font-semibold text-ink-2">Community visitors</div><div class="mt-1 text-xl font-bold tabular-nums">{{ $fmt($c['viewers']) }}</div><div class="text-xs text-ink-2">{{ $fmt($c['viewers_played']) }} of them played the quiz</div></div>
+        <div><div class="text-xs font-semibold text-ink-2">Sign-ups</div><div class="mt-1 text-xl font-bold tabular-nums">{{ $fmt($c['signups']) }}</div><div class="text-xs text-ink-2">new community accounts</div></div>
+        <div><div class="text-xs font-semibold text-ink-2">Posted or answered</div><div class="mt-1 text-xl font-bold tabular-nums">{{ $fmt($c['writers']) }}</div><div class="text-xs text-ink-2">{{ $fmt($c['writers_played']) }} of them played the quiz</div></div>
+        <div><div class="text-xs font-semibold text-ink-2">Returning visitors</div><div class="mt-1 text-xl font-bold tabular-nums">{{ $fmt($c['returning']) }}</div><div class="text-xs text-ink-2">seen on 2+ days · of {{ $fmt($c['visitors']) }}</div></div>
+    </div>
+    @if ($c['by_place'])
+        <p class="mt-4 text-sm"><span class="font-semibold">Clicked into a place's discussions:</span>
+            @foreach ($c['by_place'] as $row){{ $row['name'] }} <b class="tabular-nums">{{ $fmt($row['people']) }}</b>@if (! $loop->last) · @endif @endforeach
+        </p>
+    @endif
+    <p class="mt-3 text-xs text-ink-2">People are matched by the anonymous visitor id in their browser. Writes before 2026-10-09 carry no visitor id, so older contributions don't count here.</p>
+</section>
+
 <div class="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
     <div class="stat"><div class="text-xs font-semibold text-ink-2">From shared links</div><div class="mt-1 text-2xl font-bold tabular-nums">{{ $fmt($s['referral_visitors']) }}</div><div class="text-xs text-ink-2">visitors via a friend's result</div></div>
     <div class="stat"><div class="text-xs font-semibold text-ink-2">Played via links</div><div class="mt-1 text-2xl font-bold tabular-nums">{{ $fmt($s['referred_players']) }}</div><div class="text-xs text-ink-2">people · {{ $s['referral_conversion'] }}% of link visitors</div></div>

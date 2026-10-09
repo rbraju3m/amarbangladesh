@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Site\Community;
 use App\Community\Accounts;
 use App\Http\Controllers\Controller;
 use App\Http\Middleware\ResolveMember;
+use App\Models\AnalyticsEvent;
 use App\Models\Member;
 use App\Support\Bangla;
 use App\Support\Lang;
@@ -34,7 +35,7 @@ class AuthController extends Controller
         }
         $name = Bangla::cleanName($data['name']) ?? throw ValidationException::withMessages(['name' => __('নামটা ঠিকমতো লিখুন।')]);
 
-        return $this->signedIn(Accounts::signIn('email', $email, $name, ['password' => $data['password']]), 201);
+        return $this->signedIn($request, Accounts::signIn('email', $email, $name, ['password' => $data['password']]), 'email', 201);
     }
 
     public function emailLogin(Request $request): JsonResponse
@@ -46,7 +47,7 @@ class AuthController extends Controller
             throw ValidationException::withMessages(['email' => __('ইমেইল বা পাসওয়ার্ড মেলেনি।')]);
         }
 
-        return $this->signedIn($member);
+        return $this->signedIn($request, $member, 'email');
     }
 
     /** Always 204, so the form can't be used to find out which emails have accounts. */
@@ -77,7 +78,7 @@ class AuthController extends Controller
         $member->update(['password' => $data['password']]);
         $member->tokens()->delete(); // sign out every other device
 
-        return $this->signedIn($member);
+        return $this->signedIn($request, $member, 'email');
     }
 
     public function phoneSend(Request $request): Response
@@ -103,7 +104,7 @@ class AuthController extends Controller
             throw ValidationException::withMessages(['code' => __('কোডটা মেলেনি বা মেয়াদ শেষ।')]);
         }
 
-        return $this->signedIn(Accounts::signIn('phone', $phone, Bangla::cleanName($data['name'] ?? null)));
+        return $this->signedIn($request, Accounts::signIn('phone', $phone, Bangla::cleanName($data['name'] ?? null)), 'phone');
     }
 
     /** After signing in, a browser that still holds a device-only member brings its posts along. */
@@ -128,11 +129,14 @@ class AuthController extends Controller
         return response()->noContent();
     }
 
-    private function signedIn(Member $member, int $status = 200): JsonResponse
+    private function signedIn(Request $request, Member $member, string $method, int $status = 200): JsonResponse
     {
         abort_if($member->isBlocked(), 403, __('এই অ্যাকাউন্ট থেকে লেখা বন্ধ করা হয়েছে।'));
 
         $member->rememberLocale();
+        if ($member->wasRecentlyCreated) {
+            AnalyticsEvent::server('signed_up', $request, ['method' => $method]);
+        }
 
         return response()->json(['member' => MemberController::present($member), 'token' => $member->issueToken()], $status);
     }

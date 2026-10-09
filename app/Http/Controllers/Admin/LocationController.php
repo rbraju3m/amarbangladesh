@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Community\Taxonomy;
 use App\Http\Controllers\Controller;
 use App\Models\Location;
 use App\Models\PersonalityTrait;
 use App\Quiz\QuizConfig;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 /**
@@ -51,6 +53,7 @@ class LocationController extends Controller
             'reason_tail_en' => ['nullable', 'string', 'max:255'],
             'badges_en' => ['nullable', 'string', 'max:500'],
             'accent_color' => ['required', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'area_slug' => ['nullable', Rule::in(array_keys(Taxonomy::areas()))],
             'illustration' => ['nullable', 'string', 'max:255'],
             'og_image' => ['nullable', 'string', 'max:255'],
             'sort_order' => ['required', 'integer', 'between:0,999'],

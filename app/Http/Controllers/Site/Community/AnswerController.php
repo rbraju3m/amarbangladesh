@@ -9,7 +9,6 @@ use App\Http\Controllers\Controller;
 use App\Models\AnalyticsEvent;
 use App\Models\Answer;
 use App\Models\Post;
-use App\Support\Device;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -42,7 +41,7 @@ class AnswerController extends Controller
         if ($answer->wasRecentlyCreated) {
             $post->refreshAnswerCount();
             Notifier::answered($answer);
-            AnalyticsEvent::create(['name' => 'answer_created', 'device' => Device::fromUserAgent($request->userAgent()), 'meta' => ['type' => $post->type]]);
+            AnalyticsEvent::server('answer_created', $request, ['type' => $post->type]);
         }
         $answer->setRelation('member', $member);
 

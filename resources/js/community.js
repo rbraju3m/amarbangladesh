@@ -26,10 +26,23 @@ const PAGE_EVENTS = [
     [/^\/notifications/, 'notifications_view'],
 ];
 
+/** The anonymous visitor id rides along to Google/Facebook so a new account's sign-up event can be tied to it. */
+function withVisitor(href) {
+    const url = new URL(href, location.href);
+    url.searchParams.set('v', visitorId());
+    return url.pathname + url.search;
+}
+
 async function api(method, url, body = null, token = null) {
     const res = await fetch(url, {
         method,
-        headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...localeHeaders(), ...(token ? { 'X-Member-Token': token } : {}) },
+        headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            ...localeHeaders(),
+            ...(token ? { 'X-Member-Token': token } : {}),
+            ...(method !== 'GET' ? { 'X-Visitor': visitorId() } : {}), // ties sign-ups and posts to the anonymous visitor (analytics)
+        },
         body: body ? JSON.stringify(body) : undefined,
     });
     const data = res.status === 204 ? {} : await res.json().catch(() => ({}));
@@ -170,7 +183,8 @@ function community() {
         },
 
         // Google/Facebook leave the page: remember where to come back to and what was typed.
-        rememberReturn() {
+        rememberReturn(link = null) {
+            if (link) link.href = withVisitor(link.href);
             try {
                 sessionStorage.setItem(RETURN, location.pathname + location.search);
                 const fields = {};

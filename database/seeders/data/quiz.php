@@ -195,4 +195,11 @@ return [
         'rangamati' => [88.78, 67.08], 'rajshahi' => [13.71, 38.48], 'puran-dhaka' => [51.58, 49.52],
         'sundarbans' => [29.37, 77.11], 'barishal' => [50.45, 66.29], 'chattogram' => [80.47, 72.01],
     ],
+
+    // Community area for each place (district, or a division for places spanning several).
+    'areas' => [
+        'sylhet' => 'sylhet', 'coxs-bazar' => 'coxs-bazar', 'bandarban' => 'bandarban', 'rangamati' => 'rangamati',
+        'rajshahi' => 'rajshahi', 'puran-dhaka' => 'dhaka', 'sundarbans' => 'khulna-division', 'barishal' => 'barishal',
+        'chattogram' => 'chattogram',
+    ],
 ];

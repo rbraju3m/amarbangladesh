@@ -541,8 +541,22 @@ export default function quiz(boot) {
         },
 
         // Links into the community from the quiz page; the event is flushed as the page unloads.
-        trackCommunity(from, to) {
-            track('community_clicked', { result: this.result?.code, meta: { from, to } });
+        trackCommunity(from, to, place = null) {
+            track('community_clicked', { result: this.result?.code, meta: { from, to, ...(place ? { place } : {}) } });
+        },
+
+        // The community area a place points at (admin → Locations), for place-specific links.
+        placeArea(slug) {
+            return this.locations.find((l) => l.slug === slug)?.area ?? null;
+        },
+
+        // /feed?area=… to read about a place; /ask pre-filled with it (the ask form lists districts, not divisions).
+        communityLink(to, slug) {
+            const area = this.placeArea(slug);
+            if (to === 'feed') return path('/feed') + (area ? `?area=${area}` : '');
+            const query = new URLSearchParams({ category: 'travel' });
+            if (area && !area.endsWith('-division')) query.set('area', area);
+            return `${path('/ask')}?${query}`;
         },
 
         flash(message) {
