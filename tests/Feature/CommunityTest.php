@@ -69,10 +69,11 @@ class CommunityTest extends TestCase
         Post::create(['member_id' => $member->id, 'title' => 'Best tea garden near Sreemangal?', 'area_id' => $areas['moulvibazar']['id']]);
 
         $html = $this->get('/')->assertOk()->assertHeader('Cache-Control')->getContent();
-        $this->assertLessThan(strpos($html, 'map-title'), strpos($html, 'Where to renew a passport'), 'posts come before the map');
+        $this->assertSame(8, substr_count($html, 'class="division level-'), 'the eight divisions are drawn');
+        $this->assertStringContainsString('Where to renew a passport', $html);
         $this->assertStringContainsString('href="/ask"', $html);
         $this->assertStringContainsString('href="/quiz"', $html);
-        $this->assertMatchesRegularExpression('~class="map-spot"[^>]*>২</a>~u', $html); // two posts in Sylhet division, districts included
+        $this->assertMatchesRegularExpression('~map-count[^>]*>\s*<span class="map-ping"></span>\s*<span class="relative">২</span>~u', $html); // two recent posts in Sylhet division, districts included
         $this->assertStringNotContainsString('আমার বাংলাদেশ খুঁজে দেখি', $html);
 
         $quiz = $this->get('/quiz')->assertOk()->getContent();

@@ -607,9 +607,10 @@ function community() {
  */
 function divisionMap(divisions) {
     return {
-        spot: null,
+        spot: null, // picked division
+        hover: null, // division under the pointer / keyboard focus (label)
         html: '',
-        state: 'idle', // loading | ready | empty | error
+        state: 'idle', // loading (old posts dimmed) | slow (skeleton) | ready | empty | error
         get name() {
             return divisions[this.spot]?.name ?? '';
         },
@@ -619,13 +620,20 @@ function divisionMap(divisions) {
         async pick(slug) {
             if (this.spot === slug) return;
             this.spot = slug;
-            this.state = 'loading';
             track('community_clicked', { meta: { from: 'home_map', to: 'division', area: slug } });
+            // Phones: the posts are under the map; bring them into view without jumping.
+            if (matchMedia('(max-width: 1023px)').matches) this.$nextTick(() => this.$refs.posts?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }));
+
+            this._cache ??= {};
+            if (this._cache[slug]) return Object.assign(this, this._cache[slug]);
+            // Keep what is shown (dimmed) while loading; a skeleton only if it takes a while.
+            this.state = 'loading';
+            clearTimeout(this._slow);
+            this._slow = setTimeout(() => this.spot === slug && this.state === 'loading' && !this.html && (this.state = 'slow'), 250);
             try {
                 const data = await api('GET', withLang(`/api/feed?limit=3&compact=1&area=${encodeURIComponent(slug)}`));
-                if (this.spot !== slug) return; // picked another meanwhile
-                this.html = data.html;
-                this.state = data.count ? 'ready' : 'empty';
+                this._cache[slug] = { html: data.html, state: data.count ? 'ready' : 'empty' };
+                if (this.spot === slug) Object.assign(this, this._cache[slug]); // not if another was picked meanwhile
             } catch {
                 if (this.spot === slug) this.state = 'error';
             }

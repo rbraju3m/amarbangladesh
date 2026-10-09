@@ -37,6 +37,13 @@
        danger is for errors and destructive steps; warn is "needs attention" (an unanswered question). */
     --danger: #c0262c;
     --warn: #9a5b00;
+    /* Home map shades, least → most discussed, and hover */
+    --div-0: #d7ebdf;
+    --div-1: #a9d6bb;
+    --div-2: #7cbf98;
+    --div-3: #4a9f73;
+    --div-4: #237a52;
+    --div-hover: #f4c24f;
     --green-text: #006a4e;
     --accent: #2f7d4f;
     /* Admin chart series (validated categorical trio, light / dark). */
@@ -54,6 +61,12 @@
         --ink: #f1ede3;
         --ink-2: #a9b5ae;
         --line: #2a3832;
+        --div-0: #24342c;
+        --div-1: #2b5a43;
+        --div-2: #2f7552;
+        --div-3: #3a9466;
+        --div-4: #4fb784;
+        --div-hover: #c99a2e;
         --danger: #ff8f8f;
         --warn: #f2b45c;
         --green-text: #5fd3a4;
@@ -71,6 +84,12 @@
     --ink: #f1ede3;
     --ink-2: #a9b5ae;
     --line: #2a3832;
+    --div-0: #24342c;
+    --div-1: #2b5a43;
+    --div-2: #2f7552;
+    --div-3: #3a9466;
+    --div-4: #4fb784;
+    --div-hover: #c99a2e;
     --danger: #ff8f8f;
     --warn: #f2b45c;
     --green-text: #5fd3a4;
@@ -341,17 +360,53 @@
         @apply font-semibold text-green-text underline;
     }
 
-    /* A division on the home page's map: its discussion count, picked = brand red. */
-    .map-spot {
-        @apply absolute flex h-8 min-w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-card px-1.5 text-xs font-bold text-ink tabular-nums shadow-md ring-2 ring-flag-green/40 transition duration-150 hover:scale-110;
+    /* Home page map: divisions shaded by how much people talk there (level 0–4), hover lifts,
+       picked = brand red. Counts sit at each division's headquarters. */
+    .division {
+        fill: var(--div-0);
+        stroke: var(--card);
+        stroke-width: 1.6;
+        stroke-linejoin: round;
+        cursor: pointer;
+        transition: fill 0.18s ease, opacity 0.18s ease;
     }
 
-    .map-spot::before {
-        @apply absolute -inset-1.5 content-[''];
+    .division.level-1 { fill: var(--div-1); }
+    .division.level-2 { fill: var(--div-2); }
+    .division.level-3 { fill: var(--div-3); }
+    .division.level-4 { fill: var(--div-4); }
+
+    .division.is-hover {
+        fill: var(--div-hover);
     }
 
-    .map-spot.is-on {
-        @apply scale-110 bg-flag-red text-white ring-white;
+    .division.is-on {
+        fill: var(--red);
+    }
+
+    .division-link {
+        outline: none;
+    }
+
+    .division-link:focus-visible .division {
+        stroke: var(--ink);
+        stroke-width: 3;
+    }
+
+    .map-count {
+        @apply pointer-events-none absolute flex h-7 min-w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-card px-1.5 text-xs font-bold text-ink tabular-nums shadow-md transition duration-150;
+    }
+
+    .map-count.is-on {
+        @apply scale-110 bg-ink text-paper;
+    }
+
+    .map-ping {
+        @apply absolute inset-0 animate-ping rounded-full bg-flag-red/40;
+    }
+
+    .map-tip {
+        @apply pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-[calc(100%+20px)] rounded-2xl bg-card px-3 py-2 text-center whitespace-nowrap shadow-xl ring-1 ring-line;
     }
 
     .notice-card {
