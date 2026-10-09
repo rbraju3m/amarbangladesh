@@ -132,6 +132,8 @@ class AuthController extends Controller
     {
         abort_if($member->isBlocked(), 403, __('এই অ্যাকাউন্ট থেকে লেখা বন্ধ করা হয়েছে।'));
 
+        $member->rememberLocale();
+
         return response()->json(['member' => MemberController::present($member), 'token' => $member->issueToken()], $status);
     }
 

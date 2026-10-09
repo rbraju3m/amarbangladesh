@@ -23,6 +23,7 @@ const PAGE_EVENTS = [
     [/^\/feed/, 'feed_view'],
     [/^\/p\//, 'post_view'],
     [/^\/ask/, 'ask_view'],
+    [/^\/notifications/, 'notifications_view'],
 ];
 
 async function api(method, url, body = null, token = null) {
@@ -62,15 +63,18 @@ function community() {
         busy: false,
         formError: '',
         toast: '',
+        unread: 0, // unread notifications, for the dot on "আমি"
+        notices: { state: 'loading', next: null, email: null }, // the /notifications page
         bn: num,
         track,
 
         init() {
             this.restoreDraft();
             setTrackingContext({ visitor_id: visitorId() });
-            const event = PAGE_EVENTS.find(([re]) => re.test(location.pathname));
+            const event = PAGE_EVENTS.find(([re]) => re.test(location.pathname.replace(/^\/en(?=\/|$)/, '')));
             if (event) track(event[1]);
             this.refreshMine();
+            this.refreshUnread();
         },
 
         get me() {
@@ -117,6 +121,7 @@ function community() {
             }
             this.loginOpen = false;
             this.flash(t('লগইন হয়েছে। স্বাগতম!'));
+            this.refreshUnread();
             await this.refreshMine();
             this._waiting.splice(0).forEach((w) => w.resolve());
         },
@@ -426,6 +431,44 @@ function community() {
                 return false;
             } finally {
                 this.busy = false;
+            }
+        },
+
+        // ---------- notifications ----------
+
+        async refreshUnread() {
+            if (!this.signedIn || document.getElementById('notice-list')) return; // that page loads the list itself
+            try {
+                this.unread = (await api('GET', '/api/notifications/unread', null, this.member.token)).count;
+            } catch {}
+        },
+
+        /** The /notifications list; opening it marks everything read (the cards keep their "new" look until the next visit). */
+        async loadNotifications(more = false) {
+            if (!this.signedIn || this.busy) return;
+            this.busy = true;
+            try {
+                const query = more && this.notices.next ? `?before=${this.notices.next}` : '';
+                const data = await this.call('GET', `/api/notifications${query}`);
+                const list = document.getElementById('notice-list');
+                if (more) list.insertAdjacentHTML('beforeend', data.html);
+                else list.innerHTML = data.html;
+                this.notices = { state: list.children.length ? 'ready' : 'empty', next: data.next, email: data.email };
+                if (!more && list.querySelector('.is-unread')) await this.call('POST', '/api/notifications/read');
+                this.unread = 0;
+            } catch (e) {
+                if (!e.cancelled) this.notices.state = 'error';
+            } finally {
+                this.busy = false;
+            }
+        },
+
+        async setEmailNotices(on) {
+            try {
+                this.notices.email = (await this.call('PATCH', '/api/notifications/settings', { email: on })).email;
+                this.flash(on ? t('নতুন উত্তর এলে ইমেইলে জানাবো') : t('ইমেইল বন্ধ। এখানে তবু দেখতে পাবেন।'));
+            } catch (e) {
+                this.flash(e.message);
             }
         },
 

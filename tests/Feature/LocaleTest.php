@@ -22,7 +22,7 @@ class LocaleTest extends TestCase
         $member = Accounts::signIn('email', 'a@example.test', 'রাশেদ');
         $post = Post::create(['member_id' => $member->id, 'title' => 'দুই ভাষার একটা পরীক্ষার প্রশ্ন']);
 
-        foreach (['', '/feed', '/ask', '/me', "/p/{$post->id}", "/u/{$member->code}", '/auth/done', '/reset-password'] as $path) {
+        foreach (['', '/feed', '/ask', '/me', '/notifications', "/p/{$post->id}", "/u/{$member->code}", '/auth/done', '/reset-password'] as $path) {
             $this->get($path ?: '/')->assertOk()->assertSee('<html lang="bn">', false);
             $response = $this->get('/en'.$path)->assertOk()->assertSee('<html lang="en">', false);
             $this->assertEmpty($response->headers->getCookies(), "/en{$path} stays cookieless");

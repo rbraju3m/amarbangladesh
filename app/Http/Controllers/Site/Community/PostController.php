@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Site\Community;
 
 use App\Community\Moderation;
+use App\Community\Notifier;
 use App\Community\Taxonomy;
 use App\Community\Text;
 use App\Http\Controllers\Controller;
@@ -38,7 +39,7 @@ class PostController extends Controller
             'body.max' => __('বিস্তারিত অংশটা একটু ছোট করুন।'),
         ]);
 
-        $member = self::named($request->attributes->get('member'), $data['name'] ?? null);
+        $member = self::named($request->attributes->get('member'), $data['name'] ?? null)->rememberLocale();
         if (Text::linkCount($data['title'].' '.($data['body'] ?? '')) > Text::MAX_LINKS) {
             throw ValidationException::withMessages(['body' => __('একটা পোস্টে দুটোর বেশি লিংক দেওয়া যাবে না।')]);
         }
@@ -80,6 +81,9 @@ class PostController extends Controller
         $answer = isset($data['answer']) ? $post->answers()->published()->find($data['answer']) : null;
         abort_if(isset($data['answer']) && (! $answer || $answer->member_id === $post->member_id), 422);
         $post->update(['accepted_answer_id' => $answer?->id]);
+        if ($answer) {
+            Notifier::accepted($answer->setRelation('post', $post));
+        }
 
         return response()->json(['accepted' => $answer?->id]);
     }

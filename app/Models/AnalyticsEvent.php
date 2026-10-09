@@ -20,6 +20,7 @@ class AnalyticsEvent extends Model
         'share_clicked', 'card_saved', 'link_copied', 'name_added', 'retake_clicked', 'place_opened',
         // community (post_created and answer_created are recorded server-side)
         'community_clicked', 'feed_view', 'post_view', 'ask_view', 'post_shared',
+        'notifications_view', 'notification_clicked',
     ];
 
     /** Raw events are kept for 180 days (`php artisan model:prune`, scheduled daily). */

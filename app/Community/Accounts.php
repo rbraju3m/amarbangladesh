@@ -6,6 +6,7 @@ use App\Models\Answer;
 use App\Models\HelpfulMark;
 use App\Models\Member;
 use App\Models\MemberIdentity;
+use App\Models\MemberNotification;
 use App\Models\Post;
 use App\Models\Report;
 use App\Support\Sms\SmsSender;
@@ -41,11 +42,24 @@ final class Accounts
         return MemberIdentity::where(['provider' => $provider, 'identifier' => $identifier])->first()?->member;
     }
 
-    /** The member for this identity, created (with this name) the first time. */
-    public static function signIn(string $provider, string $identifier, ?string $name, array $attributes = []): Member
+    /**
+     * The member for this identity, created (with this name) the first time. `$email` is a verified
+     * address for notifications (the identity itself for email sign-in); it fills an empty one.
+     */
+    public static function signIn(string $provider, string $identifier, ?string $name, array $attributes = [], ?string $email = null): Member
     {
-        return self::find($provider, $identifier) ?? DB::transaction(function () use ($provider, $identifier, $name, $attributes) {
-            $member = Member::create(['code' => self::newCode(), 'name' => $name] + $attributes);
+        $email ??= $provider === 'email' ? $identifier : null;
+        $member = self::find($provider, $identifier);
+        if ($member) {
+            if ($email && ! $member->email) {
+                $member->update(['email' => $email]);
+            }
+
+            return $member;
+        }
+
+        return DB::transaction(function () use ($provider, $identifier, $name, $attributes, $email) {
+            $member = Member::create(['code' => self::newCode(), 'name' => $name, 'email' => $email] + $attributes);
             $member->identities()->create(['provider' => $provider, 'identifier' => $identifier, 'verified_at' => now()]);
 
             return $member;
@@ -65,6 +79,9 @@ final class Accounts
         DB::transaction(function () use ($account, $legacy) {
             Post::where('member_id', $legacy->id)->update(['member_id' => $account->id]);
             Answer::where('member_id', $legacy->id)->update(['member_id' => $account->id]);
+            MemberNotification::where('member_id', $legacy->id)
+                ->whereIn('answer_id', MemberNotification::where('member_id', $account->id)->pluck('answer_id'))->delete();
+            MemberNotification::where('member_id', $legacy->id)->update(['member_id' => $account->id]);
             // Marks and reports are one per member per item: where both gave one, drop the duplicate
             // (and its count on the item); move the rest.
             foreach ([HelpfulMark::class => ['markable', 'helpful_count'], Report::class => ['reportable', 'reports_count']] as $model => [$prefix, $counter]) {

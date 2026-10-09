@@ -115,6 +115,7 @@ class AuthTest extends TestCase
 
         $this->assertMatchesRegularExpression('~/auth/done#t=[A-Za-z0-9]{40}$~', $location);
         $this->assertSame('Nadia Rahman', Accounts::find('google', 'g-123')->name);
+        $this->assertSame('nadia@example.com', Accounts::find('google', 'g-123')->email, 'kept for answer notifications');
         $this->get('/auth/done')->assertOk();
 
         $this->get('/auth/facebook/redirect')->assertNotFound(); // not configured

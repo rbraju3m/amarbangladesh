@@ -32,7 +32,7 @@ DB_DATABASE=…   DB_USERNAME=…   DB_PASSWORD=…   # from Forge's database
 SUPER_ADMIN_NAME=Raju
 SUPER_ADMIN_EMAIL=rbraju3m@gmail.com
 SUPER_ADMIN_PASSWORD=…                          # same as hospital-management; 10+ chars, letters + digits
-MAIL_MAILER=smtp  MAIL_HOST=…  MAIL_USERNAME=…  MAIL_PASSWORD=…  MAIL_FROM_ADDRESS=…   # password-reset emails
+MAIL_MAILER=smtp  MAIL_HOST=…  MAIL_USERNAME=…  MAIL_PASSWORD=…  MAIL_FROM_ADDRESS=…   # password-reset and answer-notification emails
 GOOGLE_CLIENT_ID=…  GOOGLE_CLIENT_SECRET=…       # optional: "Continue with Google"
 FACEBOOK_CLIENT_ID=…  FACEBOOK_CLIENT_SECRET=…   # optional: "Continue with Facebook" (needs Meta app review)
 SMS_DRIVER=bulksmsbd  BULKSMSBD_API_KEY=…  BULKSMSBD_SENDER_ID=…   # optional: phone sign-in
@@ -73,7 +73,11 @@ The super administrator is created by the deploy's `migrate` already (and re-che
 you can log in at `/admin` with the SUPER_ADMIN_* credentials. If you change the password on the
 admin Password page it is kept; `php artisan admin:ensure-super-admin --reset-password` sets it
 back to SUPER_ADMIN_PASSWORD. Then add the scheduler
-(`php artisan schedule:run` every minute) so old analytics events are pruned.
+(`php artisan schedule:run` every minute, as a Forge scheduled job). **It is required:** it sends the
+answer-notification emails (`community:send-notification-emails`, every 5 minutes) and prunes old
+analytics events and notifications daily. Without it, notifications still show on the site but no
+email goes out. With `MAIL_MAILER=log` the emails are only written to the log; the admin Community
+page says so.
 
 ## Going live / exporting the database
 

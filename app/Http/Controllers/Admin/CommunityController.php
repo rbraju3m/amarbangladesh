@@ -6,6 +6,7 @@ use App\Community\Moderation;
 use App\Http\Controllers\Controller;
 use App\Models\Answer;
 use App\Models\Member;
+use App\Models\MemberNotification;
 use App\Models\Post;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -44,6 +45,12 @@ class CommunityController extends Controller
                 'Answers (7 days)' => Answer::where('created_at', '>=', $week)->count(),
                 'New members (7 days)' => Member::where('created_at', '>=', $week)->count(),
                 'Unanswered questions' => Post::published()->whereIn('type', ['question', 'help'])->where('answers_count', 0)->count(),
+            ],
+            // One email = the notices that share member, post and `emailed_at`.
+            'emails' => [
+                'sent' => (int) MemberNotification::where('emailed_at', '>=', $week)->selectRaw('count(distinct member_id, post_id, emailed_at) as n')->value('n'),
+                'reachable' => Member::whereNotNull('email')->where('email_notifications', true)->count(),
+                'members' => Member::has('identities')->count(),
             ],
         ]);
     }

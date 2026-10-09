@@ -25,6 +25,13 @@
         <div class="stat"><p class="text-xs font-semibold text-ink-2">{{ $label }}</p><p class="mt-1 text-2xl font-bold tabular-nums">{{ number_format($value) }}</p></div>
     @endforeach
 </div>
+<p class="-mt-3 mb-6 text-sm text-ink-2">
+    Answer notification emails sent (7 days): <strong class="text-ink tabular-nums">{{ number_format($emails['sent']) }}</strong>
+    · members who can get them: <strong class="text-ink tabular-nums">{{ number_format($emails['reachable']) }}</strong> of {{ number_format($emails['members']) }}
+    @if (config('mail.default') === 'log')
+        · <span class="font-semibold text-flag-red">MAIL_MAILER is "log": emails are only written to the log</span>
+    @endif
+</p>
 
 @foreach (['post' => $posts, 'answer' => $answers] as $type => $items)
     <section class="panel mb-6 !p-0">

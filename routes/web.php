@@ -3,6 +3,7 @@
 use App\Http\Controllers\Site\Community\AnswerController;
 use App\Http\Controllers\Site\Community\AuthController;
 use App\Http\Controllers\Site\Community\MemberController;
+use App\Http\Controllers\Site\Community\NotificationController;
 use App\Http\Controllers\Site\Community\PageController;
 use App\Http\Controllers\Site\Community\PostController;
 use App\Http\Controllers\Site\Community\SignalController;
@@ -46,9 +47,15 @@ Route::withoutMiddleware([
         Route::middleware('cache.headers:public;max_age=300;s_maxage=600;etag')->group(function () {
             Route::get('/ask', [PageController::class, 'ask'])->name('ask');
             Route::get('/me', [PageController::class, 'me'])->name('me');
+            Route::get('/notifications', [PageController::class, 'notifications'])->name('notifications');
             Route::get('/auth/done', [PageController::class, 'authDone'])->name('auth.done');
             Route::get('/reset-password', [PageController::class, 'resetPassword'])->name('password.reset.page');
         });
+
+        // From notification emails: a signed link, no login. GET asks first (mail scanners open
+        // links); POST turns the emails off, also as the one-click List-Unsubscribe target.
+        Route::match(['get', 'post'], '/notifications/unsubscribe/{member}', [NotificationController::class, 'unsubscribe'])
+            ->middleware('signed')->name('notifications.unsubscribe');
     };
     $pages();
     Route::prefix('en')->name('en.')->group($pages);
@@ -83,6 +90,11 @@ Route::withoutMiddleware([
             Route::delete('/answers/{answer}', [AnswerController::class, 'destroy'])->middleware('throttle:community')->name('answers.destroy');
             Route::post('/helpful', [SignalController::class, 'helpful'])->middleware('throttle:community')->name('helpful');
             Route::post('/reports', [SignalController::class, 'report'])->middleware('throttle:reports')->name('reports.store');
+
+            Route::get('/notifications/unread', [NotificationController::class, 'unread'])->name('notifications.unread');
+            Route::get('/notifications', [NotificationController::class, 'index'])->middleware('throttle:community')->name('notifications.index');
+            Route::post('/notifications/read', [NotificationController::class, 'read'])->middleware('throttle:community')->name('notifications.read');
+            Route::patch('/notifications/settings', [NotificationController::class, 'settings'])->middleware('throttle:community')->name('notifications.settings');
         });
 
     });

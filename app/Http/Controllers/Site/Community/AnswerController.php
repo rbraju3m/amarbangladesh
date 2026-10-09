@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Site\Community;
 
 use App\Community\Moderation;
+use App\Community\Notifier;
 use App\Community\Text;
 use App\Http\Controllers\Controller;
 use App\Models\AnalyticsEvent;
@@ -30,7 +31,7 @@ class AnswerController extends Controller
             'body.max' => __('উত্তরটা একটু ছোট করুন।'),
         ]);
 
-        $member = PostController::named($request->attributes->get('member'), $data['name'] ?? null);
+        $member = PostController::named($request->attributes->get('member'), $data['name'] ?? null)->rememberLocale();
         if (Text::linkCount($data['body']) > Text::MAX_LINKS) {
             throw ValidationException::withMessages(['body' => __('একটা উত্তরে দুটোর বেশি লিংক দেওয়া যাবে না।')]);
         }
@@ -40,6 +41,7 @@ class AnswerController extends Controller
 
         if ($answer->wasRecentlyCreated) {
             $post->refreshAnswerCount();
+            Notifier::answered($answer);
             AnalyticsEvent::create(['name' => 'answer_created', 'device' => Device::fromUserAgent($request->userAgent()), 'meta' => ['type' => $post->type]]);
         }
         $answer->setRelation('member', $member);

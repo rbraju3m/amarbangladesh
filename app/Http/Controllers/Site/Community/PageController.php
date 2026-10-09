@@ -98,6 +98,12 @@ class PageController extends Controller
         return view('community.me');
     }
 
+    /** A shell: the list is fetched with the member token (`NotificationController`). */
+    public function notifications(): View
+    {
+        return view('community.notifications');
+    }
+
     /** Google/Facebook land here with the token in the #fragment; the page stores it and returns. */
     public function authDone(): View
     {

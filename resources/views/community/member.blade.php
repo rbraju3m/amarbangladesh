@@ -31,6 +31,10 @@
             <p class="font-bold">{{ __('এটা আপনি 👋') }}</p>
             <button type="button" class="act-quiet" @click="editing = !editing">{{ __('✏️ নাম বদলান') }}</button>
         </div>
+        <a href="{{ lroute('notifications', [], false) }}" class="act mt-3" :class="unread && '!border-flag-red'">
+            🔔 {{ __('নোটিফিকেশন') }}
+            <span x-show="unread" class="rounded-full bg-flag-red px-2 text-xs font-bold text-white tabular-nums" x-text="bn(unread)"></span>
+        </a>
         <form x-show="editing" class="mt-3 flex gap-2" @submit.prevent="renameMe($el.name.value).then(ok => ok && (editing = false))">
             <input name="name" maxlength="20" :value="myName" class="field min-w-0 flex-1" aria-label="{{ __('নতুন নাম') }}">
             <button class="btn-primary !min-h-11 !w-auto !text-base" :disabled="busy">{{ __('সেভ') }}</button>

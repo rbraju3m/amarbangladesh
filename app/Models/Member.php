@@ -14,13 +14,23 @@ use Illuminate\Support\Str;
  */
 class Member extends Model
 {
-    protected $fillable = ['code', 'name', 'password', 'blocked_at'];
+    protected $fillable = ['code', 'name', 'password', 'email', 'email_notifications', 'locale', 'blocked_at'];
 
-    protected $hidden = ['password'];
+    protected $hidden = ['password', 'email'];
 
     protected function casts(): array
     {
-        return ['blocked_at' => 'datetime', 'password' => 'hashed'];
+        return ['blocked_at' => 'datetime', 'password' => 'hashed', 'email_notifications' => 'boolean'];
+    }
+
+    /** Notification emails go out in the language the member last used the site in. */
+    public function rememberLocale(): static
+    {
+        if ($this->locale !== app()->getLocale()) {
+            $this->update(['locale' => app()->getLocale() === 'en' ? 'en' : 'bn']);
+        }
+
+        return $this;
     }
 
     public function getRouteKeyName(): string
@@ -97,5 +107,10 @@ class Member extends Model
     public function answers(): HasMany
     {
         return $this->hasMany(Answer::class);
+    }
+
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(MemberNotification::class);
     }
 }

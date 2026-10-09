@@ -30,8 +30,8 @@
                         {{-- Signed out: "লগইন" opens the sheet. Signed in: the member's name, to their page. --}}
                         <a href="{{ $href }}" @click="if (!signedIn) { $event.preventDefault(); openLogin().then(() => openMe(), () => {}) }"
                             @class(['top-link flex items-center gap-2', 'is-on' => $active === $key])>
-                            <span x-show="signedIn" x-cloak class="avatar size-6 bg-flag-green text-xs" x-text="(myName || '?').slice(0, 1)"></span>
-                            <span x-text="signedIn ? (myName || @js(__($label))) : @js(__('লগইন'))">{{ __($label) }}</span>
+                            <span x-show="signedIn" x-cloak class="relative"><span class="avatar size-6 bg-flag-green text-xs" x-text="(myName || '?').slice(0, 1)"></span><span x-show="unread" class="notice-dot"></span></span>
+                            <span x-text="signedIn ? (myName || @js(__($label))) : @js(__('লগইন'))">{{ __($label) }}</span><span x-show="unread" x-cloak class="sr-only">{{ __('নতুন নোটিফিকেশন আছে') }}</span>
                         </a>
                     @else
                         <a href="{{ $href }}" @class(['top-link', 'is-on' => $active === $key]) @if ($active === $key) aria-current="page" @endif>{{ __($label) }}</a>
@@ -55,9 +55,9 @@
                 @elseif ($key === 'me')
                     <a href="{{ $href }}" @click="if (!signedIn) { $event.preventDefault(); openLogin().then(() => openMe(), () => {}) }"
                         @class(['tab-link', 'is-on' => $active === $key]) @if ($active === $key) aria-current="page" @endif>
-                        <span x-show="signedIn" x-cloak class="avatar size-6 bg-flag-green text-xs" x-text="(myName || '?').slice(0, 1)"></span>
+                        <span x-show="signedIn" x-cloak class="relative"><span class="avatar size-6 bg-flag-green text-xs" x-text="(myName || '?').slice(0, 1)"></span><span x-show="unread" class="notice-dot"></span></span>
                         <span x-show="!signedIn">{!! $svg($path) !!}</span>
-                        <span class="max-w-16 truncate" x-text="signedIn ? (myName || @js(__($label))) : @js(__('লগইন'))">{{ __($label) }}</span>
+                        <span class="max-w-16 truncate" x-text="signedIn ? (myName || @js(__($label))) : @js(__('লগইন'))">{{ __($label) }}</span><span x-show="unread" x-cloak class="sr-only">{{ __('নতুন নোটিফিকেশন আছে') }}</span>
                     </a>
                 @else
                     <a href="{{ $href }}" @class(['tab-link', 'is-on' => $active === $key]) @if ($active === $key) aria-current="page" @endif>{!! $svg($path) !!}<span>{{ __($label) }}</span></a>

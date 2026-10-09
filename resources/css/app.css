@@ -296,6 +296,23 @@
         @apply border-2 border-flag-green;
     }
 
+    .notice-card {
+        @apply flex items-start gap-3 rounded-2xl border border-line bg-card p-3.5 transition active:scale-[0.99];
+    }
+
+    .notice-card.is-unread {
+        @apply border-flag-green/40 bg-flag-green/5;
+    }
+
+    .notice-icon {
+        @apply flex size-9 shrink-0 items-center justify-center rounded-full bg-paper text-base;
+    }
+
+    /* Unread notifications, on the "আমি" tab */
+    .notice-dot {
+        @apply absolute -top-0.5 -right-1 size-2.5 rounded-full bg-flag-red ring-2 ring-card;
+    }
+
     .prose-text {
         @apply leading-relaxed break-words;
     }
