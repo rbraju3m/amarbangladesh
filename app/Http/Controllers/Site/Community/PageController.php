@@ -10,6 +10,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Answer;
 use App\Models\Member;
 use App\Models\Post;
+use App\Support\Lang;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -89,6 +90,27 @@ class PageController extends Controller
             'html' => view('community.partials.post-list', ['posts' => $posts, 'compact' => $request->boolean('compact')])->render(),
             'count' => $posts->count(),
             'next' => $posts->nextPageUrl() ? lroute('feed', $feed->query(['cursor' => $posts->nextCursor()->encode()])) : null,
+        ]);
+    }
+
+    /**
+     * The home map zoomed into one division: the box to show, its districts drawn as SVG (HTML from
+     * `partials/district-map`) and their names and counts for the hover label and the chips.
+     */
+    public function mapDivision(string $division): JsonResponse
+    {
+        $map = DivisionMap::division($division);
+        abort_unless($map, 404);
+        $font = round($map['view'][2] / DivisionMap::WIDTH * 14, 2);
+
+        return response()->json([
+            'view' => $map['view'],
+            'html' => view('community.partials.district-map', ['districts' => $map['districts'], 'font' => $font])->render(),
+            'districts' => collect($map['districts'])->map(fn ($d) => [
+                'slug' => $d['slug'], 'name' => __(':name জেলা', ['name' => $d['name']]), 'short' => $d['name'],
+                'url' => lroute('feed', ['area' => $d['slug']], false), 'x' => $d['x'], 'y' => $d['y'],
+                'label' => Lang::choice(':nটি আলোচনা', $d['count']).($d['recent'] ? ' · '.__('এই সপ্তাহে :n', ['n' => Lang::num($d['recent'])]) : ''),
+            ])->values(),
         ]);
     }
 

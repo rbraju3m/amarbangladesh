@@ -665,43 +665,159 @@ function community() {
  * server like every other card. Spots and chips are links to the division's feed without JavaScript.
  */
 function divisionMap(divisions) {
+    const FULL = [0, 0, 400, 552];
+    const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
     return {
         spot: null, // picked division
         hover: null, // division under the pointer / keyboard focus (label)
+        zoomed: null, // division the map is zoomed into
+        districts: [], // its districts: { slug, name, short, url, x, y, label }
+        view: FULL,
+        district: null, // picked district
+        dHover: null, // district under the pointer / keyboard focus
+        mapState: 'idle', // districts: loading | ready | error
         html: '',
-        state: 'idle', // loading (old posts dimmed) | slow (skeleton) | ready | empty | error
+        state: 'idle', // posts: loading (old posts dimmed) | slow (skeleton) | ready | empty | error
+        init() {
+            // District shapes come as plain HTML; their hover / picked look follows the state here.
+            this.$watch('district', () => this.paintDistricts());
+            this.$watch('dHover', () => this.paintDistricts());
+        },
+        get area() {
+            return this.district ?? this.spot;
+        },
         get name() {
+            if (this.district) return this.districts.find((d) => d.slug === this.district)?.name ?? '';
             return divisions[this.spot]?.name ?? '';
         },
         get feedUrl() {
+            if (this.district) return this.districts.find((d) => d.slug === this.district)?.url ?? path('/feed');
             return divisions[this.spot]?.url ?? path('/feed');
+        },
+        get askUrl() {
+            return path(this.district ? `/ask?area=${encodeURIComponent(this.district)}` : '/ask');
+        },
+        get hoveredDistrict() {
+            return (this.dHover && this.dHover !== this.district && this.districts.find((d) => d.slug === this.dHover)) || null;
         },
         get announcement() {
             if (!this.spot) return '';
             if (this.state === 'ready') return t(':name: সাম্প্রতিক আলোচনা দেখানো হচ্ছে', { name: this.name });
-            if (this.state === 'empty') return t('এই বিভাগে এখনো কোনো আলোচনা নেই। প্রথম প্রশ্নটা আপনিই করুন!');
+            if (this.state === 'empty') return this.emptyText;
             if (this.state === 'error') return t('আনা গেলো না। ইন্টারনেট দেখে আবার চেষ্টা করুন।');
             return '';
         },
-        async pick(slug) {
-            if (this.spot === slug) return;
+        get emptyText() {
+            return this.district ? t('এই জেলায় এখনো কোনো আলোচনা নেই। প্রথম প্রশ্নটা আপনিই করুন!') : t('এই বিভাগে এখনো কোনো আলোচনা নেই। প্রথম প্রশ্নটা আপনিই করুন!');
+        },
+        /** The hover label over a district, positioned in % of the zoomed view. */
+        tipStyle(d) {
+            const [x, y, w, h] = this.view;
+            return `left: ${((d.x - x) / w) * 100}%; top: ${((d.y - y) / h) * 100}%`;
+        },
+        pick(slug) {
+            if (this.spot === slug && this.zoomed === slug) return;
             this.spot = slug;
+            this.district = null;
             track('community_clicked', { meta: { from: 'home_map', to: 'division', area: slug } });
+            this.zoomTo(slug);
+            this.load(slug);
+        },
+        pickDistrict(slug) {
+            if (this.district === slug) return;
+            this.district = slug;
+            track('community_clicked', { meta: { from: 'home_map', to: 'district', area: slug } });
             // Phones: the posts are under the map; bring them into view without jumping.
             if (matchMedia('(max-width: 1023px)').matches) this.$nextTick(() => this.$refs.posts?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }));
-
+            this.load(slug);
+        },
+        pickDistrictFrom(event) {
+            const link = event.target.closest('[data-district]');
+            if (!link) return;
+            event.preventDefault();
+            this.pickDistrict(link.dataset.district);
+        },
+        hoverDistrictFrom(event) {
+            this.dHover = event.target.closest('[data-district]')?.dataset.district ?? null;
+        },
+        paintDistricts() {
+            this.$refs.districts.querySelectorAll('[data-district]').forEach((link) => {
+                const slug = link.dataset.district;
+                link.firstElementChild?.classList.toggle('is-on', slug === this.district);
+                link.firstElementChild?.classList.toggle('is-hover', slug === this.dHover);
+            });
+            this.$refs.districts.querySelectorAll('[data-name]').forEach((label) => label.classList.toggle('is-on', label.dataset.name === this.district || label.dataset.name === this.dHover));
+        },
+        /** Zooms the map into a division and draws its districts (fetched once, while the zoom runs). */
+        async zoomTo(slug) {
+            this.zoomed = slug;
+            this.mapState = 'loading';
+            this.$refs.districts.innerHTML = '';
+            this.districts = [];
+            this.dHover = null;
+            this.animateView(this.fit(slug));
+            this._maps ??= {};
+            try {
+                this._maps[slug] ??= await api('GET', withLang(`/api/map/${encodeURIComponent(slug)}`));
+            } catch {
+                this._maps[slug] = null;
+                if (this.zoomed === slug) Object.assign(this, { mapState: 'error', zoomed: null });
+                return;
+            }
+            if (this.zoomed !== slug) return; // zoomed out or elsewhere meanwhile
+            const map = this._maps[slug];
+            this.$refs.districts.innerHTML = map.html;
+            this.districts = map.districts;
+            this.mapState = 'ready';
+            this.paintDistricts();
+        },
+        zoomOut() {
+            this.zoomed = null;
+            this.district = null;
+            this.dHover = null;
+            this.districts = [];
+            this.$refs.districts.innerHTML = '';
+            this.animateView(FULL);
+            if (this.spot) this.load(this.spot);
+        },
+        /** The division's box with some room around it, in the map's own proportions (as DivisionMap::fit). */
+        fit(slug) {
+            const b = this.$refs.map.querySelector(`[data-division="${slug}"]`).getBBox();
+            let [w, h] = [b.width * 1.12, b.height * 1.12];
+            const ratio = FULL[2] / FULL[3];
+            if (w / h > ratio) h = w / ratio;
+            else w = h * ratio;
+            return [b.x + b.width / 2 - w / 2, b.y + b.height / 2 - h / 2, w, h];
+        },
+        animateView(to) {
+            const svg = this.$refs.map;
+            const from = this.view;
+            this.view = to;
+            cancelAnimationFrame(this._raf);
+            if (still()) return svg.setAttribute('viewBox', to.join(' '));
+            const start = performance.now();
+            const step = (now) => {
+                const p = Math.min(1, (now - start) / 600);
+                const e = 1 - (1 - p) ** 3; // ease out
+                svg.setAttribute('viewBox', from.map((v, i) => (v + (to[i] - v) * e).toFixed(2)).join(' '));
+                if (p < 1) this._raf = requestAnimationFrame(step);
+            };
+            this._raf = requestAnimationFrame(step);
+        },
+        /** Latest posts of a division or district into the panel (cached per area). */
+        async load(slug) {
             this._cache ??= {};
             if (this._cache[slug]) return Object.assign(this, this._cache[slug]);
             // Keep what is shown (dimmed) while loading; a skeleton only if it takes a while.
             this.state = 'loading';
             clearTimeout(this._slow);
-            this._slow = setTimeout(() => this.spot === slug && this.state === 'loading' && !this.html && (this.state = 'slow'), 250);
+            this._slow = setTimeout(() => this.area === slug && this.state === 'loading' && !this.html && (this.state = 'slow'), 250);
             try {
                 const data = await api('GET', withLang(`/api/feed?limit=3&compact=1&area=${encodeURIComponent(slug)}`));
                 this._cache[slug] = { html: data.html, state: data.count ? 'ready' : 'empty' };
-                if (this.spot === slug) Object.assign(this, this._cache[slug]); // not if another was picked meanwhile
+                if (this.area === slug) Object.assign(this, this._cache[slug]); // not if another was picked meanwhile
             } catch {
-                if (this.spot === slug) this.state = 'error';
+                if (this.area === slug) this.state = 'error';
             }
         },
     };

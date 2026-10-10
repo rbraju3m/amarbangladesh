@@ -68,7 +68,7 @@
     <div class="contents lg:block lg:space-y-6">
         <section class="map-card order-2 mt-6 lg:mt-0" aria-labelledby="map-title">
             <h2 id="map-title" class="text-lg font-bold">{{ __('কোন এলাকায় কী নিয়ে কথা হচ্ছে?') }}</h2>
-            <p class="mb-4 text-sm text-ink-2">{{ __('ম্যাপে একটা বিভাগ বেছে নিন') }}</p>
+            <p class="mb-4 text-sm text-ink-2"><span x-show="!zoomed">{{ __('ম্যাপে একটা বিভাগ বেছে নিন') }}</span><span x-show="zoomed" x-cloak>{{ __('এবার একটা জেলা বেছে নিন') }}</span></p>
             @include('community.partials.division-map', ['spots' => $spots])
         </section>
 

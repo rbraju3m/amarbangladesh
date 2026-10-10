@@ -376,11 +376,13 @@
         stroke: var(--card);
         stroke-width: 1.6;
         stroke-linejoin: round;
+        vector-effect: non-scaling-stroke; /* same line width when the map zooms in */
         cursor: pointer;
         transform-box: fill-box;
         transform-origin: center;
         transition: fill 0.25s ease, opacity 0.3s ease, filter 0.25s ease;
-        animation: division-in 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+        /* backwards, not both: a held end state would override the dimming below */
+        animation: division-in 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
         animation-delay: calc(var(--i, 0) * 70ms);
     }
 
@@ -396,7 +398,7 @@
 
     .division.is-on {
         fill: var(--red);
-        animation: division-in 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both, picked 2.4s ease-in-out 0.2s infinite;
+        animation: division-in 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) backwards, picked 2.4s ease-in-out 0.2s infinite;
         animation-delay: calc(var(--i, 0) * 70ms), 0.2s;
     }
 
@@ -405,8 +407,81 @@
         opacity: 0.5;
     }
 
-    .division-link {
+    /* Zoomed into a division: the rest of the country fades, the division itself is the stage for its districts. */
+    .division-map.is-zoomed .division:not(.is-on) {
+        opacity: 0.18;
+    }
+
+    .division-map.is-zoomed .division.is-on {
+        fill: var(--div-0);
+        animation: none;
+    }
+
+    .map-rivers path {
+        vector-effect: non-scaling-stroke;
+    }
+
+    .division-link,
+    .district-link {
         outline: none;
+    }
+
+    .district {
+        fill: var(--div-0);
+        stroke: var(--card);
+        stroke-width: 1.2;
+        stroke-linejoin: round;
+        vector-effect: non-scaling-stroke;
+        cursor: pointer;
+        transition: fill 0.2s ease, opacity 0.25s ease;
+        animation: district-in 0.45s ease-out backwards;
+        animation-delay: calc(200ms + var(--i, 0) * 35ms);
+    }
+
+    .district.level-1 { fill: var(--div-1); }
+    .district.level-2 { fill: var(--div-2); }
+    .district.level-3 { fill: var(--div-3); }
+    .district.level-4 { fill: var(--div-4); }
+    .district.is-hover { fill: var(--div-hover); }
+    .district.is-on { fill: var(--red); }
+
+    .division-map.has-district .district:not(.is-on, .is-hover) {
+        opacity: 0.6;
+    }
+
+    .district-link:focus-visible .district {
+        stroke: var(--ink);
+        stroke-width: 2.5;
+    }
+
+    .district-name {
+        fill: var(--ink);
+        font-weight: 700;
+        paint-order: stroke;
+        stroke: var(--card);
+        stroke-width: 0.3em;
+        stroke-linejoin: round;
+        pointer-events: none;
+        animation: district-in 0.4s ease-out backwards;
+        animation-delay: calc(450ms + var(--i, 0) * 35ms);
+    }
+
+    .district-name.is-on {
+        fill: var(--red-text);
+    }
+
+    .district-live {
+        fill: var(--red);
+        pointer-events: none;
+        animation: live-blink 1.6s ease-in-out infinite;
+    }
+
+    .map-back {
+        @apply absolute top-1 left-1 rounded-full bg-card/95 px-3 py-1.5 text-sm font-bold text-ink shadow-md ring-1 ring-line transition hover:bg-card active:scale-95;
+    }
+
+    .map-loading {
+        @apply pointer-events-none absolute inset-x-0 bottom-2 text-center text-xs text-ink-2;
     }
 
     .division-link:focus-visible .division {
@@ -788,6 +863,25 @@
     to {
         opacity: 1;
         transform: none;
+    }
+}
+
+@keyframes district-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes live-blink {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.25;
     }
 }
 
