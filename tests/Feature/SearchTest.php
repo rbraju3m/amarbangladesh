@@ -7,6 +7,7 @@ use App\Community\Search;
 use App\Community\Taxonomy;
 use App\Models\Member;
 use App\Models\Post;
+use App\Support\Lang;
 use Database\Seeders\QuizContentSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabaseState;
 use Illuminate\Support\Facades\DB;
@@ -77,7 +78,14 @@ class SearchTest extends TestCase
         $first = $this->get('/search?q=visas')->assertOk()->getContent();
         $this->assertSame(Search::PER_PAGE, substr_count($first, 'data-item="post:'));
         $this->assertMatchesRegularExpression('~data-next href="[^"]*page=2~', $first);
-        $this->assertSame(3, substr_count($this->get('/search?q=visas&page=2')->getContent(), 'data-item="post:'));
+        $second = $this->get('/search?q=visas&page=2')->getContent();
+        $this->assertSame(3, substr_count($second, 'data-item="post:'));
+
+        // One ranking feeds the count and both pages: no repeats, nothing lost, newest first on a tie.
+        preg_match_all('~data-item="post:(\d+)"~', $first.$second, $ids);
+        $this->assertCount(Search::PER_PAGE + 3, array_unique($ids[1]));
+        $this->assertSame(array_values(array_reverse(array_unique($ids[1]))), array_values(collect($ids[1])->unique()->sort()->all()));
+        $this->assertStringContainsString(Lang::choice(':nটি ফলাফল', Search::PER_PAGE + 3), $first);
     }
 
     public function test_similar_questions_share_meaningful_words(): void

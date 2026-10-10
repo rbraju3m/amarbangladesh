@@ -3,19 +3,26 @@
 namespace App\Community;
 
 use App\Models\Post;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator as LengthAwarePaginatorContract;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
 
 /**
  * Search over published posts (title and body), on the `posts_search` FULLTEXT index with MySQL's
  * ngram parser. Each word of the query is matched as a phrase, i.e. as a substring, which suits
  * Bangla (no dictionary needed, and suffixes like -র / -এর still match). Search wants every word;
- * "similar questions" while asking wants any word and then keeps the closest titles.
+ * "similar questions" while asking wants any word and then keeps the closest titles (on the
+ * title-only index `posts_title_search`).
  */
 final class Search
 {
     public const PER_PAGE = 20;
+
+    private const RELATIONS = ['member:id,code,name,deleted_at', 'category:id,slug,name_bn,name_en,emoji', 'area:id,slug,name_bn,name_en'];
+
+    /** Search ranks at most this many matches; past it the count is read separately. */
+    private const MAX_RANKED = 1000;
 
     /** Longer queries are cut to this many words. */
     private const MAX_TERMS = 8;
@@ -38,18 +45,34 @@ final class Search
         return array_slice($words, 0, self::MAX_TERMS);
     }
 
-    /** Every word must appear; best matches first, then newest. */
-    public static function posts(string $query): ?LengthAwarePaginator
+    /**
+     * Every word must appear; best matches first, then newest. One FULLTEXT pass ranks the matching
+     * ids (narrow rows) and gives the total too, instead of a page query plus a count query; only the
+     * page's posts are then loaded in full.
+     */
+    public static function posts(string $query): ?LengthAwarePaginatorContract
     {
         $terms = self::terms($query);
         if (! $terms) {
             return null;
         }
         $against = implode(' ', array_map(fn ($t) => '+"'.$t.'"', $terms));
+        $match = fn () => Post::published()->whereRaw('MATCH(title, body) AGAINST (? IN BOOLEAN MODE)', [$against]);
 
-        return self::base($against)
-            ->orderByDesc('relevance')->orderByDesc('id')
-            ->paginate(self::PER_PAGE)->withQueryString();
+        $ranked = fn () => $match()->selectRaw('id, MATCH(title, body) AGAINST (? IN BOOLEAN MODE) AS relevance', [$against])
+            ->orderByDesc('relevance')->orderByDesc('id');
+        $ids = $ranked()->limit(self::MAX_RANKED + 1)->pluck('id');
+        $total = $ids->count() > self::MAX_RANKED ? $match()->count() : $ids->count();
+        $page = Paginator::resolveCurrentPage();
+        $pageIds = $page * self::PER_PAGE <= self::MAX_RANKED
+            ? $ids->slice(($page - 1) * self::PER_PAGE, self::PER_PAGE)->values()
+            : $ranked()->offset(($page - 1) * self::PER_PAGE)->limit(self::PER_PAGE)->pluck('id'); // very deep pages
+        $posts = Post::whereIn('id', $pageIds)->with(self::RELATIONS)->get()
+            ->sortBy(fn (Post $post) => $pageIds->search($post->id))->values();
+
+        return (new LengthAwarePaginator($posts, $total, self::PER_PAGE, $page, [
+            'path' => Paginator::resolveCurrentPath(),
+        ]))->withQueryString();
     }
 
     /**
@@ -65,7 +88,12 @@ final class Search
         $against = implode(' ', array_map(fn ($t) => '"'.$t.'"', $terms));
         $need = min(2, count($terms));
 
-        return self::base($against)->orderByDesc('relevance')->limit(50)->get()
+        return Post::published()
+            ->select('posts.*')
+            ->selectRaw('MATCH(title) AGAINST (? IN BOOLEAN MODE) AS relevance', [$against])
+            ->whereRaw('MATCH(title) AGAINST (? IN BOOLEAN MODE)', [$against])
+            ->with(self::RELATIONS)
+            ->orderByDesc('relevance')->limit(50)->get()
             ->map(function (Post $post) use ($terms) {
                 $haystack = mb_strtolower($post->title);
                 $post->shared = count(array_filter($terms, fn ($t) => str_contains($haystack, $t)));
@@ -75,14 +103,5 @@ final class Search
             ->filter(fn (Post $post) => $post->shared >= $need)
             ->sortByDesc(fn (Post $post) => [$post->shared, $post->accepted_answer_id ? 1 : 0, $post->answers_count])
             ->take($limit)->values();
-    }
-
-    private static function base(string $against): Builder
-    {
-        return Post::published()
-            ->select('posts.*')
-            ->selectRaw('MATCH(title, body) AGAINST (? IN BOOLEAN MODE) AS relevance', [$against])
-            ->whereRaw('MATCH(title, body) AGAINST (? IN BOOLEAN MODE)', [$against])
-            ->with(['member:id,code,name,deleted_at', 'category:id,slug,name_bn,name_en,emoji', 'area:id,slug,name_bn,name_en']);
     }
 }
