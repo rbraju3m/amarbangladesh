@@ -65,10 +65,10 @@ class DemoContentTest extends TestCase
         $this->get('/feed')->assertOk()->assertSee(Post::latest('id')->value('title'));
 
         // Drawn photos on a few threads, through the real upload path; a second seed replaced the first.
-        $this->assertSame(9, Photo::count());
-        $this->assertSame(3, Photo::where('photoable_type', 'post')->distinct()->count('photoable_id'));
-        $this->assertSame(3, Photo::where('photoable_type', 'answer')->count());
-        $this->assertCount(9 * 2 + 3, Storage::disk('public')->allFiles('photos')); // two sizes each + a share copy per post
+        $this->assertSame(39, Photo::count());
+        $this->assertSame(18, Photo::where('photoable_type', 'post')->distinct()->count('photoable_id'));
+        $this->assertSame(9, Photo::where('photoable_type', 'answer')->count());
+        $this->assertCount(39 * 2 + 18, Storage::disk('public')->allFiles('photos')); // two sizes each + a share copy per post
     }
 
     public function test_purging_keeps_real_content_and_fixes_its_counts(): void
