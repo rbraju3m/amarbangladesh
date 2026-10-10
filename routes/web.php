@@ -7,6 +7,7 @@ use App\Http\Controllers\Site\Community\NotificationController;
 use App\Http\Controllers\Site\Community\PageController;
 use App\Http\Controllers\Site\Community\PhotoController;
 use App\Http\Controllers\Site\Community\PostController;
+use App\Http\Controllers\Site\Community\SavedController;
 use App\Http\Controllers\Site\Community\SignalController;
 use App\Http\Controllers\Site\Community\SocialAuthController;
 use App\Http\Controllers\Site\EventController;
@@ -55,6 +56,7 @@ Route::withoutMiddleware([
             Route::get('/ask', [PageController::class, 'ask'])->name('ask');
             Route::get('/me', [PageController::class, 'me'])->name('me');
             Route::get('/notifications', [PageController::class, 'notifications'])->name('notifications');
+            Route::get('/saved', [PageController::class, 'saved'])->name('saved');
             Route::get('/privacy', [PageController::class, 'privacy'])->name('privacy');
             Route::get('/auth/done', [PageController::class, 'authDone'])->name('auth.done');
             Route::get('/reset-password', [PageController::class, 'resetPassword'])->name('password.reset.page');
@@ -103,6 +105,8 @@ Route::withoutMiddleware([
             Route::post('/posts/{post}/answers', [AnswerController::class, 'store'])->middleware('throttle:answers')->name('answers.store');
             Route::patch('/answers/{answer}', [AnswerController::class, 'update'])->middleware('throttle:community')->name('answers.update');
             Route::delete('/answers/{answer}', [AnswerController::class, 'destroy'])->middleware('throttle:community')->name('answers.destroy');
+            Route::post('/saved', [SavedController::class, 'store'])->middleware('throttle:community')->name('saved.store');
+            Route::get('/saved', [SavedController::class, 'index'])->middleware('throttle:community')->name('saved.index');
             Route::post('/helpful', [SignalController::class, 'helpful'])->middleware('throttle:community')->name('helpful');
             Route::post('/reports', [SignalController::class, 'report'])->middleware('throttle:reports')->name('reports.store');
 

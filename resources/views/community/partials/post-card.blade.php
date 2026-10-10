@@ -25,6 +25,9 @@
         <span aria-hidden="true">·</span>
         <time datetime="{{ $post->created_at->toIso8601String() }}" class="shrink-0">{{ \App\Support\Lang::ago($post->created_at) }}</time>
         <span class="ml-auto flex shrink-0 items-center gap-2">
+            {{-- Save for later: plain HTML (cards are also fetched into the quiz page); the community
+                 component handles [data-save] clicks and paints the state. Shown only where it works. --}}
+            <button type="button" class="save-btn" data-save="{{ $post->id }}" aria-pressed="false" aria-label="{{ __('পরে পড়তে সেভ করুন') }}" title="{{ __('পরে পড়তে সেভ করুন') }}">@include('community.partials.bookmark-icon')</button>
             @if ($post->helpful_count)
                 <span title="{{ __('কাজের মনে করেছে') }}">🙏 {{ \App\Support\Lang::num($post->helpful_count) }}</span>
             @endif

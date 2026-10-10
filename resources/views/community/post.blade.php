@@ -55,6 +55,9 @@
             <button type="button" class="act" :aria-pressed="marked('post:{{ $post->id }}')" x-show="!mine('post', {{ $post->id }})" @click="helpful('post', {{ $post->id }})">
                 🙏 {{ $post->isQuestion() ? __('আমারও জানা দরকার') : __('কাজের পোস্ট') }} <span class="tabular-nums" x-text="count('post:{{ $post->id }}', {{ $post->helpful_count }})">{{ $post->helpful_count ? \App\Support\Lang::num($post->helpful_count) : '' }}</span>
             </button>
+            <button type="button" class="act save-btn save-act" data-save="{{ $post->id }}" aria-pressed="false">
+                @include('community.partials.bookmark-icon') <span class="save-off">{{ __('সেভ') }}</span><span class="save-on">{{ __('সেভ করা') }}</span>
+            </button>
             <button type="button" class="act" @click="sharePost(@js($post->title), @js(url($post->url())))">{{ __('↗ শেয়ার') }}</button>
             <span class="ml-auto flex items-center gap-1">
                 <button type="button" class="act-quiet" x-show="mine('post', {{ $post->id }})" x-cloak @click="editing = true">{{ __('সম্পাদনা') }}</button>

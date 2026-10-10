@@ -349,8 +349,8 @@ class CommunityTest extends TestCase
         $this->get("/u/{$helper->code}")->assertOk()->assertDontSee('বেনামে একটা উত্তর দিচ্ছি।');
 
         // The author still gets owner controls through /api/mine.
-        $this->as($askerToken)->postJson('/api/mine', ['items' => ["post:{$post->id}", 'answer:'.Answer::first()->id]])->assertExactJson(['mine' => ["post:{$post->id}"]]);
-        $this->as($helperToken)->postJson('/api/mine', ['items' => ["post:{$post->id}", 'answer:'.Answer::first()->id]])->assertExactJson(['mine' => ['answer:'.Answer::first()->id]]);
+        $this->as($askerToken)->postJson('/api/mine', ['items' => ["post:{$post->id}", 'answer:'.Answer::first()->id]])->assertExactJson(['mine' => ["post:{$post->id}"], 'saved' => []]);
+        $this->as($helperToken)->postJson('/api/mine', ['items' => ["post:{$post->id}", 'answer:'.Answer::first()->id]])->assertExactJson(['mine' => ['answer:'.Answer::first()->id], 'saved' => []]);
         $this->flushHeaders()->postJson('/api/mine', ['items' => ["post:{$post->id}"]])->assertUnauthorized();
 
         // Admins see who wrote it.

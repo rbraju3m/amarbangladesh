@@ -36,10 +36,14 @@ class MemberController extends Controller
         }
         $member = $request->attributes->get('member');
 
-        return response()->json(['mine' => array_merge(
-            Post::whereIn('id', $ids['post'])->where('member_id', $member->id)->pluck('id')->map(fn ($id) => "post:{$id}")->all(),
-            Answer::whereIn('id', $ids['answer'])->where('member_id', $member->id)->pluck('id')->map(fn ($id) => "answer:{$id}")->all(),
-        )]);
+        return response()->json([
+            'mine' => array_merge(
+                Post::whereIn('id', $ids['post'])->where('member_id', $member->id)->pluck('id')->map(fn ($id) => "post:{$id}")->all(),
+                Answer::whereIn('id', $ids['answer'])->where('member_id', $member->id)->pluck('id')->map(fn ($id) => "answer:{$id}")->all(),
+            ),
+            // Which of these posts the member saved (the bookmark buttons' state).
+            'saved' => $ids['post'] ? $member->savedPosts()->whereIn('post_id', $ids['post'])->pluck('post_id')->map(fn ($id) => "post:{$id}")->all() : [],
+        ]);
     }
 
     public function update(Request $request): JsonResponse

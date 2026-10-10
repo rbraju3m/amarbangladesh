@@ -105,7 +105,7 @@ final class Accounts
 
     /**
      * Deletes an account: every way to sign in, the email and password, all devices, notifications,
-     * helpful marks and reports (with the counts they added). Posts and answers are deleted too
+     * saved posts, helpful marks and reports (with the counts they added). Posts and answers are deleted too
      * when asked; otherwise they stay with the author shown as "মুছে ফেলা অ্যাকাউন্ট" and no profile.
      */
     public static function delete(Member $member, bool $withContent = false): void
@@ -126,6 +126,7 @@ final class Accounts
             $member->identities()->delete();
             $member->tokens()->delete();
             $member->notifications()->delete();
+            $member->savedPosts()->delete();
             $member->update([
                 'name' => null, 'password' => null, 'email' => null, 'email_notifications' => false,
                 'code' => 'x'.Str::lower(Str::random(11)), // the old profile URL stops working

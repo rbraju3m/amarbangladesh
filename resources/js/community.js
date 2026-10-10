@@ -18,6 +18,7 @@ const MEMBER = 'bd.member'; // { token, code, name, account }
 const RETURN = 'bd.return'; // where to come back to after Google/Facebook
 const DRAFT = 'bd.draft'; // { path, fields } typed text kept across a Google/Facebook round trip
 const MARKS = 'bd.helpful'; // ['post:12', 'answer:40', …]
+const SAVED = 'bd.saved'; // [12, 40, …] saved post ids, so cards fetched later show their state at once
 
 // Rejection used when the reader closes the sign-in sheet: actions stop quietly.
 const CANCELLED = Object.assign(new Error(''), { cancelled: true });
@@ -28,6 +29,7 @@ const PAGE_EVENTS = [
     [/^\/p\//, 'post_view'],
     [/^\/ask/, 'ask_view'],
     [/^\/notifications/, 'notifications_view'],
+    [/^\/saved/, 'saved_view'],
 ];
 
 /** The anonymous visitor id rides along to Google/Facebook so a new account's sign-up event can be tied to it. */
@@ -97,10 +99,13 @@ function community() {
         toast: '',
         unread: 0, // unread notifications, for the dot on "আমি"
         notices: { state: 'loading', next: null, email: null }, // the /notifications page
+        saved: Object.fromEntries(store.get(SAVED, []).map((id) => [id, true])), // post id → true
+        savedList: { state: 'loading', next: null }, // the /saved page
         bn: num,
         track,
 
         init() {
+            this.watchSaveButtons();
             this.restoreDraft();
             setTrackingContext({ visitor_id: visitorId() });
             const event = PAGE_EVENTS.find(([re]) => re.test(location.pathname.replace(/^\/en(?=\/|$)/, '')));
@@ -276,6 +281,7 @@ function community() {
             this.member = null;
             this.owned = {};
             store.set(MEMBER, null);
+            store.set(SAVED, []); // private to the account
             location.href = path('/feed');
         },
 
@@ -332,12 +338,85 @@ function community() {
 
         // Owner controls: ask the server which of the items on the page are the reader's.
         async refreshMine() {
-            const items = [...document.querySelectorAll('[data-own]')].map((el) => el.dataset.own);
+            const posts = [...document.querySelectorAll('[data-save]')].map((el) => `post:${el.dataset.save}`);
+            const items = [...new Set([...document.querySelectorAll('[data-own]')].map((el) => el.dataset.own).concat(posts))];
             if (!this.member?.token || !items.length) return;
             try {
                 const data = await api('POST', '/api/mine', { items: items.slice(0, 200) }, this.member.token);
                 this.owned = Object.fromEntries(data.mine.map((k) => [k, true]));
+                const saved = new Set(data.saved ?? []);
+                items.filter((k) => k.startsWith('post:')).forEach((k) => this.rememberSaved(+k.slice(5), saved.has(k)));
+                this.paintSaved();
             } catch {}
+        },
+
+        // ---------- saved posts ----------
+        // The bookmark buttons are plain HTML (`[data-save]` in post cards and on the post page, also
+        // fetched into lists later): one click listener here, and their state painted as a class.
+
+        watchSaveButtons() {
+            document.documentElement.dataset.canSave = '';
+            document.addEventListener('click', (e) => {
+                const button = e.target.closest('[data-save]');
+                if (!button) return;
+                e.preventDefault();
+                this.toggleSave(+button.dataset.save);
+            });
+            new MutationObserver((changes) => changes.some((c) => [...c.addedNodes].some((n) => n.querySelector?.('[data-save]'))) && this.paintSaved()).observe(document.body, { childList: true, subtree: true });
+            this.paintSaved();
+        },
+
+        paintSaved() {
+            document.querySelectorAll('[data-save]').forEach((button) => {
+                const on = !!this.saved[button.dataset.save];
+                button.classList.toggle('is-on', on);
+                button.setAttribute('aria-pressed', on);
+                if (button.hasAttribute('aria-label')) {
+                    const label = on ? t('সেভ থেকে সরান') : t('পরে পড়তে সেভ করুন');
+                    button.setAttribute('aria-label', label);
+                    button.title = label;
+                }
+            });
+        },
+
+        rememberSaved(id, on) {
+            if (on) this.saved[id] = true;
+            else delete this.saved[id];
+            store.set(SAVED, Object.keys(this.saved).map(Number).slice(-1000));
+        },
+
+        async toggleSave(id) {
+            const on = !this.saved[id];
+            this.rememberSaved(id, on); // at once; put back if the server says no
+            this.paintSaved();
+            try {
+                await this.call('POST', '/api/saved', { post: id, saved: on });
+                track('post_saved', { meta: { saved: on ? 1 : 0, page: location.pathname.replace(/^\/en(?=\/|$)/, '').split('/')[1] || 'home' } });
+                this.flash(on ? t('সেভ হয়েছে। আপনার পাতার “সেভ করা পোস্ট”-এ পাবেন।') : t('সেভ থেকে সরানো হয়েছে'));
+            } catch (e) {
+                this.rememberSaved(id, !on);
+                this.paintSaved();
+                if (!e.cancelled) this.flash(e.message);
+            }
+        },
+
+        /** The /saved page: the member's saved posts, newest saved first. */
+        async loadSaved(more = false) {
+            if (!this.signedIn || this.busy) return;
+            this.busy = true;
+            try {
+                const data = await this.call('GET', `/api/saved${more && this.savedList.next ? `?before=${this.savedList.next}` : ''}`);
+                const list = document.getElementById('saved-list');
+                if (more) list.insertAdjacentHTML('beforeend', data.html);
+                else list.innerHTML = data.html;
+                data.ids.forEach((id) => this.rememberSaved(id, true));
+                this.paintSaved();
+                this.savedList = { state: list.children.length ? 'ready' : 'empty', next: data.next };
+            } catch (e) {
+                if (!e.cancelled) this.savedList.state = 'error';
+            } finally {
+                this.busy = false;
+            }
         },
 
         marked(key) {
@@ -596,6 +675,7 @@ function community() {
             this.owned = {};
             store.set(MEMBER, null);
             store.set(MARKS, []);
+            store.set(SAVED, []);
             location.href = path('/feed?deleted=1');
         },
 

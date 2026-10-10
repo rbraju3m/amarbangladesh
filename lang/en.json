@@ -518,5 +518,17 @@
     "সমাধান পেয়েছে": "Solved",
     "এখন": "Now",
     "নতুন পোস্ট": "New posts",
-    "বিষয় বাদ দিন: :name": "Clear topic: :name"
+    "বিষয় বাদ দিন: :name": "Clear topic: :name",
+    "সেভ করা পোস্ট": "Saved posts",
+    "সেভ করা পোস্ট · আমার বাংলাদেশ": "Saved posts · Amar Bangladesh",
+    "শুধু আপনি দেখতে পান।": "Only you can see these.",
+    "লগইন করলে পরে পড়ার জন্য পোস্ট সেভ করে রাখতে পারবেন।": "Log in to save posts to read later.",
+    "এখনো কিছু সেভ করেননি": "Nothing saved yet",
+    "কোনো পোস্টে 🔖 চাপলে সেটা এখানে থাকবে, পরে পড়ার জন্য।": "Tap 🔖 on any post and it stays here for later.",
+    "পরে পড়তে সেভ করুন": "Save to read later",
+    "সেভ থেকে সরান": "Remove from saved",
+    "সেভ করা": "Saved",
+    "সেভ হয়েছে। আপনার পাতার “সেভ করা পোস্ট”-এ পাবেন।": "Saved. Find it under “Saved posts” on your page.",
+    "সেভ থেকে সরানো হয়েছে": "Removed from saved",
+    "পোস্টটা আর নেই।": "This post is no longer available."
 }

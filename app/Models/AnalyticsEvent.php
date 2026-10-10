@@ -24,7 +24,7 @@ class AnalyticsEvent extends Model
         // community (post_created and answer_created are recorded server-side)
         'community_clicked', 'home_view', 'feed_view', 'search_performed', 'similar_shown', 'similar_clicked',
         'feed_page_loaded', 'feed_load_failed', 'post_view', 'ask_view', 'post_shared',
-        'notifications_view', 'notification_clicked',
+        'notifications_view', 'notification_clicked', 'saved_view', 'post_saved',
     ];
 
     /** Visitor ids come from the browser (random, in localStorage): community requests send it as a header. */

@@ -232,6 +232,12 @@ class PageController extends Controller
         return view('community.notifications');
     }
 
+    /** The signed-in member's saved posts: a cacheable shell, the list comes from /api/saved. */
+    public function saved(): View
+    {
+        return view('community.saved');
+    }
+
     /** Google/Facebook land here with the token in the #fragment; the page stores it and returns. */
     public function authDone(): View
     {

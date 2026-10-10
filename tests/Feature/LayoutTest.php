@@ -33,7 +33,7 @@ class LayoutTest extends TestCase
         $member = Member::where('is_demo', true)->whereHas('posts', fn ($q) => $q->where('is_anonymous', false))->value('code');
 
         foreach (['', '/en'] as $prefix) {
-            foreach (['/', '/quiz', "/r/{$result}", '/feed', "/p/{$post}", '/ask', "/u/{$member}", '/me', '/notifications', '/privacy'] as $path) {
+            foreach (['/', '/quiz', "/r/{$result}", '/feed', "/p/{$post}", '/ask', "/u/{$member}", '/me', '/notifications', '/saved', '/privacy'] as $path) {
                 $url = $prefix.($path === '/' && $prefix ? '' : $path);
                 $html = $this->get($url)->assertOk()->getContent();
 

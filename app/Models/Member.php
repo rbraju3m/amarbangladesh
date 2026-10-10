@@ -123,4 +123,9 @@ class Member extends Model
     {
         return $this->hasMany(MemberNotification::class);
     }
+
+    public function savedPosts(): HasMany
+    {
+        return $this->hasMany(SavedPost::class);
+    }
 }

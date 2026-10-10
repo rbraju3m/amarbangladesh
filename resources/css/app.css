@@ -477,6 +477,33 @@
         animation: live-blink 1.6s ease-in-out infinite;
     }
 
+    /* Bookmark: hidden until the community script runs (it handles the clicks); filled when saved. */
+    .save-btn {
+        @apply relative z-10 hidden items-center justify-center gap-1.5 text-ink-2 transition hover:text-ink active:scale-90;
+    }
+
+    [data-can-save] .save-btn {
+        display: inline-flex;
+    }
+
+    .post-card .save-btn {
+        @apply -m-1.5 size-9 rounded-full hover:bg-paper-2;
+    }
+
+    .save-btn.is-on {
+        --bookmark-fill: currentColor;
+        @apply text-red-text;
+    }
+
+    .save-act .save-on,
+    .save-act.is-on .save-off {
+        display: none;
+    }
+
+    .save-act.is-on .save-on {
+        display: inline;
+    }
+
     .home-stats {
         @apply mt-5 grid max-w-md grid-cols-3 gap-2;
     }

@@ -18,7 +18,7 @@
 <ul>
     <li>A random ID, so we can tell the same browser came back (not your name or identity).</li>
     <li>When you log in, a token so you don't have to log in again.</li>
-    <li>Which quiz results are yours, which card design you chose, and which posts you marked “Helpful”.</li>
+    <li>Which quiz results are yours, which card design you chose, which posts you marked “Helpful”, and which you saved.</li>
     <li>Text you were writing when you went to log in with Google or Facebook, so it isn't lost.</li>
 </ul>
 <p>Clearing the site's data in your browser removes all of these.</p>
@@ -33,7 +33,7 @@
     <li><strong>Phone:</strong> your mobile number.</li>
     <li><strong>Email:</strong> your email address and password (stored so that even we can't read it).</li>
 </ul>
-<p>Also the name you choose, your posts and answers (and their photos), your “Helpful” marks, reports, and whether you use the site in Bangla or English. Everyone can see your name, posts and answers; nobody can see your phone number or email.</p>
+<p>Also the name you choose, your posts and answers (and their photos), your “Helpful” marks, reports, saved posts (only you can see them), and whether you use the site in Bangla or English. Everyone can see your name, posts and answers; nobody can see your phone number or email.</p>
 
 <h2>Anonymous posts</h2>
 <p>If you post anonymously, readers never learn who wrote it: your name and profile link aren't on the page. Only the site's admins can see the author's account, and only to deal with harmful posts.</p>
@@ -74,7 +74,7 @@
 <p>Log in, open your own page (“Me”), and choose “Delete account”. When you do:</p>
 <ul>
     <li>All your ways of logging in, your email, phone number and password are deleted, and every device is logged out.</li>
-    <li>Your notifications, “Helpful” marks and reports are deleted.</li>
+    <li>Your notifications, saved posts, “Helpful” marks and reports are deleted.</li>
     <li>Your posts and answers stay, so other people's questions keep their answers, but the author shows as “Deleted account” and your profile page is gone. If you prefer, tick a box to delete your posts and answers too, with their photos.</li>
 </ul>
 <p>If you can't log in any more (for example, you lost the number or account), write to <a href="mailto:{{ $email }}">{{ $email }}</a> saying how you used to log in, and we'll delete it.</p>
