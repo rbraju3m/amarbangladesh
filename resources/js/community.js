@@ -629,6 +629,13 @@ function divisionMap(divisions) {
         get feedUrl() {
             return divisions[this.spot]?.url ?? path('/feed');
         },
+        get announcement() {
+            if (!this.spot) return '';
+            if (this.state === 'ready') return t(':name: সাম্প্রতিক আলোচনা দেখানো হচ্ছে', { name: this.name });
+            if (this.state === 'empty') return t('এই বিভাগে এখনো কোনো আলোচনা নেই। প্রথম প্রশ্নটা আপনিই করুন!');
+            if (this.state === 'error') return t('আনা গেলো না। ইন্টারনেট দেখে আবার চেষ্টা করুন।');
+            return '';
+        },
         async pick(slug) {
             if (this.spot === slug) return;
             this.spot = slug;

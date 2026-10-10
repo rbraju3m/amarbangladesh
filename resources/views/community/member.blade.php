@@ -68,6 +68,7 @@
         @endforeach
     </nav>
 
+    <h2 class="sr-only">{{ $tab === 'posts' ? __('পোস্ট') : __('উত্তর') }}</h2>
     <div id="member-list" class="mt-4 space-y-3">
         @forelse ($items as $item)
             @if ($tab === 'posts')

@@ -31,7 +31,7 @@
     --ink: #14211b;
     --ink-2: #4b5a52;
     --line: #e4ddcc;
-    --red: #e03a3e;
+    --red: #cf2e35; /* a touch darker than the logo's #e03a3e: white text on it and it as text on white reach 4.5:1 */
     --green: #006a4e;
     /* Roles, so one colour doesn't mean three things: red is the brand and the main action;
        danger is for errors and destructive steps; warn is "needs attention" (an unanswered question). */
@@ -45,6 +45,7 @@
     --div-4: #237a52;
     --div-hover: #f4c24f;
     --green-text: #006a4e;
+    --red-text: #cf2e35; /* the brand red as text; lighter in dark mode */
     --accent: #2f7d4f;
     /* Admin chart series (validated categorical trio, light / dark). */
     --viz-1: #2a78d6;
@@ -70,6 +71,7 @@
         --danger: #ff8f8f;
         --warn: #f2b45c;
         --green-text: #5fd3a4;
+        --red-text: #ff6b70;
         --viz-1: #3987e5;
         --viz-2: #d95926;
         --viz-3: #199e70;
@@ -93,6 +95,7 @@
     --danger: #ff8f8f;
     --warn: #f2b45c;
     --green-text: #5fd3a4;
+    --red-text: #ff6b70;
     --viz-1: #3987e5;
     --viz-2: #d95926;
     --viz-3: #199e70;
@@ -111,6 +114,7 @@
     --color-flag-red: var(--red);
     --color-flag-green: var(--green);
     --color-green-text: var(--green-text);
+    --color-red-text: var(--red-text);
     --color-danger: var(--danger);
     --color-warn: var(--warn);
     --color-accent: var(--accent);
@@ -133,6 +137,11 @@
 
     button {
         cursor: pointer;
+    }
+
+    /* "Skip to content": hidden until focused with the keyboard */
+    .skip-link {
+        @apply absolute top-2 left-2 z-50 -translate-y-24 rounded-xl bg-ink px-4 py-2 text-sm font-semibold text-paper transition focus:translate-y-0;
     }
 
     :focus-visible {
@@ -657,7 +666,7 @@
     }
 
     .tab-link.is-on {
-        @apply text-flag-red;
+        @apply text-red-text;
     }
 
     .top-link {

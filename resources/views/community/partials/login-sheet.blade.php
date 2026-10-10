@@ -40,7 +40,7 @@
             <label for="login-phone" class="text-sm font-semibold">{{ __('মোবাইল নম্বর') }}</label>
             <input id="login-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" required class="field mt-1 !text-lg tracking-wide" placeholder="01712345678" x-model="loginPhone">
             <p class="mt-1 text-xs text-ink-2">{{ __('এই নম্বরে ৬ সংখ্যার একটা কোড যাবে।') }}</p>
-            <p x-show="formError" class="mt-2 text-sm font-semibold text-danger" x-text="formError"></p>
+            <p role="alert" x-show="formError" class="mt-2 text-sm font-semibold text-danger" x-text="formError"></p>
             <button class="btn-primary mt-4" :disabled="authBusy" x-text="authBusy ? '…' : @js(__('কোড পাঠান'))"></button>
         </form>
 
@@ -51,7 +51,7 @@
             <input id="login-code" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required class="field mt-2 text-center !text-2xl font-bold tracking-[0.5em]" placeholder="••••••">
             <label for="login-phone-name" class="mt-3 block text-sm font-semibold">{{ __('আপনার নাম') }} <span class="font-medium text-ink-2">({{ __('নতুন হলে') }})</span></label>
             <input id="login-phone-name" name="name" maxlength="20" autocomplete="name" class="field mt-1" placeholder="{{ __('যেমন: রাশেদ') }}">
-            <p x-show="formError" class="mt-2 text-sm font-semibold text-danger" x-text="formError"></p>
+            <p role="alert" x-show="formError" class="mt-2 text-sm font-semibold text-danger" x-text="formError"></p>
             <button class="btn-primary mt-4" :disabled="authBusy" x-text="authBusy ? '…' : @js(__('লগইন করুন'))"></button>
             <button type="button" class="mt-3 w-full text-sm font-semibold text-ink-2" @click="loginStep = 'phone'">{{ __('কোড আসেনি? আবার পাঠান') }}</button>
         </form>
@@ -76,7 +76,7 @@
                 <label for="login-password" class="text-sm font-semibold">{{ __('পাসওয়ার্ড') }} <span x-show="loginStep === 'email-register'" class="font-medium text-ink-2">({{ __('অন্তত ৮ অক্ষর') }})</span></label>
                 <input id="login-password" name="password" type="password" minlength="8" required class="field mt-1" :autocomplete="loginStep === 'email-register' ? 'new-password' : 'current-password'">
             </div>
-            <p x-show="formError" class="text-sm font-semibold text-danger" x-text="formError"></p>
+            <p role="alert" x-show="formError" class="text-sm font-semibold text-danger" x-text="formError"></p>
             <button class="btn-primary" :disabled="authBusy" x-text="authBusy ? '…' : (loginStep === 'email-register' ? @js(__('অ্যাকাউন্ট খুলুন')) : @js(__('লগইন করুন')))"></button>
             <button type="button" x-show="loginStep === 'email-login'" class="text-sm font-semibold text-ink-2" @click="loginStep = 'email-forgot'; formError = ''">{{ __('পাসওয়ার্ড ভুলে গেছেন?') }}</button>
         </form>
@@ -85,7 +85,7 @@
         <form x-show="loginStep === 'email-forgot'" x-cloak class="mt-5" @submit.prevent="forgotPassword($el)">
             <label for="login-forgot" class="text-sm font-semibold">{{ __('অ্যাকাউন্টের ইমেইল') }}</label>
             <input id="login-forgot" name="email" type="email" autocomplete="email" required class="field mt-1" x-model="loginEmail">
-            <p x-show="formError" class="mt-2 text-sm font-semibold text-danger" x-text="formError"></p>
+            <p role="alert" x-show="formError" class="mt-2 text-sm font-semibold text-danger" x-text="formError"></p>
             <button class="btn-primary mt-4" :disabled="authBusy">{{ __('পাসওয়ার্ড বদলের লিংক পাঠান') }}</button>
         </form>
         <div x-show="loginStep === 'forgot-sent'" x-cloak class="mt-6 text-center">

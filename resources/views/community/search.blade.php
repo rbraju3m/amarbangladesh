@@ -6,6 +6,7 @@
 
 @section('main')
 <div class="mx-auto max-w-2xl px-4 pt-5" @if ($posts) x-init="track('search_performed', { meta: { results: {{ $posts->total() }}, len: {{ mb_strlen($query) }} } })" @endif>
+    <h1 class="sr-only">{{ __('খুঁজুন') }}</h1>
     <form role="search" action="{{ lroute('search', [], false) }}" method="get" class="flex gap-2">
         <label for="search-q" class="sr-only">{{ __('কী খুঁজছেন?') }}</label>
         <input id="search-q" type="search" name="q" value="{{ $query }}" maxlength="100" enterkeyhint="search" @if ($query === '') autofocus @endif
@@ -23,7 +24,7 @@
             <a href="{{ lroute('ask', ['title' => $query], false) }}" class="btn-primary mt-5 !w-auto">{{ __('✍️ এটাই জিজ্ঞেস করি') }}</a>
         </div>
     @else
-        <p class="mt-5 text-sm text-ink-2">{{ \App\Support\Lang::choice(':nটি ফলাফল', $posts->total()) }}</p>
+        <h2 class="mt-5 text-sm font-normal text-ink-2">{{ \App\Support\Lang::choice(':nটি ফলাফল', $posts->total()) }}</h2>
         <div id="search-list" class="mt-3 space-y-3">
             @include('community.partials.post-list', ['posts' => $posts])
         </div>

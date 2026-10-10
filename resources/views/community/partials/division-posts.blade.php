@@ -2,7 +2,9 @@
     The picked division's latest posts (shares the `divisionMap` scope with partials/division-map).
     Shown once a division is picked. Desktop: under the ask box. Phones: under the map.
 --}}
-<div x-show="spot" x-cloak class="rounded-3xl border border-line bg-card p-4 text-left lg:p-5" aria-live="polite">
+<div x-show="spot" x-cloak class="rounded-3xl border border-line bg-card p-4 text-left lg:p-5">
+    {{-- Screen readers hear a short summary, not every card --}}
+    <p class="sr-only" aria-live="polite" x-text="announcement"></p>
     <div class="flex items-baseline justify-between gap-2">
         <p class="text-lg font-bold" x-text="name"></p>
         <button type="button" class="act-quiet !min-h-8 !px-2 text-sm" @click="spot = null" aria-label="{{ __('বন্ধ করুন') }}">✕</button>

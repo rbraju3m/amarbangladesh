@@ -63,6 +63,7 @@
             </div>
         </div>
 
+        <h2 class="sr-only">{{ __('আলোচনা') }}</h2>
         <div id="feed-list" class="mt-4 space-y-3">
             @include('community.partials.post-list', ['posts' => $posts, 'promoAt' => 3])
         </div>

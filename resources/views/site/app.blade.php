@@ -13,6 +13,7 @@
 <main x-data="quiz(JSON.parse(document.getElementById('boot').textContent))" :style="`--accent: ${accent}`" class="relative overflow-x-clip">
     {{-- The shared site header; the questions and the reveal are full-screen, so it steps aside there. --}}
     <x-site.header active="quiz" x-show="!['question', 'reveal'].includes(screen)" />
+    <div id="content" tabindex="-1" class="outline-none"></div>
 
     {{-- ===================== LANDING ===================== --}}
     <section x-show="screen === 'landing'" @if ($isShared) x-cloak @endif class="screen pt-3 pb-10 md:max-w-2xl lg:max-w-6xl lg:px-8"
@@ -280,7 +281,7 @@
             <template x-if="result.friend">
                 <div class="animate-rise mt-6 rounded-3xl bg-flag-red/10 p-4">
                     <div class="flex items-center gap-4">
-                        <div class="text-5xl font-bold text-flag-red tabular-nums" x-text="`${bn(result.friend.pct)}%`"></div>
+                        <div class="text-5xl font-bold text-red-text tabular-nums" x-text="`${bn(result.friend.pct)}%`"></div>
                         <div class="min-w-0 leading-relaxed">
                             <p class="font-bold" x-text="t(':owner সাথে তোমার মিল', { owner: result.friend.name ? possessive(result.friend.name) : t('তোমার বন্ধুর'), name: result.friend.name || t('তোমার বন্ধু') })"></p>
                             <p class="text-sm text-ink-2" x-text="result.friend.same ? t('দুজনেরই বাংলাদেশ :place! 🤝', { place: result.friend.location.name }) : t('ওর বাংলাদেশ :friend, তোমার :mine।', { friend: `${result.friend.location.emoji} ${result.friend.location.name}`, mine: result.location.name })"></p>
