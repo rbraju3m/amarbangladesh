@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Community\Moderation;
 use App\Http\Controllers\Controller;
+use App\Models\AdminAction;
 use App\Models\Answer;
 use App\Models\Member;
 use App\Models\MemberNotification;
@@ -55,10 +56,11 @@ class CommunityController extends Controller
         ]);
     }
 
-    public function moderate(string $type, int $id, string $action): RedirectResponse
+    public function moderate(Request $request, string $type, int $id, string $action): RedirectResponse
     {
         $item = Moderation::find($type, $id);
         abort_unless($item, 404);
+        Moderation::log($request->user(), $action, $item); // first: a "keep" deletes the reports it records
 
         if ($action === 'dismiss') {
             Moderation::dismissReports($item);
@@ -69,9 +71,28 @@ class CommunityController extends Controller
         return back()->with('status', ucfirst($type).' '.($action === 'dismiss' ? 'kept, reports cleared' : $action.'d').'.');
     }
 
-    public function block(Member $member, string $action): RedirectResponse
+    /** The moderation log: every admin action and automatic hide, newest first (read-only). */
+    public function log(Request $request): View
+    {
+        $action = array_key_exists($request->query('action'), AdminAction::ACTIONS) ? $request->query('action') : null;
+        $rows = AdminAction::with('user:id,name,email')->when($action, fn ($q) => $q->where('action', $action))
+            ->latest('id')->paginate(50)->withQueryString();
+
+        // Targets in two queries per type, for links and current status.
+        $ids = $rows->groupBy('target_type')->map(fn ($g) => $g->pluck('target_id')->unique());
+        $targets = [
+            'post' => Post::whereIn('id', $ids['post'] ?? [])->get(['id', 'title', 'status'])->keyBy('id'),
+            'answer' => Answer::whereIn('id', $ids['answer'] ?? [])->get(['id', 'post_id', 'status'])->keyBy('id'),
+            'member' => Member::whereIn('id', $ids['member'] ?? [])->get(['id', 'code', 'name', 'blocked_at', 'deleted_at'])->keyBy('id'),
+        ];
+
+        return view('admin.community-log', ['rows' => $rows, 'targets' => $targets, 'action' => $action]);
+    }
+
+    public function block(Request $request, Member $member, string $action): RedirectResponse
     {
         $member->update(['blocked_at' => $action === 'block' ? now() : null]);
+        Moderation::log($request->user(), $action, $member);
 
         return back()->with('status', ($member->name ?: 'Member').' '.($action === 'block' ? 'blocked from posting' : 'unblocked').'.');
     }

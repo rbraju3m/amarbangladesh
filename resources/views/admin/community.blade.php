@@ -17,6 +17,7 @@
         @foreach (['attention' => 'Needs a look', 'all' => 'Everything'] as $key => $label)
             <a href="{{ route('admin.community', $key === 'all' ? ['show' => 'all'] : []) }}" @class(['rounded-lg px-3 py-1.5 transition', 'bg-ink text-paper' => $show === $key, 'text-ink-2 hover:text-ink' => $show !== $key])>{{ $label }}</a>
         @endforeach
+        <a href="{{ route('admin.community.log') }}" class="rounded-lg px-3 py-1.5 text-ink-2 transition hover:text-ink">Action log →</a>
     </nav>
 </header>
 

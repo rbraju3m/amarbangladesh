@@ -33,6 +33,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('locations', LocationController::class)->only(['index', 'edit', 'update']);
 
         Route::get('/community', [CommunityController::class, 'index'])->name('community');
+        Route::get('/community/log', [CommunityController::class, 'log'])->name('community.log');
         Route::post('/community/{type}/{id}/{action}', [CommunityController::class, 'moderate'])
             ->whereIn('type', ['post', 'answer'])->whereNumber('id')->whereIn('action', ['hide', 'restore', 'remove', 'dismiss'])->name('community.moderate');
         Route::post('/community/members/{member:id}/{action}', [CommunityController::class, 'block'])

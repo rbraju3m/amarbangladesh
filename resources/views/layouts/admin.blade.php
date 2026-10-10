@@ -21,6 +21,7 @@
             ],
             'Community' => [
                 ['admin.community', 'Moderation', 'admin.community', 'M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.4A8 8 0 1 1 21 12Z'],
+                ['admin.community.log', 'Action log', 'admin.community.log', 'M8 6h12M8 12h12M8 18h8M4 6h.01M4 12h.01M4 18h.01'],
             ],
             'Quiz' => [
                 ['admin.plays', 'Plays', 'admin.plays', 'M5 4l14 8-14 8V4Z'],
@@ -33,6 +34,11 @@
             ],
         ];
         $nav = array_merge(...array_values($groups));
+        // "N need a look" on Moderation: hidden items and reported ones (cached a minute).
+        $badges = auth()->check() ? ['admin.community' => \App\Community\Moderation::needsLookCount()] : [];
+        $badge = fn ($route) => ($n = $badges[$route] ?? 0)
+            ? '<span class="nav-badge" title="'.$n.' need a look"><span class="sr-only">, </span>'.$n.'<span class="sr-only"> need a look</span></span>'
+            : '';
         $icon = fn ($d) => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="'.$d.'"/></svg>';
     @endphp
     @auth
@@ -48,7 +54,7 @@
                         <div class="space-y-1">
                             <p class="px-3 text-xs font-semibold tracking-wide text-ink-2 uppercase">{{ $group }}</p>
                             @foreach ($items as [$route, $label, $pattern, $path])
-                                <a href="{{ route($route) }}" @class(['nav-link', 'is-on' => request()->routeIs($pattern)])>{!! $icon($path) !!}{{ $label }}</a>
+                                <a href="{{ route($route) }}" @class(['nav-link', 'is-on' => request()->routeIs($pattern)])>{!! $icon($path) !!}{{ $label }}{!! $badge($route) !!}</a>
                             @endforeach
                         </div>
                     @endforeach
@@ -75,7 +81,7 @@
                     </div>
                     <nav class="flex gap-1 overflow-x-auto px-3 py-2 [scrollbar-width:none]">
                         @foreach ($nav as [$route, $label, $pattern, $path])
-                            <a href="{{ route($route) }}" @class(['nav-link !gap-2 !py-1.5', 'is-on' => request()->routeIs($pattern)])>{!! $icon($path) !!}{{ $label }}</a>
+                            <a href="{{ route($route) }}" @class(['nav-link !gap-2 !py-1.5', 'is-on' => request()->routeIs($pattern)])>{!! $icon($path) !!}{{ $label }}{!! $badge($route) !!}</a>
                         @endforeach
                     </nav>
                 </header>
