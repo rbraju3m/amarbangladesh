@@ -98,7 +98,7 @@ function community() {
         formError: '',
         toast: '',
         unread: 0, // unread notifications, for the dot on "আমি"
-        notices: { state: 'loading', next: null, email: null }, // the /notifications page
+        notices: { state: 'loading', next: null, email: null, prefs: null }, // the /notifications page
         saved: Object.fromEntries(store.get(SAVED, []).map((id) => [id, true])), // post id → true
         savedList: { state: 'loading', next: null }, // the /saved page
         share: null, // { title, url, from } while the share sheet is open
@@ -721,7 +721,7 @@ function community() {
                 const list = document.getElementById('notice-list');
                 if (more) list.insertAdjacentHTML('beforeend', data.html);
                 else list.innerHTML = data.html;
-                this.notices = { state: list.children.length ? 'ready' : 'empty', next: data.next, email: data.email };
+                this.notices = { state: list.children.length ? 'ready' : 'empty', next: data.next, email: data.email, prefs: data.prefs };
                 if (!more && list.querySelector('.is-unread')) await this.call('POST', '/api/notifications/read');
                 this.unread = 0;
             } catch (e) {
@@ -736,6 +736,18 @@ function community() {
                 this.notices.email = (await this.call('PATCH', '/api/notifications/settings', { email: on })).email;
                 this.flash(on ? t('নতুন উত্তর এলে ইমেইলে জানাবো') : t('ইমেইল বন্ধ। এখানে তবু দেখতে পাবেন।'));
             } catch (e) {
+                this.flash(e.message);
+            }
+        },
+
+        /** One per-type switch (`site` or `email`): shown at once, put back if saving fails. */
+        async setNoticePref(channel, type, on) {
+            this.notices.prefs[channel][type] = on;
+            try {
+                this.notices.prefs = (await this.call('PATCH', '/api/notifications/settings', { prefs: { [channel]: { [type]: on } } })).prefs;
+                this.flash(t('সেভ হয়েছে'));
+            } catch (e) {
+                this.notices.prefs[channel][type] = !on;
                 this.flash(e.message);
             }
         },

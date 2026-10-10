@@ -174,6 +174,67 @@ class NotificationTest extends TestCase
         $this->assertFalse($member->fresh()->email_notifications);
     }
 
+    public function test_each_kind_can_be_turned_off_on_the_site(): void
+    {
+        [$asker, $askerToken] = $this->member();
+        [$helper, $helperToken] = $this->member('নাদিয়া');
+        [$curious, $curiousToken] = $this->member('তানিয়া');
+
+        // Everything on by default; the settings come with the list.
+        $this->assertSame(['site' => ['answer' => true, 'reply' => true, 'accepted' => true, 'need' => true], 'email' => ['answer' => true, 'accepted' => true]],
+            $this->as($askerToken)->getJson('/api/notifications')->json('prefs'));
+
+        $this->as($askerToken)->patchJson('/api/notifications/settings', ['prefs' => ['site' => ['answer' => false]]])->assertOk()->assertJsonPath('prefs.site.answer', false);
+        $this->as($helperToken)->patchJson('/api/notifications/settings', ['prefs' => ['site' => ['reply' => false, 'accepted' => false]]])->assertOk();
+        $this->as($curiousToken)->patchJson('/api/notifications/settings', ['prefs' => ['site' => ['need' => false]]])->assertOk();
+        $this->assertSame(['site' => ['answer' => false]], $asker->fresh()->notification_prefs); // only what's off is stored
+
+        $post = $this->ask($askerToken);
+        $this->as($curiousToken)->postJson('/api/helpful', ['type' => 'post', 'id' => $post->id])->assertOk();
+        $answer = $this->answer($helperToken, $post);
+        $this->answer($askerToken, $post, ['body' => 'ধন্যবাদ, খুব কাজে লাগলো!', 'parent' => $answer->id]);
+        $this->as($askerToken)->postJson("/api/posts/{$post->id}/accept", ['answer' => $answer->id])->assertOk();
+        $this->assertSame(0, MemberNotification::count(), 'answer, need, reply and accepted were all turned off');
+
+        // Turning one back on removes it from what's stored, and the next one arrives.
+        $this->as($askerToken)->patchJson('/api/notifications/settings', ['prefs' => ['site' => ['answer' => true]]])->assertOk();
+        $this->assertNull($asker->fresh()->notification_prefs);
+        $this->answer($curiousToken, $post, ['body' => 'মার্চের শুরুতে গেলেও ভালো লাগবে।']);
+        $this->assertSame(['answer'], MemberNotification::where('member_id', $asker->id)->pluck('type')->all());
+
+        // Only known kinds and channels; replies and "need" can't be emailed.
+        $this->as($askerToken)->patchJson('/api/notifications/settings', ['prefs' => ['site' => ['likes' => false]]])->assertUnprocessable();
+        $this->as($askerToken)->patchJson('/api/notifications/settings', ['prefs' => ['email' => ['reply' => false]]])->assertUnprocessable();
+        $this->as($askerToken)->patchJson('/api/notifications/settings', ['prefs' => ['push' => []]])->assertUnprocessable();
+    }
+
+    public function test_a_kind_turned_off_for_email_stays_on_the_site(): void
+    {
+        Mail::fake();
+        [$asker, $askerToken] = $this->member();
+        [$helper, $helperToken] = $this->member('নাদিয়া');
+        $this->as($askerToken)->patchJson('/api/notifications/settings', ['prefs' => ['email' => ['answer' => false]]])->assertOk()
+            ->assertJsonPath('prefs.email.answer', false)->assertJsonPath('prefs.site.answer', true);
+
+        $post = $this->ask($askerToken);
+        $answer = $this->answer($helperToken, $post);
+        $this->as($askerToken)->postJson("/api/posts/{$post->id}/accept", ['answer' => $answer->id])->assertOk();
+
+        $this->travel(6)->minutes();
+        $this->sendEmails();
+        Mail::assertSent(AnswerNotice::class, 1); // the helper's "your answer is the solution"
+        Mail::assertSent(AnswerNotice::class, fn ($mail) => $mail->hasTo($helper->email));
+        $this->assertSame(1, $asker->notifications()->count()); // still on the site
+        $this->assertNull($asker->notifications()->value('emailed_at'));
+
+        // The unsubscribe link (email off) still stops every email, whatever the per-kind choices.
+        $this->as($askerToken)->patchJson('/api/notifications/settings', ['prefs' => ['email' => ['answer' => true]], 'email' => true])->assertOk();
+        $this->assertTrue($asker->fresh()->wantsNotice('email', 'answer'));
+        $asker->update(['email_notifications' => false]); // the unsubscribe link still stops every email
+        $this->assertFalse($asker->fresh()->wantsNotice('email', 'answer'));
+        $this->assertFalse($asker->fresh()->wantsNotice('email', 'reply'));
+    }
+
     public function test_the_page_is_a_cookieless_shell(): void
     {
         foreach (['/notifications', '/en/notifications'] as $url) {

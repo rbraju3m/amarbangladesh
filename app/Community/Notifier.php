@@ -8,8 +8,9 @@ use App\Models\Member;
 use App\Models\MemberNotification;
 
 /**
- * Creates notifications where things happen. Nobody is told about their own action, and people who
- * pressed "আমারও জানা দরকার" get one unread notice per question, not one per answer.
+ * Creates notifications where things happen. Nobody is told about their own action, nor about a kind
+ * they turned off (Member::wantsNotice), and people who pressed "আমারও জানা দরকার" get one unread
+ * notice per question, not one per answer.
  */
 final class Notifier
 {
@@ -31,9 +32,12 @@ final class Notifier
         }
 
         // Deleted accounts stay only as the author of what they left up; nobody reads their notices.
-        $deleted = Member::whereKey(array_keys($recipients))->whereNotNull('deleted_at')->pluck('id')->flip();
-        foreach (array_diff_key($recipients, $deleted->all()) as $memberId => $type) {
-            MemberNotification::firstOrCreate(['member_id' => $memberId, 'type' => $type, 'answer_id' => $answer->id], ['post_id' => $post->id]);
+        // And nobody gets a kind they turned off.
+        $members = Member::whereKey(array_keys($recipients))->whereNull('deleted_at')->get(['id', 'notification_prefs'])->keyBy('id');
+        foreach ($recipients as $memberId => $type) {
+            if ($members->get($memberId)?->wantsNotice('site', $type)) {
+                MemberNotification::firstOrCreate(['member_id' => $memberId, 'type' => $type, 'answer_id' => $answer->id], ['post_id' => $post->id]);
+            }
         }
     }
 
@@ -41,7 +45,8 @@ final class Notifier
     public static function replied(Answer $reply): void
     {
         $parent = $reply->parent;
-        if ($parent->member_id === $reply->member_id || Member::whereKey($parent->member_id)->whereNotNull('deleted_at')->exists()) {
+        $to = $parent->member_id === $reply->member_id ? null : Member::find($parent->member_id);
+        if (! $to || $to->isDeleted() || ! $to->wantsNotice('site', 'reply')) {
             return;
         }
         MemberNotification::firstOrCreate(['member_id' => $parent->member_id, 'type' => 'reply', 'answer_id' => $reply->id], ['post_id' => $reply->post_id]);
@@ -49,7 +54,7 @@ final class Notifier
 
     public static function accepted(Answer $answer): void
     {
-        if ($answer->member_id !== $answer->post->member_id && ! $answer->member->isDeleted()) {
+        if ($answer->member_id !== $answer->post->member_id && ! $answer->member->isDeleted() && $answer->member->wantsNotice('site', 'accepted')) {
             MemberNotification::firstOrCreate(['member_id' => $answer->member_id, 'type' => 'accepted', 'answer_id' => $answer->id], ['post_id' => $answer->post_id]);
         }
     }

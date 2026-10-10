@@ -14,13 +14,42 @@ use Illuminate\Support\Str;
  */
 class Member extends Model
 {
-    protected $fillable = ['code', 'name', 'password', 'email', 'email_notifications', 'locale', 'blocked_at', 'deleted_at'];
+    protected $fillable = ['code', 'name', 'password', 'email', 'email_notifications', 'notification_prefs', 'locale', 'blocked_at', 'deleted_at'];
 
     protected $hidden = ['password', 'email'];
 
     protected function casts(): array
     {
-        return ['blocked_at' => 'datetime', 'deleted_at' => 'datetime', 'is_demo' => 'boolean', 'password' => 'hashed', 'email_notifications' => 'boolean'];
+        return ['blocked_at' => 'datetime', 'deleted_at' => 'datetime', 'is_demo' => 'boolean', 'password' => 'hashed', 'email_notifications' => 'boolean', 'notification_prefs' => 'array'];
+    }
+
+    /** Notice types a member can turn off on the site, and the ones also emailed (Notifier, SendNotificationEmails). */
+    public const NOTICE_TYPES = ['answer', 'reply', 'accepted', 'need'];
+
+    public const EMAILED_TYPES = ['answer', 'accepted'];
+
+    /**
+     * Whether this member wants notices of `$type` on the `site` (no site notice = no email either) or
+     * by `email` (also needs an address and email notifications on: the unsubscribe link turns those off).
+     */
+    public function wantsNotice(string $channel, string $type): bool
+    {
+        $site = $this->notification_prefs['site'][$type] ?? true;
+        if ($channel === 'site') {
+            return $site;
+        }
+
+        return $site && in_array($type, self::EMAILED_TYPES, true) && $this->email && $this->email_notifications
+            && ($this->notification_prefs['email'][$type] ?? true);
+    }
+
+    /** Every type × channel as booleans, for the settings switches. */
+    public function noticeChoices(): array
+    {
+        return [
+            'site' => collect(self::NOTICE_TYPES)->mapWithKeys(fn ($t) => [$t => $this->notification_prefs['site'][$t] ?? true])->all(),
+            'email' => collect(self::EMAILED_TYPES)->mapWithKeys(fn ($t) => [$t => $this->notification_prefs['email'][$t] ?? true])->all(),
+        ];
     }
 
     /** Notification emails go out in the language the member last used the site in. */

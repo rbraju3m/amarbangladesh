@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Mail\AnswerNotice;
+use App\Models\Member;
 use App\Models\MemberNotification;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Mail;
@@ -31,12 +32,15 @@ class SendNotificationEmails extends Command
 
     public function handle(): int
     {
-        $pending = MemberNotification::whereIn('type', ['answer', 'accepted'])
+        $pending = MemberNotification::whereIn('type', Member::EMAILED_TYPES)
             ->whereNull('emailed_at')->unread()->visible()
             ->whereBetween('created_at', [now()->subHours(self::MAX_AGE), now()->subMinutes(self::WAIT)])
             ->whereHas('member', fn ($q) => $q->whereNotNull('email')->where('email_notifications', true)->whereNull('blocked_at'))
             ->with(['member', 'post', 'answer.member'])
-            ->orderBy('id')->limit(1000)->get();
+            ->orderBy('id')->limit(1000)->get()
+            // Kinds the member turned off for email stay on the site only (if turned back on within
+            // MAX_AGE, a still-unread notice may go out then).
+            ->filter(fn ($notice) => $notice->member->wantsNotice('email', $notice->type));
 
         $sent = 0;
         foreach ($pending->groupBy('member_id') as $notices) {

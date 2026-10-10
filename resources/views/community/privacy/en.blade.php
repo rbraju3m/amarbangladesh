@@ -65,7 +65,7 @@
 
 <h2>What you can do</h2>
 <ul>
-    <li>Turn off notification emails.</li>
+    <li>Choose which notifications you get on the site and by email, or turn notification emails off entirely.</li>
     <li>Log out (on one device).</li>
     <li>Delete any of your posts or answers.</li>
     <li>Delete your whole account (see below).</li>

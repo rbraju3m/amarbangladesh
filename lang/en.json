@@ -538,5 +538,14 @@
     "কপি না হলে লিংকটা চেপে ধরে কপি করুন।": "If copying doesn't work, long-press the link to copy it.",
     "কপি করা গেলো না। লিংকটা চেপে ধরে কপি করুন।": "Couldn't copy. Long-press the link to copy it.",
     ":n বার দেখা হয়েছে": ":n view|:n views",
-    "প্রতিটি ব্রাউজার দিনে একবার গোনা হয়": "Each browser counts once a day"
+    "প্রতিটি ব্রাউজার দিনে একবার গোনা হয়": "Each browser counts once a day",
+    "কী নিয়ে জানাবো": "What to tell you about",
+    "আমার পোস্টে নতুন উত্তর": "New answers on my posts",
+    "আমার উত্তরে কেউ জবাব দিলে": "Replies to my answers",
+    "আমার উত্তর সমাধান হিসেবে বাছাই হলে": "My answer chosen as the solution",
+    "যে প্রশ্নে “আমারও জানা দরকার” দিয়েছি, তার উত্তর এলে": "Answers to questions I also need answered",
+    "সাইটে": "On the site",
+    "ইমেইলে": "By email",
+    "সাইটে বন্ধ করলে ইমেইলও যাবে না। জবাব আর “আমারও জানা দরকার”-এর খবর শুধু সাইটে আসে।": "Turning one off on the site also stops its emails. Replies and “I need to know too” notices come only on the site.",
+    "সেভ হয়েছে": "Saved"
 }
