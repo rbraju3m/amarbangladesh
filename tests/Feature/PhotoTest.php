@@ -9,6 +9,7 @@ use App\Models\AnalyticsEvent;
 use App\Models\Answer;
 use App\Models\Photo;
 use App\Models\Post;
+use App\Models\User;
 use Database\Seeders\QuizContentSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -241,5 +242,58 @@ class PhotoTest extends TestCase
 
         $this->assertSame(0, Photo::count());
         Storage::disk('public')->assertMissing($this->files($photo)[0]);
+    }
+
+    public function test_the_post_page_cards_and_link_preview_show_the_photos(): void
+    {
+        $token = $this->token();
+        $ids = [$this->upload($token, UploadedFile::fake()->image('wide.jpg', 2000, 1000)), $this->upload($token), $this->upload($token)];
+        $post = Post::find($this->as($token)->postJson('/api/posts', ['title' => 'এই গাছটার নাম কী কেউ জানেন?', 'photos' => $ids])->json('post.id'));
+        $first = $post->photos->first();
+
+        $page = $this->get($post->url())->assertOk();
+        $page->assertSee('data-gallery=', false)->assertSee($first->url('thumb'), false)->assertSee($first->url(), false);
+        $page->assertSee('alt="ছবি ১/৩: এই গাছটার নাম কী কেউ জানেন?"', false);
+        // Link previews: the JPEG copy of the first photo, with its real size.
+        Storage::disk('public')->assertExists("{$first->path}-share.jpg");
+        $page->assertSee('<meta property="og:image" content="'.$first->shareUrl().'">', false)
+            ->assertSee('<meta property="og:image:width" content="1200">', false)
+            ->assertSee('<meta property="og:image:height" content="600">', false);
+
+        // Cards: the first photo as a thumbnail, "+2", and the count for screen readers.
+        $feed = $this->get('/feed')->assertOk();
+        $feed->assertSee($first->url('thumb'), false)->assertSee('+২')->assertSee('৩টি ছবি');
+        $this->get('/en/feed')->assertSee('3 photos');
+
+        // Without photos the default preview image stays.
+        $plain = Post::find($this->as($token)->postJson('/api/posts', ['title' => 'ছবি ছাড়া একটা প্রশ্ন, শুধু লেখা'])->json('post.id'));
+        $this->get($plain->url())->assertSee('images/og/default.png', false)->assertDontSee('data-gallery=', false);
+    }
+
+    public function test_answer_photos_show_and_an_edit_returns_the_new_grid(): void
+    {
+        $token = $this->token();
+        $post = Post::find($this->as($token)->postJson('/api/posts', ['title' => 'এই গাছটার নাম কী কেউ জানেন?', 'photos' => [$this->upload($token)]])->json('post.id'));
+        $helper = $this->token('মিতু');
+        $photo = $this->upload($helper);
+        $html = $this->as($helper)->postJson("/api/posts/{$post->id}/answers", ['body' => 'এটা কদম গাছ, ছবি দেখুন', 'photos' => [$photo]])->json('html');
+        $this->assertStringContainsString(Photo::find($photo)->url('thumb'), $html);
+        $this->get($post->url())->assertSee('উত্তরের ছবি', false);
+
+        $postPhoto = $post->photos()->first();
+        Storage::disk('public')->assertExists("{$postPhoto->path}-share.jpg");
+        $grid = $this->as($token)->patchJson("/api/posts/{$post->id}", ['title' => $post->title, 'photos' => []])->assertOk()->json('photos_html');
+        $this->assertSame('', trim($grid));
+        Storage::disk('public')->assertMissing("{$postPhoto->path}-share.jpg"); // the preview copy goes with the photo
+    }
+
+    public function test_moderators_see_the_photos_of_reported_items(): void
+    {
+        $token = $this->token();
+        $post = Post::find($this->as($token)->postJson('/api/posts', ['title' => 'এই গাছটার নাম কী কেউ জানেন?', 'photos' => [$this->upload($token)]])->json('post.id'));
+        $post->forceFill(['reports_count' => 1])->save();
+
+        $this->actingAs(User::factory()->create())->get('/admin/community')->assertOk()
+            ->assertSee($post->photos->first()->url('thumb'), false)->assertSee('opens full size');
     }
 }

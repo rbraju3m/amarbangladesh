@@ -30,8 +30,8 @@
     <meta property="og:title" content="{{ $ogTitle }}">
     <meta property="og:description" content="{{ $ogDescription }}">
     <meta property="og:image" content="{{ $ogImage }}">
-    <meta property="og:image:width" content="1200">
-    <meta property="og:image:height" content="630">
+    <meta property="og:image:width" content="{{ $ogImageSize[0] ?? 1200 }}">
+    <meta property="og:image:height" content="{{ $ogImageSize[1] ?? 630 }}">
     <meta property="og:image:alt" content="{{ $ogTitle }}">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{{ $ogTitle }}">

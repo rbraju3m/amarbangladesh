@@ -22,13 +22,13 @@ class CommunityController extends Controller
         $show = $request->query('show') === 'all' ? 'all' : 'attention';
         $needsLook = fn ($q) => $q->where(fn ($q) => $q->where('status', Post::HIDDEN)->orWhere(fn ($q) => $q->where('status', Post::PUBLISHED)->where('reports_count', '>', 0)));
 
-        $posts = Post::with(['member', 'category', 'area'])
+        $posts = Post::with(['member', 'category', 'area', 'photos'])
             ->when($show === 'attention', $needsLook)
             ->when($show === 'all', fn ($q) => $q->whereIn('status', [Post::PUBLISHED, Post::HIDDEN, Post::REMOVED]))
             ->orderByDesc($show === 'attention' ? 'reports_count' : 'id')->orderByDesc('id')
             ->paginate(30, ['*'], 'posts')->withQueryString();
 
-        $answers = Answer::with(['member', 'post:id,title'])
+        $answers = Answer::with(['member', 'post:id,title', 'photos'])
             ->when($show === 'attention', $needsLook)
             ->when($show === 'all', fn ($q) => $q->whereIn('status', [Post::PUBLISHED, Post::HIDDEN, Post::REMOVED]))
             ->orderByDesc($show === 'attention' ? 'reports_count' : 'id')->orderByDesc('id')

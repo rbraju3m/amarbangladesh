@@ -538,6 +538,55 @@
         @apply block w-full rounded-2xl border-2 border-line bg-paper px-3.5 py-3 text-base outline-none transition placeholder:text-ink-2/70 focus:border-accent;
     }
 
+    /* Photos on posts and answers (partials/photo-grid): one big photo keeps its shape, more make a grid */
+    .photo-grid {
+        @apply grid max-w-sm grid-cols-4 gap-1.5;
+    }
+
+    .photo-grid.is-big {
+        @apply max-w-none grid-cols-2 gap-2;
+    }
+
+    .photo-grid.is-big.has-3 {
+        @apply grid-cols-3;
+    }
+
+    .photo-cell {
+        @apply block aspect-square overflow-hidden rounded-2xl bg-paper-2;
+    }
+
+    .photo-cell img {
+        @apply size-full object-cover transition duration-200 hover:scale-[1.03];
+    }
+
+    .photo-grid.is-single {
+        @apply grid-cols-1;
+    }
+
+    .photo-grid.is-single .photo-cell {
+        @apply aspect-auto;
+    }
+
+    .photo-grid.is-single .photo-cell img {
+        @apply h-auto max-h-[70vh] w-full object-contain hover:scale-100;
+    }
+
+    .card-thumb {
+        @apply relative mt-2 shrink-0 overflow-hidden rounded-2xl bg-paper-2;
+    }
+
+    .card-thumb-more {
+        @apply absolute right-1 bottom-1 rounded-full bg-ink/80 px-1.5 text-xs font-bold text-paper;
+    }
+
+    .photo-viewer {
+        @apply fixed inset-0 z-[60] bg-black/95;
+    }
+
+    .photo-viewer-btn {
+        @apply flex size-11 items-center justify-center rounded-full bg-white/15 text-2xl leading-none text-white transition hover:bg-white/25 active:scale-90;
+    }
+
     /* Photo picker in composers (partials/photo-picker) */
     .photo-tiles {
         @apply mb-2 grid grid-cols-4 gap-2;

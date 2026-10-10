@@ -293,6 +293,21 @@ function community() {
             }
         },
 
+        // ---------- photos ----------
+
+        viewer: null, // { photos: [{ src, width, height, alt }], index } while the full-screen viewer is open
+        touchX: null,
+
+        /** Opens the viewer on photo `index` of a grid (partials/photo-grid carries the list in data-gallery). */
+        openPhotos(grid, index) {
+            this.viewer = { photos: JSON.parse(grid.dataset.gallery), index };
+        },
+
+        stepPhoto(step) {
+            if (!this.viewer || this.viewer.photos.length < 2) return;
+            this.viewer.index = (this.viewer.index + step + this.viewer.photos.length) % this.viewer.photos.length;
+        },
+
         /** One photo for a composer (resources/js/photos.js), signed in like any other write. */
         async uploadPhoto(blob, onProgress) {
             if (!this.signedIn) await this.openLogin();
@@ -474,6 +489,7 @@ function community() {
                 const article = form.closest('article');
                 document.getElementById('post-title').textContent = data.title;
                 document.getElementById('post-body').innerHTML = data.body_html;
+                document.getElementById('post-photos').innerHTML = data.photos_html ?? '';
                 article.querySelector('template[data-raw-title]').innerHTML = '';
                 article.querySelector('template[data-raw-title]').content.append(data.title);
                 article.querySelector('template[data-raw]').innerHTML = '';

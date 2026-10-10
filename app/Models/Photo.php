@@ -28,6 +28,20 @@ class Photo extends Model
         return Storage::disk('public')->url("{$this->path}-{$size}.webp");
     }
 
+    /** The JPEG copy for link previews (a post's first photo only; Photos::shareCopy()). */
+    public function shareUrl(): string
+    {
+        return Storage::disk('public')->url("{$this->path}-share.jpg");
+    }
+
+    /** Size of the share copy (longest side Photos::SHARE['side']). */
+    public function shareSize(): array
+    {
+        $scale = min(1, 1200 / max($this->width, $this->height));
+
+        return [(int) round($this->width * $scale), (int) round($this->height * $scale)];
+    }
+
     /** What the browser needs to show it and send it back with a post. */
     public function present(): array
     {

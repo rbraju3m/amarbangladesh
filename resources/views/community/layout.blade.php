@@ -14,6 +14,8 @@
     <x-site.footer />
     <x-site.tabbar :active="$active ?? null" />
 
+    @include('community.partials.photo-viewer')
+
     {{-- Report / confirm sheet --}}
     <div x-show="sheet" x-cloak x-modal="sheet" class="fixed inset-0 z-50 flex items-end justify-center md:items-center md:p-6" role="dialog" aria-modal="true" :aria-labelledby="sheet && `sheet-${sheet.kind}-title`" @keydown.escape.window="sheet = null">
         <div class="absolute inset-0 bg-black/50" x-show="sheet" x-transition.opacity @click="sheet = null"></div>

@@ -99,7 +99,8 @@ class PostController extends Controller
             'body' => $post->body,
             'body_html' => $post->body ? RichText::render($post)->toHtml() : '',
             'raw_html' => $post->body_html,
-            'photos' => $post->photos()->get()->map->present()->all(),
+            'photos' => ($photos = $post->photos()->get())->map->present()->all(),
+            'photos_html' => view('community.partials.photo-grid', ['photos' => $photos, 'title' => $post->title, 'big' => true])->render(),
         ]);
     }
 

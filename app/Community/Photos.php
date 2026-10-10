@@ -33,6 +33,12 @@ final class Photos
     /** Longest side of the two sizes written. */
     public const SIZES = ['full' => 1600, 'thumb' => 480];
 
+    /**
+     * A post's first photo also gets a JPEG copy for link previews (`og:image`): WebP isn't accepted
+     * by every app that shows previews. Written when it becomes the first photo, deleted with the rest.
+     */
+    public const SHARE = ['suffix' => 'share.jpg', 'side' => 1200];
+
     /** Uploaded but never posted: kept this long (drafts, slow typing). */
     public const UNATTACHED_HOURS = 24;
 
@@ -142,13 +148,29 @@ final class Photos
                 $photos[$id]->update(['photoable_type' => $type, 'photoable_id' => $item->id, 'position' => $position]);
             }
         });
+        if ($type === 'post' && $ids) {
+            self::shareCopy($photos[$ids[0]]);
+        }
+    }
+
+    /** The JPEG link-preview copy of a post's first photo (see SHARE). */
+    public static function shareCopy(Photo $photo): void
+    {
+        $disk = Storage::disk(self::DISK);
+        $file = "{$photo->path}-".self::SHARE['suffix'];
+        if ($disk->exists($file) || ! ($image = @imagecreatefromstring((string) $disk->get("{$photo->path}-full.webp")))) {
+            return;
+        }
+        ob_start();
+        imagejpeg(self::fit($image, self::SHARE['side']), null, 82);
+        $disk->put($file, (string) ob_get_clean());
     }
 
     /** Files and rows of these photos. */
     public static function delete(Collection $photos): int
     {
         foreach ($photos as $photo) {
-            Storage::disk(self::DISK)->delete(array_map(fn ($size) => "{$photo->path}-{$size}.webp", array_keys(self::SIZES)));
+            Storage::disk(self::DISK)->delete([...array_map(fn ($size) => "{$photo->path}-{$size}.webp", array_keys(self::SIZES)), "{$photo->path}-".self::SHARE['suffix']]);
             $photo->delete();
         }
 

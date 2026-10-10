@@ -121,7 +121,7 @@ class PageController extends Controller
 
         $related = Post::published()->whereKeyNot($post->id)
             ->when($post->category_id, fn ($q) => $q->where('category_id', $post->category_id))
-            ->with(['member:id,code,name,deleted_at', 'category', 'area'])
+            ->with(['member:id,code,name,deleted_at', 'category', 'area', 'photos'])
             ->latest('id')->limit(3)->get();
 
         return view('community.post', ['post' => $post, 'answers' => $answers, 'replies' => $replies, 'related' => $related]);
@@ -153,7 +153,7 @@ class PageController extends Controller
         // One list at a time, keyset-paginated like the feed (endless with JavaScript).
         $items = $tab === 'answers'
             ? $answers()->whereHas('post', fn ($q) => $q->published())->with('post:id,title,type,accepted_answer_id')
-            : $posts()->with(['member:id,code,name,deleted_at', 'category', 'area']);
+            : $posts()->with(['member:id,code,name,deleted_at', 'category', 'area', 'photos']);
 
         return view('community.member', [
             'member' => $member,

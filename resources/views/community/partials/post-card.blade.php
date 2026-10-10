@@ -1,13 +1,24 @@
 {{-- A post in a list. The title link is stretched over the whole card; tags and the author link sit above it. --}}
 @php($compact = $compact ?? false)
+@php($photo = $post->photos->first())
 <article class="post-card group" data-item="post:{{ $post->id }}">
     @include('community.partials.tags', ['post' => $post])
-    <h3 @class(['mt-2 font-bold leading-snug', 'text-lg' => ! $compact, 'text-base' => $compact])>
-        <a href="{{ $post->url() }}" class="after:absolute after:inset-0 after:rounded-3xl group-hover:text-green-text">{{ $post->title }}</a>
-    </h3>
-    @if ($post->body && ! $compact)
-        <p class="mt-1 line-clamp-2 text-ink-2">{{ \App\Community\Text::excerpt($post->body) }}</p>
-    @endif
+    <div class="flex items-start gap-3">
+        <div class="min-w-0 flex-1">
+            <h3 @class(['mt-2 font-bold leading-snug', 'text-lg' => ! $compact, 'text-base' => $compact])>
+                <a href="{{ $post->url() }}" class="after:absolute after:inset-0 after:rounded-3xl group-hover:text-green-text">{{ $post->title }}@if ($photo)<span class="sr-only"> · {{ \App\Support\Lang::choice(':nটি ছবি', $post->photos->count()) }}</span>@endif</a>
+            </h3>
+            @if ($post->body && ! $compact)
+                <p class="mt-1 line-clamp-2 text-ink-2">{{ \App\Community\Text::excerpt($post->body) }}</p>
+            @endif
+        </div>
+        @if ($photo)
+            <div @class(['card-thumb', 'size-20' => ! $compact, 'size-14' => $compact]) aria-hidden="true">
+                <img src="{{ $photo->url('thumb') }}" alt="" loading="lazy" decoding="async" class="size-full object-cover">
+                @if ($post->photos->count() > 1)<span class="card-thumb-more">+{{ \App\Support\Lang::num($post->photos->count() - 1) }}</span>@endif
+            </div>
+        @endif
+    </div>
     {{-- Wraps on narrow cards (the badges drop to their own line) so the author's name never shrinks to a letter. --}}
     <div class="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-sm text-ink-2">
         @include('community.partials.author', ['item' => $post, 'linkClass' => 'relative z-10 !min-w-[5.5rem] !font-semibold text-ink-2 hover:text-ink', 'avatarClass' => 'size-6 text-xs'])

@@ -56,6 +56,16 @@
                             <p class="mt-1 text-sm">{{ \Illuminate\Support\Str::limit($item->body, 300) }}</p>
                             <p class="mt-1 text-xs text-ink-2">on <a href="{{ route('posts.show', $item->post_id) }}" target="_blank" class="font-semibold hover:underline">{{ $item->post->title }}</a></p>
                         @endif
+                        @if ($item->photos->isNotEmpty())
+                            {{-- Photos are part of what's reported: open them full size to check --}}
+                            <div class="mt-2 flex gap-2">
+                                @foreach ($item->photos as $photo)
+                                    <a href="{{ $photo->url() }}" target="_blank" class="block size-16 overflow-hidden rounded-xl border border-line bg-paper-2" title="Photo {{ $loop->iteration }} of {{ $loop->count }} (opens full size)">
+                                        <img src="{{ $photo->url('thumb') }}" alt="Photo {{ $loop->iteration }}" loading="lazy" class="size-full object-cover">
+                                    </a>
+                                @endforeach
+                            </div>
+                        @endif
                     </div>
                     <div class="flex flex-wrap gap-2">
                         @if ($item->reports_count || $item->status === 'hidden')

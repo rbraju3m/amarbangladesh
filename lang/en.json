@@ -496,5 +496,12 @@
     "ছবি :n সরান": "Remove photo :n",
     "ছবি আপলোড হচ্ছে, একটু অপেক্ষা করুন।": "Photos are still uploading, one moment.",
     "ছবিটা আপলোড করা গেলো না। আবার চেষ্টা করুন।": "That photo couldn't be uploaded. Please try again.",
-    "ছবিটা আপলোড করা গেলো না। ইন্টারনেট দেখে আবার চেষ্টা করুন।": "That photo couldn't be uploaded. Check your connection and try again."
+    "ছবিটা আপলোড করা গেলো না। ইন্টারনেট দেখে আবার চেষ্টা করুন।": "That photo couldn't be uploaded. Check your connection and try again.",
+    "ছবি :n/:total: :title": "Photo :n of :total: :title",
+    "উত্তরের ছবি": "answer photo",
+    ":nটি ছবি": "1 photo|:n photos",
+    "ছবি": "Photo",
+    "আগের ছবি": "Previous photo",
+    "পরের ছবি": "Next photo",
+    ":n/:total": ":n/:total"
 }

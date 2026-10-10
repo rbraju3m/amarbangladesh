@@ -6,6 +6,9 @@
         ? \App\Community\Text::excerpt($post->body, 180)
         : ($post->answers_count ? \App\Support\Lang::choice(':nটি উত্তর · আমার বাংলাদেশে দেখুন', $post->answers_count) : __('জানা থাকলে উত্তর দিন · আমার বাংলাদেশ')),
     'canonical' => url($post->url()),
+    // A post with photos previews with its first one (a JPEG copy, see App\Community\Photos::SHARE).
+    'ogImage' => $post->photos->first()?->shareUrl(),
+    'ogImageSize' => $post->photos->first()?->shareSize(),
 ])
 
 @section('main')
@@ -27,6 +30,7 @@
             <span id="post-edited" @class(['text-xs text-ink-2', 'hidden' => ! $post->edited_at])>{{ __('(সম্পাদিত)') }}</span>
         </div>
         <div x-show="!editing" id="post-body" class="prose-text mt-4 text-lg empty:hidden">@if ($post->body){{ \App\Community\RichText::render($post) }}@endif</div>
+        <div x-show="!editing" id="post-photos" class="mt-4 empty:hidden">@include('community.partials.photo-grid', ['photos' => $post->photos, 'title' => $post->title, 'big' => true])</div>
 
         {{-- The author edits title and details in place --}}
         <template x-if="editing">

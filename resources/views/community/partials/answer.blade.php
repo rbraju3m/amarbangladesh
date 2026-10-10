@@ -10,6 +10,7 @@
     <template data-raw>{{ $answer->body }}</template>@if ($answer->body_html)<template data-raw-html>{{ $answer->body_html }}</template>@endif
     @if ($answer->photos->isNotEmpty())<template data-raw-photos>@json($answer->photos->map->present())</template>@endif
     <div x-show="!editing" class="prose-text mt-2">{{ \App\Community\RichText::render($answer) }}</div>
+    <div x-show="!editing" class="mt-3 empty:hidden">@include('community.partials.photo-grid', ['photos' => $answer->photos, 'title' => __('উত্তরের ছবি')])</div>
     @include('community.partials.edit-form', ['id' => $answer->id, 'type' => 'answer', 'rich' => true, 'photos' => ! $answer->is_anonymous])
     <div x-show="!editing" class="mt-3 flex flex-wrap items-center gap-2">
         <button type="button" class="act" :aria-pressed="marked('answer:{{ $answer->id }}')" x-show="!mine('answer', {{ $answer->id }})"

@@ -19,7 +19,7 @@ final class Search
 {
     public const PER_PAGE = 20;
 
-    private const RELATIONS = ['member:id,code,name,deleted_at', 'category:id,slug,name_bn,name_en,emoji', 'area:id,slug,name_bn,name_en'];
+    private const RELATIONS = ['member:id,code,name,deleted_at', 'category:id,slug,name_bn,name_en,emoji', 'area:id,slug,name_bn,name_en', 'photos'];
 
     /** Search ranks at most this many matches; past it the count is read separately. */
     private const MAX_RANKED = 1000;
