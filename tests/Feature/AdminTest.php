@@ -219,4 +219,21 @@ class AdminTest extends TestCase
             ->assertSeeInOrder(['Card designs', 'Boarding pass', '2', 'Poster', '1', 'Square', '2', 'Story', '1'])
             ->assertSeeInOrder(['Card colours', 'Night', '2', 'Place colour', '1']);
     }
+
+    public function test_dashboard_numbers_are_kept_a_while_and_can_be_recounted(): void
+    {
+        $answers = array_map(fn ($o) => array_key_first($o), array_values(QuizConfig::fromDatabase()->questions));
+        $this->actingAs(User::factory()->create());
+        $plays = fn ($response) => $response->assertOk()->viewData('summary')['plays'];
+
+        $this->assertSame(0, $plays($this->get('/admin?days=7')));
+        $this->postJson('/api/results', ['answers' => $answers])->assertCreated();
+
+        $page = $this->get('/admin?days=7');
+        $this->assertSame(0, $plays($page)); // still the kept numbers
+        $this->assertCount(1, $page->viewData('recent')); // recent plays are always live
+        $page->assertSee('count now');
+        $this->assertSame(1, $plays($this->get('/admin?days=7&fresh=1')));
+        $this->assertSame(1, $plays($this->get('/admin?days=30'))); // each range on its own
+    }
 }

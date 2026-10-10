@@ -26,6 +26,7 @@
     <div>
         <h1 class="text-2xl font-bold md:text-3xl">Growth funnel</h1>
         <p class="mt-1 text-sm text-ink-2">How people move from opening the site to sharing their result. Arrows compare with the previous {{ strtolower($ranges[$days]) === 'today' ? 'day' : 'period' }}.</p>
+        <p class="mt-1 text-xs text-ink-2">Counted at {{ \Illuminate\Support\Carbon::createFromTimestamp($counted_at, config('app.timezone'))->format('H:i') }} (kept {{ \App\Http\Controllers\Admin\DashboardController::CACHE_SECONDS[$days] / 60 }} minutes) · <a href="?days={{ $days }}&amp;fresh=1" class="font-semibold underline hover:text-ink">count now</a></p>
     </div>
     <div class="flex flex-wrap items-center gap-2">
         <nav class="flex gap-1 rounded-xl border border-line bg-card p-1 text-sm font-semibold" aria-label="Date range">
