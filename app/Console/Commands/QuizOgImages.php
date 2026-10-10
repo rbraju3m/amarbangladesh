@@ -13,9 +13,9 @@ use Illuminate\Support\Facades\Process;
  */
 class QuizOgImages extends Command
 {
-    protected $signature = 'quiz:og-images {--chrome=google-chrome : Chrome/Chromium binary}';
+    protected $signature = 'quiz:og-images {--chrome=google-chrome : Chrome/Chromium binary} {--only= : render just this image (default, community or a location slug)}';
 
-    protected $description = 'Render Open Graph preview images for every location and the home page, in Bangla and English';
+    protected $description = 'Render Open Graph preview images for every location, the quiz and the community, in Bangla and English';
 
     public function handle(): int
     {
@@ -45,6 +45,11 @@ class QuizOgImages extends Command
                 'accent' => '#006a4e', 'illustration' => null, 'kicker' => __('মাত্র ১ মিনিটের খেলা'),
                 'name' => $locale === 'en' ? "Where is your\nBangladesh?" : "তোমার বাংলাদেশ\nকোথায়?", 'nameSize' => 76,
                 'title' => __('বাংলাদেশের কোন জায়গাটা তোমার মতো?'), 'cta' => __('খেলে দেখো →'),
+            ], 'community' => $base + [
+                // Community pages without a photo of their own (posts, feed, home).
+                'accent' => '#006a4e', 'illustration' => null, 'kicker' => __('বাংলাদেশিদের প্রশ্ন-উত্তর'),
+                'name' => $locale === 'en' ? "Amar\nBangladesh" : "আমার\nবাংলাদেশ", 'nameSize' => 92,
+                'title' => __('জিজ্ঞেস করুন, জানা থাকলে উত্তর দিন'), 'cta' => __('আলোচনায় আসুন →'),
             ]];
 
             foreach (Location::orderBy('sort_order')->get() as $location) {
@@ -60,6 +65,9 @@ class QuizOgImages extends Command
                 ];
             }
 
+            if ($only = $this->option('only')) {
+                $jobs = array_intersect_key($jobs, [$only => true]);
+            }
             foreach ($jobs as $slug => $data) {
                 $html = "{$tmp}/{$locale}-{$slug}.html";
                 File::put($html, view('og.image', $data)->render());

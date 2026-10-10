@@ -23,7 +23,7 @@
     <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
     <link rel="manifest" href="{{ asset('site.webmanifest') }}">
 
-    <meta property="og:type" content="website">
+    <meta property="og:type" content="{{ $ogType ?? 'website' }}">
     <meta property="og:site_name" content="{{ $siteTitle }}">
     <meta property="og:locale" content="{{ \App\Support\Lang::isEnglish() ? 'en_US' : 'bn_BD' }}">
     <meta property="og:url" content="{{ $canonical ?? url()->current() }}">

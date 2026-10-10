@@ -3,7 +3,7 @@ import { lang, loadDictionary, localeHeaders, num, path, t, withLang } from './i
 import infinite from './infinite';
 import modal from './modal';
 import { photoPicker, send as sendPhoto } from './photos';
-import { copyText, isMobile, shareLinks } from './share';
+import { copyText, isInAppBrowser, isMobile, shareLinks } from './share';
 import { store, visitorId } from './store';
 import { setTrackingContext, track } from './track';
 
@@ -101,11 +101,13 @@ function community() {
         notices: { state: 'loading', next: null, email: null }, // the /notifications page
         saved: Object.fromEntries(store.get(SAVED, []).map((id) => [id, true])), // post id → true
         savedList: { state: 'loading', next: null }, // the /saved page
+        share: null, // { title, url, from } while the share sheet is open
+        inApp: isInAppBrowser(),
         bn: num,
         track,
 
         init() {
-            this.watchSaveButtons();
+            this.watchCardButtons();
             this.restoreDraft();
             setTrackingContext({ visitor_id: visitorId() });
             const event = PAGE_EVENTS.find(([re]) => re.test(location.pathname.replace(/^\/en(?=\/|$)/, '')));
@@ -354,9 +356,14 @@ function community() {
         // The bookmark buttons are plain HTML (`[data-save]` in post cards and on the post page, also
         // fetched into lists later): one click listener here, and their state painted as a class.
 
-        watchSaveButtons() {
-            document.documentElement.dataset.canSave = '';
+        watchCardButtons() {
+            document.documentElement.dataset.cardActions = '';
             document.addEventListener('click', (e) => {
+                const share = e.target.closest('[data-share]');
+                if (share) {
+                    e.preventDefault();
+                    return this.sharePost(share.dataset.title, share.dataset.share, 'card');
+                }
                 const button = e.target.closest('[data-save]');
                 if (!button) return;
                 e.preventDefault();
@@ -623,26 +630,33 @@ function community() {
             }
         },
 
-        async sharePost(title, url) {
-            track('post_shared', { meta: { channel: 'native' } });
-            if (navigator.share && isMobile()) {
+        /**
+         * Share a post: the phone's own share sheet where it works; elsewhere (desktop, and Facebook /
+         * Messenger's in-app browsers, which have none) our sheet with WhatsApp, Facebook, Messenger, copy.
+         */
+        async sharePost(title, url, from = 'post') {
+            if (navigator.share && isMobile() && !this.inApp) {
+                track('post_shared', { meta: { channel: 'native', from } });
                 try {
                     await navigator.share({ title, text: title, url });
                 } catch {}
                 return;
             }
-            this.shareTo('copy', title, url);
+            this.share = { title, url, from };
         },
 
         async shareTo(channel, title, url) {
-            track('post_shared', { meta: { channel } });
+            const from = this.share?.from ?? 'post';
+            track('post_shared', { meta: { channel, from } });
             if (channel === 'copy' || (channel === 'messenger' && !isMobile())) {
                 const ok = await copyText(`${title}\n${url}`);
-                this.flash(ok ? t('লিংক কপি হয়েছে! যাঁর দরকার তাঁকে পাঠান ✨') : t('কপি করা গেলো না।'));
+                if (ok) this.share = null;
+                this.flash(ok ? t('লিংক কপি হয়েছে! যাঁর দরকার তাঁকে পাঠান ✨') : t('কপি করা গেলো না। লিংকটা চেপে ধরে কপি করুন।'));
                 return;
             }
+            this.share = null;
             const href = shareLinks[channel](t(':title — জানা থাকলে উত্তর দিন 🙏', { title }), url);
-            if (channel === 'messenger') location.href = href;
+            if (channel === 'messenger' || this.inApp) location.href = href; // in-app browsers block new windows
             else window.open(href, '_blank', 'noopener');
         },
 

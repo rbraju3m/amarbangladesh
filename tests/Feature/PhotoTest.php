@@ -279,9 +279,9 @@ class PhotoTest extends TestCase
         $feed->assertSee($first->url('thumb'), false)->assertSee('+২')->assertSee('৩টি ছবি');
         $this->get('/en/feed')->assertSee('3 photos');
 
-        // Without photos the default preview image stays.
+        // Without photos the community preview image is used.
         $plain = Post::find($this->as($token)->postJson('/api/posts', ['title' => 'ছবি ছাড়া একটা প্রশ্ন, শুধু লেখা'])->json('post.id'));
-        $this->get($plain->url())->assertSee('images/og/default.png', false)->assertDontSee('data-gallery=', false);
+        $this->get($plain->url())->assertSee('images/og/community.png', false)->assertDontSee('data-gallery=', false);
     }
 
     public function test_answer_photos_show_and_an_edit_returns_the_new_grid(): void

@@ -477,17 +477,23 @@
         animation: live-blink 1.6s ease-in-out infinite;
     }
 
-    /* Bookmark: hidden until the community script runs (it handles the clicks); filled when saved. */
-    .save-btn {
+    /* Card share / bookmark: hidden until the community script runs (it handles the clicks); the bookmark is filled when saved. */
+    .save-btn,
+    .card-act {
         @apply relative z-10 hidden items-center justify-center gap-1.5 text-ink-2 transition hover:text-ink active:scale-90;
     }
 
-    [data-can-save] .save-btn {
+    [data-card-actions] .save-btn,
+    [data-card-actions] .card-act {
         display: inline-flex;
     }
 
-    .post-card .save-btn {
-        @apply -m-1.5 size-9 rounded-full hover:bg-paper-2;
+    .post-card .card-act {
+        @apply -my-1.5 size-9 rounded-full hover:bg-paper-2;
+    }
+
+    .post-card .card-act svg {
+        @apply size-[1.15rem];
     }
 
     .save-btn.is-on {

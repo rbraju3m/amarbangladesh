@@ -6,6 +6,7 @@
         ? \App\Community\Text::excerpt($post->body, 180)
         : ($post->answers_count ? \App\Support\Lang::choice(':nটি উত্তর · আমার বাংলাদেশে দেখুন', $post->answers_count) : __('জানা থাকলে উত্তর দিন · আমার বাংলাদেশ')),
     'canonical' => url($post->url()),
+    'ogType' => 'article',
     // A post with photos previews with its first one (a JPEG copy, see App\Community\Photos::SHARE).
     'ogImage' => $post->photos->first()?->shareUrl(),
     'ogImageSize' => $post->photos->first()?->shareSize(),
@@ -58,7 +59,7 @@
             <button type="button" class="act save-btn save-act" data-save="{{ $post->id }}" aria-pressed="false">
                 @include('community.partials.bookmark-icon') <span class="save-off">{{ __('সেভ') }}</span><span class="save-on">{{ __('সেভ করা') }}</span>
             </button>
-            <button type="button" class="act" @click="sharePost(@js($post->title), @js(url($post->url())))">{{ __('↗ শেয়ার') }}</button>
+            <button type="button" class="act" @click="sharePost(@js($post->title), @js(url($post->url())), 'post')">{{ __('↗ শেয়ার') }}</button>
             <span class="ml-auto flex items-center gap-1">
                 <button type="button" class="act-quiet" x-show="mine('post', {{ $post->id }})" x-cloak @click="editing = true">{{ __('সম্পাদনা') }}</button>
                 <button type="button" class="act-quiet" x-show="mine('post', {{ $post->id }})" x-cloak @click="sheet = { kind: 'delete', type: 'post', id: {{ $post->id }} }">{{ __('মুছে ফেলুন') }}</button>
@@ -84,9 +85,10 @@
             <p class="text-3xl" aria-hidden="true">🤝</p>
             <p class="mt-2 font-bold">{{ $post->isQuestion() ? __('এখনো কেউ উত্তর দেয়নি') : __('এখনো কেউ কিছু বলেনি') }}</p>
             <p class="mt-1 text-sm text-ink-2">{{ __('জানা থাকলে নিচে লিখুন। না জানলে যে জানতে পারেন, তাঁকে পাঠিয়ে দিন।') }}</p>
-            <div class="mt-4 flex justify-center gap-4">
+            <div class="mt-4 flex flex-wrap justify-center gap-4">
                 <button type="button" class="share-btn" @click="shareTo('whatsapp', @js($post->title), @js(url($post->url())))"><span class="bg-[#25D366]">@include('partials.icon', ['name' => 'whatsapp'])</span><span>WhatsApp</span></button>
                 <button type="button" class="share-btn" @click="shareTo('messenger', @js($post->title), @js(url($post->url())))"><span class="bg-[#0084FF]">@include('partials.icon', ['name' => 'messenger'])</span><span>Messenger</span></button>
+                <button type="button" class="share-btn" @click="shareTo('facebook', @js($post->title), @js(url($post->url())))"><span class="bg-[#1877F2]">@include('partials.icon', ['name' => 'facebook'])</span><span>Facebook</span></button>
                 <button type="button" class="share-btn" @click="shareTo('copy', @js($post->title), @js(url($post->url())))"><span class="bg-ink !text-paper">@include('partials.icon', ['name' => 'link'])</span><span>{{ __('লিংক কপি') }}</span></button>
             </div>
         </div>
