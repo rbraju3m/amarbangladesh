@@ -137,11 +137,32 @@ class RichTextTest extends TestCase
         $post = $this->ask($token, ['format' => 'html', 'body' => '<p><em>প্রথম</em> লেখা</p>']);
 
         $this->as($token)->patchJson("/api/posts/{$post->id}", ['title' => $post->title, 'format' => 'html', 'body' => '<p><strong>নতুন</strong> লেখা</p>'])
-            ->assertOk()->assertJson(['body' => 'নতুন লেখা', 'body_html' => '<p><strong>নতুন</strong> লেখা</p>']);
+            ->assertOk()->assertJson(['body' => 'নতুন লেখা', 'body_html' => '<p><strong>নতুন</strong> লেখা</p>', 'raw_html' => '<p><strong>নতুন</strong> লেখা</p>']);
         $this->assertNotNull($post->fresh()->edited_at);
 
         $this->as($token)->patchJson("/api/posts/{$post->id}", ['title' => $post->title, 'body' => 'শুধু লেখা'])
-            ->assertOk()->assertJson(['body' => 'শুধু লেখা', 'body_html' => 'শুধু লেখা']);
+            ->assertOk()->assertJson(['body' => 'শুধু লেখা', 'body_html' => 'শুধু লেখা', 'raw_html' => null]);
         $this->assertNull($post->fresh()->body_html);
+    }
+
+    public function test_edit_forms_get_the_formatted_source_and_replies_stay_plain(): void
+    {
+        $token = $this->token();
+        $post = $this->ask($token, ['format' => 'html', 'body' => '<p><em>প্রথম</em> লেখা</p>']);
+        $other = $this->token('মিতু');
+        $answerId = $this->as($other)->postJson("/api/posts/{$post->id}/answers", ['format' => 'html', 'body' => '<ul><li>ছবি</li></ul>'])->assertCreated()->json('answer.id');
+        $this->as($token)->postJson("/api/posts/{$post->id}/answers", ['parent' => $answerId, 'format' => 'html', 'body' => '<p><strong>ধন্যবাদ</strong> ভাই</p>'])->assertCreated();
+
+        $page = $this->get($post->url())->assertOk()->getContent();
+        // The editor opens on the escaped HTML; the plain text stays beside it for the textarea.
+        $this->assertStringContainsString('<template data-raw-html>&lt;p&gt;&lt;em&gt;প্রথম&lt;/em&gt; লেখা&lt;/p&gt;</template>', $page);
+        $this->assertStringContainsString('<template data-raw-html>&lt;ul&gt;&lt;li&gt;ছবি&lt;/li&gt;&lt;/ul&gt;</template>', $page);
+        $this->assertSame(2, substr_count($page, '<template data-raw-html>'));
+        $this->assertSame(2, substr_count($page, 'x-rich.now'));
+
+        $html = $this->as($other)->patchJson("/api/answers/{$answerId}", ['format' => 'html', 'body' => '<ol><li>ছবি</li><li>সনদ</li></ol>'])->assertOk()->json('html');
+        $this->assertStringContainsString('<template data-raw-html>&lt;ol&gt;', $html);
+        $this->assertStringContainsString('x-rich.now', $html);
+        $this->assertSame('<ol><li>ছবি</li><li>সনদ</li></ol>', Answer::find($answerId)->body_html);
     }
 }

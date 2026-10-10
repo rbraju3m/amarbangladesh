@@ -79,6 +79,7 @@ class PostController extends Controller
             'title' => $post->title,
             'body' => $post->body,
             'body_html' => $post->body ? RichText::render($post)->toHtml() : '',
+            'raw_html' => $post->body_html,
         ]);
     }
 

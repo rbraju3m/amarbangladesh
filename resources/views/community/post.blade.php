@@ -18,7 +18,7 @@
 
     <article class="mt-3" data-own="post:{{ $post->id }}" x-data="{ editing: false }">
         @include('community.partials.tags', ['post' => $post])
-        <template data-raw-title>{{ $post->title }}</template><template data-raw>{{ $post->body }}</template>
+        <template data-raw-title>{{ $post->title }}</template><template data-raw>{{ $post->body }}</template><template data-raw-html>{{ $post->body_html }}</template>
         <h1 x-show="!editing" id="post-title" class="mt-3 text-[1.7rem] leading-snug font-bold md:text-3xl">{{ $post->title }}</h1>
         <div class="mt-3 flex items-center gap-2 text-sm">
             @include('community.partials.author', ['item' => $post])
@@ -35,8 +35,8 @@
                 <textarea id="edit-title" name="title" rows="2" maxlength="200" required class="field !text-xl font-semibold"
                     x-init="$el.value = $el.closest('article').querySelector('template[data-raw-title]').content.textContent; $el.focus()"></textarea>
                 <label for="edit-body" class="text-sm font-semibold">{{ __('বিস্তারিত') }}</label>
-                <textarea id="edit-body" name="body" rows="5" maxlength="5000" class="field"
-                    x-init="$el.value = $el.closest('article').querySelector('template[data-raw]').content.textContent"></textarea>
+                <input type="hidden" name="format" value="">
+                <textarea id="edit-body" name="body" rows="5" maxlength="20000" class="field" x-rich.now="'post'" x-init="editText($el)"></textarea>
                 <div class="flex items-center gap-2">
                     <button class="btn-primary !min-h-11 !w-auto !px-5 !text-base" :disabled="busy">{{ __('সেভ') }}</button>
                     <button type="button" class="act-quiet" @click="editing = false">{{ __('থাক') }}</button>

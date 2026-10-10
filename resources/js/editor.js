@@ -48,11 +48,15 @@ export function mountEditor(textarea, { headings = false } = {}) {
     textarea.style.display = 'none'; // not `hidden`: .field sets display
     textarea.required = false; // a hidden required field would block the form; the submit buttons check length
 
+    // An edit form opens on the item's saved formatting (data-html), unless the plain text was changed
+    // while the editor loaded.
+    const saved = textarea.dataset.html && textarea.value === textarea.dataset.plain ? textarea.dataset.html : null;
+
     let syncing = false;
     let buttons = [];
     const editor = new Editor({
         element: area,
-        content: format?.value === 'html' ? textarea.value : fromText(textarea.value),
+        content: saved ?? (format?.value === 'html' ? textarea.value : fromText(textarea.value)),
         extensions: [
             StarterKit.configure({
                 heading: headings ? { levels: [3] } : false,

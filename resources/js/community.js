@@ -413,6 +413,16 @@ function community() {
         },
 
         /** The author saves an edited answer or reply: the server sends it back re-rendered. */
+        /**
+         * Fills an edit form's textarea from its item: the plain text at once (it works if the editor
+         * never loads), and the formatted version for `x-rich` to open on.
+         */
+        editText(el) {
+            const raw = (name) => el.closest('article').querySelector(`template[${name}]`)?.content.textContent ?? '';
+            el.value = el.dataset.plain = raw('data-raw');
+            el.dataset.html = raw('data-raw-html');
+        },
+
         async saveAnswer(id, form) {
             this.busy = true;
             try {
@@ -437,6 +447,8 @@ function community() {
                 article.querySelector('template[data-raw-title]').content.append(data.title);
                 article.querySelector('template[data-raw]').innerHTML = '';
                 article.querySelector('template[data-raw]').content.append(data.body ?? '');
+                article.querySelector('template[data-raw-html]').innerHTML = '';
+                article.querySelector('template[data-raw-html]').content.append(data.raw_html ?? '');
                 document.getElementById('post-edited')?.classList.remove('hidden');
                 document.title = `${data.title} — ${document.title.split(' — ').pop()}`;
                 Alpine.$data(article).editing = false;
@@ -670,10 +682,11 @@ Alpine.plugin(modal);
 /**
  * `x-rich` on a composer's textarea (`x-rich="'post'"` adds the heading button): turns it into the
  * formatting editor (resources/js/editor.js, its own ~120 kB chunk) on the first touch or focus, or
- * once the browser is idle with `.eager` (the Ask page, where people came to write). Without JS, or
- * until then, the plain textarea works and is sent as plain text. `el._rich.focus()` focuses the editor.
+ * once the browser is idle with `.eager` (the Ask page, where people came to write), or right away with
+ * `.now` (edit forms, which open on the item's formatted text). Without JS, or until then, the plain
+ * textarea works and is sent as plain text. `el._rich.focus()` focuses the editor.
  */
-Alpine.directive('rich', (el, { expression, modifiers }, { evaluate }) => {
+Alpine.directive('rich', (el, { expression, modifiers }, { evaluate, cleanup }) => {
     const headings = expression ? evaluate(expression) === 'post' : false;
     let started = false;
     const start = () => {
@@ -688,7 +701,9 @@ Alpine.directive('rich', (el, { expression, modifiers }, { evaluate }) => {
     };
     el.addEventListener('pointerdown', start, { once: true });
     el.addEventListener('focus', start, { once: true });
-    if (modifiers.includes('eager')) (window.requestIdleCallback ?? ((fn) => setTimeout(fn, 1500)))(start, { timeout: 4000 });
+    cleanup(() => el._rich?.editor.destroy()); // edit forms come and go with x-if
+    if (modifiers.includes('now')) queueMicrotask(start); // after x-init has filled the textarea
+    else if (modifiers.includes('eager')) (window.requestIdleCallback ?? ((fn) => setTimeout(fn, 1500)))(start, { timeout: 4000 });
 });
 
 Alpine.data('community', community);
