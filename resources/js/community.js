@@ -870,6 +870,83 @@ function divisionMap(divisions, lens, topics) {
     };
 }
 
+/**
+ * Home lists (latest / needs an answer / solved). Inside `divisionMap`, so they follow its topic: with
+ * a topic, that topic's lists come from /api/feed (cached per tab and topic); without, the page's own.
+ */
+function homeLists() {
+    return {
+        tab: 'latest',
+        filtered: {}, // `${tab}|${topic}` → HTML ('' = none, null = failed)
+        listState: 'idle', // loading | slow | idle
+        init() {
+            this.$watch('topic', () => this.refresh());
+            this.$watch('tab', () => this.refresh());
+        },
+        get key() {
+            return `${this.tab}|${this.topic}`;
+        },
+        moreUrl(url) {
+            return this.topic ? `${url}${url.includes('?') ? '&' : '?'}category=${encodeURIComponent(this.topic)}` : url;
+        },
+        async refresh() {
+            const key = this.key;
+            if (!this.topic || typeof this.filtered[key] === 'string') return;
+            this.listState = 'loading';
+            clearTimeout(this._slow);
+            this._slow = setTimeout(() => this.listState === 'loading' && (this.listState = 'slow'), 250);
+            try {
+                const data = await api('GET', withLang(`/api/feed?limit=5&compact=1&tab=${this.tab}&category=${encodeURIComponent(this.topic)}`));
+                this.filtered[key] = data.count ? data.html : '';
+            } catch {
+                this.filtered[key] = null;
+            }
+            if (this.key === key) this.listState = 'idle';
+        },
+    };
+}
+
+/** Home "happening now": shows the newest posts one by one; holds still under the pointer, focus, or reduced motion. */
+function ticker(count) {
+    return {
+        i: 0,
+        paused: false,
+        init() {
+            if (count < 2 || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+            this._timer = setInterval(() => !this.paused && !document.hidden && (this.i = (this.i + 1) % count), 4000);
+        },
+        destroy() {
+            clearInterval(this._timer);
+        },
+    };
+}
+
+/** A number that counts up from 0 once it scrolls into view (just the number under reduced motion). */
+function countUp(target) {
+    return {
+        n: target,
+        get shown() {
+            return num(this.n);
+        },
+        init() {
+            if (!target || matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) return;
+            this.n = 0;
+            const seen = new IntersectionObserver(([entry]) => {
+                if (!entry.isIntersecting) return;
+                seen.disconnect();
+                const start = performance.now();
+                const step = (now) => {
+                    const p = Math.min(1, (now - start) / 900);
+                    this.n = Math.round(target * (1 - (1 - p) ** 3));
+                    if (p < 1) requestAnimationFrame(step);
+                };
+                requestAnimationFrame(step);
+            });
+            seen.observe(this.$el);
+        },
+    };
+}
+
 /** Ask page: questions like the title being typed, so people find an answer before asking again. */
 function similarQuestions() {
     return {
@@ -925,6 +1002,9 @@ Alpine.directive('rich', (el, { expression, modifiers }, { evaluate, cleanup }) 
 
 Alpine.data('community', community);
 Alpine.data('divisionMap', divisionMap);
+Alpine.data('homeLists', homeLists);
+Alpine.data('ticker', ticker);
+Alpine.data('countUp', countUp);
 Alpine.data('infinite', infinite);
 Alpine.data('photoPicker', photoPicker);
 Alpine.data('similarQuestions', similarQuestions);

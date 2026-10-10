@@ -512,5 +512,11 @@
     "এবার একটা জেলা বেছে নিন": "Now pick a district",
     "বিষয় দিয়ে ম্যাপ দেখুন": "See the map by topic",
     "আগের এলাকা": "Previous area",
-    "পরের এলাকা": "Next area"
+    "পরের এলাকা": "Next area",
+    "প্রশ্ন ও আলোচনা": "Questions & discussions",
+    "উত্তর দেওয়া হয়েছে": "Answers given",
+    "সমাধান পেয়েছে": "Solved",
+    "এখন": "Now",
+    "নতুন পোস্ট": "New posts",
+    "বিষয় বাদ দিন: :name": "Clear topic: :name"
 }

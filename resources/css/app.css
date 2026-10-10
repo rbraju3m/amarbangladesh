@@ -477,6 +477,30 @@
         animation: live-blink 1.6s ease-in-out infinite;
     }
 
+    .home-stats {
+        @apply mt-5 grid max-w-md grid-cols-3 gap-2;
+    }
+
+    .home-stats > div {
+        @apply rounded-2xl border border-line bg-card/70 px-3 py-2;
+    }
+
+    .home-stats dd {
+        @apply text-green-text;
+    }
+
+    .home-ticker {
+        @apply mt-4 flex max-w-xl items-center gap-2 rounded-full border border-line bg-card/80 py-1.5 pr-4 pl-3;
+    }
+
+    .ticker-item {
+        @apply absolute inset-0 flex items-center;
+    }
+
+    .topic-tile.is-on {
+        @apply border-flag-red/60 bg-flag-red/5;
+    }
+
     .map-tip-latest {
         @apply mt-1 line-clamp-2 block max-w-56 border-t border-line pt-1 text-xs font-medium whitespace-normal text-ink;
     }

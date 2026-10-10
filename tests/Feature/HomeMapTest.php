@@ -97,4 +97,28 @@ class HomeMapTest extends TestCase
         $districts = collect($this->getJson('/api/map/sylhet-division?category=health')->json('districts'))->keyBy('slug');
         $this->assertSame('Doctor?', $districts['sylhet']['latest']);
     }
+
+    public function test_home_has_the_ask_box_numbers_and_the_happening_now_ticker(): void
+    {
+        $member = Accounts::signIn('email', 'a@example.test', 'Rashed');
+        $areas = Taxonomy::areas();
+        $solved = Post::create(['member_id' => $member->id, 'title' => 'Tea gardens in October?', 'area_id' => $areas['sylhet']['id']]);
+        Post::create(['member_id' => $member->id, 'title' => 'Hidden one', 'status' => Post::HIDDEN]);
+        $answer = $solved->answers()->create(['member_id' => $member->id, 'body' => 'Yes, go.']);
+        $solved->update(['accepted_answer_id' => $answer->id]);
+
+        $html = $this->get('/')->assertOk()->getContent();
+        // Asking starts right here: a plain GET form to the Ask page, which fills the title in.
+        $this->assertMatchesRegularExpression('~<form action="/ask" method="get"[^>]*>~', $html);
+        $this->assertStringContainsString('name="title"', $html);
+        $this->get('/ask?title='.urlencode('Tea gardens?'))->assertOk()->assertSee('Tea gardens?');
+        // One post, one answer, one solved (the hidden post doesn't count), rendered without JS.
+        $this->assertMatchesRegularExpression('~x-data="countUp\(1\)" x-text="shown">১</dd>~u', $html);
+        $this->assertSame(3, substr_count($html, 'x-data="countUp(1)"'));
+        // The ticker links the newest posts with their place.
+        $this->assertMatchesRegularExpression('~class="ticker-item"[\s\S]*?href="/p/'.$solved->id.'"[\s\S]*?সিলেট[\s\S]*?Tea gardens in October\?~u', $html);
+        $this->assertStringNotContainsString('Hidden one', $html);
+        // Topic tiles still work as links without JS.
+        $this->assertStringContainsString('href="/feed?category=health" class="topic-tile"', $html);
+    }
 }

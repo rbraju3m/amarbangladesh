@@ -14,6 +14,7 @@ use App\Support\Lang;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 /** Server-rendered community pages: indexable, cookieless, and they work before any JS runs. */
@@ -21,6 +22,8 @@ class PageController extends Controller
 {
     /** Posts per list on the home page. */
     private const HOME_LIST = 5;
+
+    private const TICKER = 8;
 
     /** Top-level answers per page on a post, and replies shown under each before "show more". */
     private const ANSWERS_PAGE = 20;
@@ -43,6 +46,14 @@ class PageController extends Controller
 
         return view('community.home', [
             'lists' => $lists,
+            // The "happening now" ticker under the hero: the newest posts with where they're from.
+            'ticker' => Post::published()->with('area:id,slug,name_bn,name_en')->latest('id')->limit(self::TICKER)
+                ->get(['id', 'title', 'type', 'area_id', 'created_at']),
+            'stats' => Cache::remember('community.home_stats', 300, fn () => [
+                'posts' => Post::published()->count(),
+                'answers' => Answer::where('status', Post::PUBLISHED)->count(),
+                'solved' => Post::published()->whereNotNull('accepted_answer_id')->count(),
+            ]),
             'spots' => DivisionMap::spots(),
             'lens' => collect(DivisionMap::lens())->map(fn ($divisions) => collect($divisions)->map(fn ($d) => [
                 'level' => $d['level'], 'latest' => $d['latest'], 'label' => self::areaLabel($d['count'], $d['recent']),
