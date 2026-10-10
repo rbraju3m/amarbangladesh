@@ -30,6 +30,7 @@
                 'post' => $target ? lroute('posts.show', ['post' => $target->id]) : null,
                 'answer' => $target ? lroute('posts.show', ['post' => $target->post_id]).'#answer-'.$target->id : null,
                 'member' => $target && ! $target->deleted_at ? lroute('members.show', ['member' => $target->code]) : null,
+                'category' => route('admin.categories.index').'#topic-'.$row->target_id,
                 default => null,
             };
         @endphp
@@ -55,10 +56,13 @@
                     </p>
                 @endif
                 @if (! empty($meta['from']))<p class="mt-0.5 text-xs text-ink-2">was {{ $meta['from'] }}</p>@endif
+                @foreach ($meta['changes'] ?? [] as $field => $change)
+                    <p class="mt-0.5 text-xs text-ink-2">{{ str_replace('_', ' ', $field) }}: {{ is_bool($change['from']) ? ($change['from'] ? 'on' : 'off') : ($change['from'] ?? '—') }} → {{ is_bool($change['to']) ? ($change['to'] ? 'on' : 'off') : ($change['to'] ?? '—') }}</p>
+                @endforeach
             </div>
         </div>
     @empty
-        <p class="px-4 py-10 text-center text-ink-2">Nothing yet. Every hide, keep, remove, restore and block will show up here.</p>
+        <p class="px-4 py-10 text-center text-ink-2">Nothing yet. Every hide, keep, remove, restore, block and topic change will show up here.</p>
     @endforelse
 </div>
 <div class="mt-4">{{ $rows->links() }}</div>

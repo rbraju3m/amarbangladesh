@@ -24,7 +24,7 @@ final class Feed
 
     public static function fromRequest(array $query): self
     {
-        $categories = Taxonomy::categories();
+        $categories = Taxonomy::allCategories(); // turned-off topics still filter (old links)
         $areas = Taxonomy::areas();
 
         return new self(

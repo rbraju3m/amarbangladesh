@@ -21,6 +21,7 @@
             ],
             'Community' => [
                 ['admin.community', 'Moderation', 'admin.community', 'M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.4A8 8 0 1 1 21 12Z'],
+                ['admin.categories.index', 'Topics', 'admin.categories.*', 'M4 6h7v7H4V6Zm9 0h7v7h-7V6ZM4 15h7v5H4v-5Zm9 0h7v5h-7v-5Z'],
                 ['admin.community.log', 'Action log', 'admin.community.log', 'M8 6h12M8 12h12M8 18h8M4 6h.01M4 12h.01M4 18h.01'],
             ],
             'Quiz' => [
