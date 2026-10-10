@@ -77,10 +77,17 @@ final class Moderation
         self::setStatus($item, Post::PUBLISHED);
     }
 
+    /**
+     * Its author deleting an item takes its photos with it at once; after an admin removal they stay
+     * Photos::REMOVED_DAYS (it may be restored) and Photos::prune() deletes them.
+     */
     public static function setStatus(Post|Answer $item, string $status): void
     {
         $item->status = $status;
         $item->save();
+        if ($status === Post::DELETED) {
+            Photos::deleteFor($item);
+        }
 
         if ($item instanceof Answer) {
             $item->post->refreshAnswerCount();

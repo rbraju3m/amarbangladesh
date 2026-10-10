@@ -5,6 +5,7 @@ use App\Http\Controllers\Site\Community\AuthController;
 use App\Http\Controllers\Site\Community\MemberController;
 use App\Http\Controllers\Site\Community\NotificationController;
 use App\Http\Controllers\Site\Community\PageController;
+use App\Http\Controllers\Site\Community\PhotoController;
 use App\Http\Controllers\Site\Community\PostController;
 use App\Http\Controllers\Site\Community\SignalController;
 use App\Http\Controllers\Site\Community\SocialAuthController;
@@ -93,6 +94,7 @@ Route::withoutMiddleware([
         Route::middleware('member:account')->group(function () {
             Route::patch('/members/me', [MemberController::class, 'update'])->middleware('throttle:community')->name('members.update');
             Route::delete('/members/me', [MemberController::class, 'destroy'])->middleware('throttle:community')->name('members.destroy');
+            Route::post('/photos', [PhotoController::class, 'store'])->middleware('throttle:photos')->name('photos.store');
             Route::post('/posts', [PostController::class, 'store'])->middleware('throttle:posts')->name('posts.store');
             Route::patch('/posts/{post}', [PostController::class, 'update'])->middleware('throttle:community')->name('posts.update');
             Route::delete('/posts/{post}', [PostController::class, 'destroy'])->middleware('throttle:community')->name('posts.destroy');

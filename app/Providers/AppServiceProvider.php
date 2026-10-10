@@ -37,6 +37,7 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('auth-sms', fn (Request $request) => [Limit::perHour(10)->by($request->ip()), Limit::perDay(5)->by('p'.preg_replace('/\D/', '', (string) $request->input('phone')))]);
         RateLimiter::for('posts', fn (Request $request) => [Limit::perMinute(3)->by('m'.$request->ip()), Limit::perHour(15)->by('h'.$request->ip())]);
         RateLimiter::for('answers', fn (Request $request) => [Limit::perMinute(6)->by('m'.$request->ip()), Limit::perHour(60)->by('h'.$request->ip())]);
+        RateLimiter::for('photos', fn (Request $request) => [Limit::perMinute(20)->by('m'.$request->ip()), Limit::perHour(100)->by('h'.$request->ip())]);
         RateLimiter::for('community', fn (Request $request) => Limit::perMinute(60)->by($request->ip()));
         RateLimiter::for('reports', fn (Request $request) => Limit::perHour(30)->by($request->ip()));
         RateLimiter::for('search', fn (Request $request) => Limit::perMinute(40)->by($request->ip())); // similar questions while typing

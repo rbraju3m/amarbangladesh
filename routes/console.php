@@ -10,3 +10,4 @@ Artisan::command('inspire', function () {
 
 Schedule::command('model:prune')->daily();
 Schedule::command('community:send-notification-emails')->everyFiveMinutes()->withoutOverlapping();
+Schedule::command('community:prune-photos')->hourly()->withoutOverlapping();

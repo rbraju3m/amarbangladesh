@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Site\Community;
 
 use App\Community\Moderation;
 use App\Community\Notifier;
+use App\Community\Photos;
 use App\Community\RichText;
 use App\Community\Taxonomy;
 use App\Community\Text;
@@ -16,6 +17,7 @@ use App\Support\Bangla;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -35,24 +37,33 @@ class PostController extends Controller
             'anonymous' => ['nullable', 'boolean'],
         ], self::messages());
 
+        $photos = Photos::input($request, anonymous: (bool) ($data['anonymous'] ?? false));
         $member = self::named($request->attributes->get('member'), $data['name'] ?? null)->rememberLocale();
         self::checkLinks($data['title'], $data['body'] ?? null, $html);
 
-        // A double tap or a retry after a slow network should not post twice.
-        $post = Post::where('member_id', $member->id)->where('title', $data['title'])->where('created_at', '>=', now()->subMinutes(10))->first()
-            ?? Post::create([
-                'member_id' => $member->id,
-                'is_anonymous' => (bool) ($data['anonymous'] ?? false),
-                'type' => $data['type'] ?? 'question',
-                'title' => $data['title'],
-                'body' => $data['body'] ?? null,
-                'body_html' => $html,
-                'category_id' => Taxonomy::categories()[$data['category'] ?? '']['id'] ?? null,
-                'area_id' => Taxonomy::areas()[$data['area'] ?? '']['id'] ?? null,
-            ]);
+        // A double tap or a retry after a slow network should not post twice. Photos that can't be
+        // attached undo the post, so a retry starts clean.
+        $post = DB::transaction(function () use ($member, $data, $html, $photos) {
+            $post = Post::where('member_id', $member->id)->where('title', $data['title'])->where('created_at', '>=', now()->subMinutes(10))->first()
+                ?? Post::create([
+                    'member_id' => $member->id,
+                    'is_anonymous' => (bool) ($data['anonymous'] ?? false),
+                    'type' => $data['type'] ?? 'question',
+                    'title' => $data['title'],
+                    'body' => $data['body'] ?? null,
+                    'body_html' => $html,
+                    'category_id' => Taxonomy::categories()[$data['category'] ?? '']['id'] ?? null,
+                    'area_id' => Taxonomy::areas()[$data['area'] ?? '']['id'] ?? null,
+                ]);
+            if ($photos !== null) {
+                Photos::attach($member, $post, $photos);
+            }
+
+            return $post;
+        });
 
         if ($post->wasRecentlyCreated) {
-            AnalyticsEvent::server('post_created', $request, ['type' => $post->type, 'anon' => $post->is_anonymous ? 1 : 0, 'rich' => RichText::isFormatted($post->body_html) ? 1 : 0]);
+            AnalyticsEvent::server('post_created', $request, ['type' => $post->type, 'anon' => $post->is_anonymous ? 1 : 0, 'rich' => RichText::isFormatted($post->body_html) ? 1 : 0, 'photos' => count($photos ?? [])]);
         }
 
         return response()->json(['post' => ['id' => $post->id, 'url' => $post->url()], 'member' => MemberController::present($member)], 201);
@@ -70,16 +81,25 @@ class PostController extends Controller
             'body' => ['nullable', 'string', 'max:5000'],
         ], self::messages());
         self::checkLinks($data['title'], $data['body'] ?? null, $html);
+        $photos = Photos::input($request, anonymous: $post->is_anonymous);
 
-        if ($data['title'] !== $post->title || ($data['body'] ?? null) !== $post->body || $html !== $post->body_html) {
-            $post->forceFill(['title' => $data['title'], 'body' => $data['body'] ?? null, 'body_html' => $html, 'edited_at' => now()])->save();
-        }
+        DB::transaction(function () use ($request, $post, $data, $html, $photos) {
+            $changed = $data['title'] !== $post->title || ($data['body'] ?? null) !== $post->body || $html !== $post->body_html;
+            if ($photos !== null && array_map('intval', $photos) !== Photos::idsOf($post)) {
+                Photos::attach($request->attributes->get('member'), $post, $photos);
+                $changed = true;
+            }
+            if ($changed) {
+                $post->forceFill(['title' => $data['title'], 'body' => $data['body'] ?? null, 'body_html' => $html, 'edited_at' => now()])->save();
+            }
+        });
 
         return response()->json([
             'title' => $post->title,
             'body' => $post->body,
             'body_html' => $post->body ? RichText::render($post)->toHtml() : '',
             'raw_html' => $post->body_html,
+            'photos' => $post->photos()->get()->map->present()->all(),
         ]);
     }
 
@@ -109,7 +129,7 @@ class PostController extends Controller
     public function destroy(Request $request, Post $post): Response
     {
         abort_unless($post->member_id === $request->attributes->get('member')->id, 403);
-        Moderation::setStatus($post, Post::DELETED);
+        Moderation::setStatus($post, Post::DELETED); // its photos go too
 
         return response()->noContent();
     }

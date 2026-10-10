@@ -479,5 +479,14 @@
     "চাইলে বেনামে জিজ্ঞেস করুন": "Ask anonymously if you like",
     "একদম ফ্রি": "Completely free",
     "মূল অংশে যান": "Skip to content",
-    ":name: সাম্প্রতিক আলোচনা দেখানো হচ্ছে": ":name: showing recent discussions"
+    ":name: সাম্প্রতিক আলোচনা দেখানো হচ্ছে": ":name: showing recent discussions",
+    "অনেক ছবি আপলোড হয়ে আছে, আগে পোস্টটা করুন।": "You have many photos waiting. Post first, then add more.",
+    "ছবিটা অনেক বড়। ৫ MB-এর ছোট ছবি দিন।": "That photo is too large. Please use one under 5 MB.",
+    "শুধু ছবি (JPG, PNG বা WebP) দেওয়া যাবে।": "Only photos (JPG, PNG or WebP) can be added.",
+    "ছবিটা খোলা গেলো না। অন্য একটা ছবি দিন।": "That photo couldn't be opened. Please try another one.",
+    "একসাথে সর্বোচ্চ ৪টি ছবি দেওয়া যাবে।": "You can add up to 4 photos.",
+    "ছবিগুলো আবার দিন।": "Please add the photos again.",
+    "বেনামে লিখলে ছবি দেওয়া যায় না। ছবি দিতে চাইলে বেনামী বন্ধ করুন।": "Anonymous posts can't have photos. Turn off anonymous to add them.",
+    "জবাবে ছবি দেওয়া যায় না।": "Replies can't have photos.",
+    "একটা ছবি বেছে নিন।": "Please choose a photo."
 }

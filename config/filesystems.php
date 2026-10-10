@@ -43,6 +43,12 @@ return [
             'root' => storage_path('app/public'),
             'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
             'visibility' => 'public',
+            // Group-writable, so the scheduler (community:prune-photos) can delete what the web server
+            // wrote when the two run as different users of one group.
+            'permissions' => [
+                'file' => ['public' => 0664, 'private' => 0600],
+                'dir' => ['public' => 0775, 'private' => 0700],
+            ],
             'throw' => false,
             'report' => false,
         ],

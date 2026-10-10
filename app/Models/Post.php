@@ -110,4 +110,10 @@ class Post extends Model
     {
         return $this->belongsTo(Answer::class, 'accepted_answer_id');
     }
+
+    /** Its photos, in order (App\Community\Photos). */
+    public function photos(): HasMany
+    {
+        return $this->hasMany(Photo::class, 'photoable_id')->where('photoable_type', 'post')->orderBy('position');
+    }
 }

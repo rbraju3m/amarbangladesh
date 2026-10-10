@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * A reply to a post: an answer to a question, a comment in a discussion. Same statuses as Post.
@@ -74,5 +75,11 @@ class Answer extends Model
     public function thread(): BelongsTo
     {
         return $this->belongsTo(self::class, 'thread_id');
+    }
+
+    /** Its photos, in order (App\Community\Photos). */
+    public function photos(): HasMany
+    {
+        return $this->hasMany(Photo::class, 'photoable_id')->where('photoable_type', 'answer')->orderBy('position');
     }
 }
