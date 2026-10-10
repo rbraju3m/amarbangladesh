@@ -1,6 +1,9 @@
-# Laravel scheduler (prunes analytics events older than 180 days). Install with `crontab -e`
+# Laravel scheduler (notification emails, pruning analytics events and unused photos). Install with `crontab -e`
 # as the user that owns the app (e.g. www-data or your deploy user); adjust the path.
 * * * * * cd /var/www/amarbangladesh && php artisan schedule:run >> /dev/null 2>&1
 
 # Daily database backup, kept 14 days. Put credentials in ~/.my.cnf ([mysqldump] user=… password=…).
 30 3 * * * mkdir -p ~/backups && mysqldump --single-transaction amarbangladesh | gzip > ~/backups/amarbangladesh-$(date +\%F).sql.gz && find ~/backups -name 'amarbangladesh-*.sql.gz' -mtime +14 -delete
+
+# Daily backup of member photos (rsync keeps one current copy; files never change, only appear and go).
+45 3 * * * mkdir -p ~/backups/photos && rsync -a --delete /var/www/amarbangladesh/storage/app/public/photos/ ~/backups/photos/

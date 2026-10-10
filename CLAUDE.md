@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 "আমার বাংলাদেশ" — a mobile-first, Bangla-language site with two pillars:
 1. **The quiz** "তোমার বাংলাদেশ কোথায়?": a 1-minute personality quiz that matches a player to one of 9 Bangladesh places, then pushes them to share the result (**quiz → result → share → friend plays**). It is the emotional identity and the growth engine; since 2026-10-10 it lives at `/quiz` (the Quiz menu), and results and friend links stay at `/r/{code}`.
-2. **The community** (added 2026-10-09; the home page `/` since 2026-10-10): Bangladeshis ask questions, answer, and browse a feed (**discover → ask → receive answers → browse**). Reading is open; writing needs a login (Google, Facebook, phone code or email), and posts/answers can be anonymous. Built: threads (replies), editing, search, notifications, the division map, formatted posts/answers. The community-first redesign runs in phases (`docs/2026-10-10_community-first-plan.md`, local only): 1–4 done, 5 rich text built (goes live after the owner's Android keyboard test; if it fails, a Markdown toolbar replaces the Tiptap composer), 6 photos done (video later), 7 hardening. Not planned: follows, groups, ranking — don't add them unasked.
+2. **The community** (added 2026-10-09; the home page `/` since 2026-10-10): Bangladeshis ask questions, answer, and browse a feed (**discover → ask → receive answers → browse**). Reading is open; writing needs a login (Google, Facebook, phone code or email), and posts/answers can be anonymous. Built: threads (replies), editing, search, notifications, the division map, formatted posts/answers, photos. The community-first redesign runs in phases (`docs/2026-10-10_community-first-plan.md`, local only): 1–4 done, 5 rich text built (goes live after the owner's Android keyboard test; if it fails, a Markdown toolbar replaces the Tiptap composer), 6 photos done (video later), 7 hardening: speed check, accessibility and dashboard done. Next: a second feature plan (`docs/2026-10-10_feature-plan.md`: saved posts, view counts, urgent help, helplines…) once the owner answers its questions. Not planned: follows, groups, ranking — don't add them unasked.
 
 The whole site is **Bangla at `/…` and English at `/en/…`**. The quiz needs no login; no XP or global leaderboards.
 
@@ -18,7 +18,9 @@ php artisan migrate:fresh --seed     # schema + all quiz content + super admin (
 php artisan admin:ensure-super-admin [--reset-password]   # create/repair the permanent super admin
 php artisan quiz:purge-plays         # delete all results + analytics (demo data) before going live / exporting
 php artisan db:seed --class=DemoCommunitySeeder   # fictional community (40 members, 67 posts) for dev/UI review; refuses production
-php artisan community:purge-demo     # remove it again (members with is_demo and everything they wrote)
+php artisan community:purge-demo     # remove it again (members with is_demo and everything they wrote, photos included)
+php artisan storage:link             # public/storage → storage/app/public (member photos); also in every deploy
+php artisan community:prune-photos   # hourly via the scheduler: unattached uploads (24 h), removed items' photos (30 days)
 npm run build                        # or `npm run dev` with `php artisan serve`
 php artisan test                     # MySQL test DB `amarbangladesh_test` (see phpunit.xml); no sqlite driver on this machine
 php artisan test --filter=ScoringTest

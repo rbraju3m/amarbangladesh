@@ -14,6 +14,7 @@ npm ci --no-audit --no-fund
 npm run build
 
 php artisan migrate --force
+php artisan storage:link      # public/storage → member photos (no-op if it exists)
 php artisan optimize          # config, routes, views, events
 php artisan cache:clear       # drops cached quiz content (quiz.boot), so content/URL changes show up
 
