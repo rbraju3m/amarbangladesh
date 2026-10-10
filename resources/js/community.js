@@ -664,8 +664,9 @@ function community() {
  * The home page's map: picking a division (a spot or a chip) shows its latest posts, rendered by the
  * server like every other card. Spots and chips are links to the division's feed without JavaScript.
  */
-function divisionMap(divisions) {
+function divisionMap(divisions, lens, topics) {
     const FULL = [0, 0, 400, 552];
+    const withTopic = (url, topic) => (topic ? `${url}${url.includes('?') ? '&' : '?'}category=${encodeURIComponent(topic)}` : url);
     const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
     return {
         spot: null, // picked division
@@ -676,6 +677,7 @@ function divisionMap(divisions) {
         district: null, // picked district
         dHover: null, // district under the pointer / keyboard focus
         mapState: 'idle', // districts: loading | ready | error
+        topic: '', // category slug of the topic lens ('' = all)
         html: '',
         state: 'idle', // posts: loading (old posts dimmed) | slow (skeleton) | ready | empty | error
         init() {
@@ -691,14 +693,32 @@ function divisionMap(divisions) {
             return divisions[this.spot]?.name ?? '';
         },
         get feedUrl() {
-            if (this.district) return this.districts.find((d) => d.slug === this.district)?.url ?? path('/feed');
-            return divisions[this.spot]?.url ?? path('/feed');
+            const url = this.district ? this.districts.find((d) => d.slug === this.district)?.url : divisions[this.spot]?.url;
+            return withTopic(url ?? path('/feed'), this.topic);
         },
         get askUrl() {
-            return path(this.district ? `/ask?area=${encodeURIComponent(this.district)}` : '/ask');
+            return withTopic(path(this.district ? `/ask?area=${encodeURIComponent(this.district)}` : '/ask'), this.topic);
         },
-        get hoveredDistrict() {
-            return (this.dHover && this.dHover !== this.district && this.districts.find((d) => d.slug === this.dHover)) || null;
+        get topicName() {
+            return topics[this.topic] ?? '';
+        },
+        level(slug) {
+            return lens[this.topic || 'all']?.[slug]?.level ?? 0;
+        },
+        ariaFor(slug) {
+            return `${divisions[slug].name}: ${lens[this.topic || 'all'][slug].label}`;
+        },
+        /** The hover label: a district when zoomed in, else a division (not the picked one: its posts are shown). */
+        get tip() {
+            if (this.zoomed) {
+                const d = this.dHover && this.dHover !== this.district && this.districts.find((d) => d.slug === this.dHover);
+                if (!d) return null;
+                const [x, y, w, h] = this.view;
+                return { ...d, style: `left: ${((d.x - x) / w) * 100}%; top: ${((d.y - y) / h) * 100}%` };
+            }
+            if (!this.hover || this.hover === this.spot) return null;
+            const d = divisions[this.hover];
+            return { name: d.name, ...lens[this.topic || 'all'][this.hover], style: `left: ${d.x}%; top: ${d.y}%` };
         },
         get announcement() {
             if (!this.spot) return '';
@@ -709,11 +729,6 @@ function divisionMap(divisions) {
         },
         get emptyText() {
             return this.district ? t('এই জেলায় এখনো কোনো আলোচনা নেই। প্রথম প্রশ্নটা আপনিই করুন!') : t('এই বিভাগে এখনো কোনো আলোচনা নেই। প্রথম প্রশ্নটা আপনিই করুন!');
-        },
-        /** The hover label over a district, positioned in % of the zoomed view. */
-        tipStyle(d) {
-            const [x, y, w, h] = this.view;
-            return `left: ${((d.x - x) / w) * 100}%; top: ${((d.y - y) / h) * 100}%`;
         },
         pick(slug) {
             if (this.spot === slug && this.zoomed === slug) return;
@@ -749,6 +764,34 @@ function divisionMap(divisions) {
             this.$refs.districts.querySelectorAll('[data-name]').forEach((label) => label.classList.toggle('is-on', label.dataset.name === this.district || label.dataset.name === this.dHover));
         },
         /** Zooms the map into a division and draws its districts (fetched once, while the zoom runs). */
+        setTopic(slug) {
+            if (this.topic === slug) return;
+            this.topic = slug;
+            track('community_clicked', { meta: { from: 'home_map', to: 'topic', category: slug || 'all' } });
+            if (this.zoomed) this.zoomTo(this.zoomed);
+            if (this.spot) this.load(this.area);
+        },
+        close() {
+            if (this.zoomed) this.zoomOut();
+            this.spot = null;
+        },
+        /** Next / previous division, or district when zoomed in (wraps around). */
+        step(by) {
+            const list = this.zoomed ? this.districts.map((d) => d.slug) : Object.keys(divisions);
+            const current = list.indexOf(this.zoomed ? this.district : this.spot);
+            const next = list[(current + by + list.length) % list.length];
+            this.zoomed ? this.pickDistrict(next) : this.pick(next);
+        },
+        swipeStart(event) {
+            this._touch = [event.touches[0].clientX, event.touches[0].clientY];
+        },
+        swipeEnd(event) {
+            if (!this._touch) return;
+            const dx = event.changedTouches[0].clientX - this._touch[0];
+            const dy = event.changedTouches[0].clientY - this._touch[1];
+            this._touch = null;
+            if (Math.abs(dx) > 60 && Math.abs(dx) > 2 * Math.abs(dy)) this.step(dx < 0 ? 1 : -1);
+        },
         async zoomTo(slug) {
             this.zoomed = slug;
             this.mapState = 'loading';
@@ -757,15 +800,17 @@ function divisionMap(divisions) {
             this.dHover = null;
             this.animateView(this.fit(slug));
             this._maps ??= {};
+            const key = `${slug}|${this.topic}`;
+            const topic = this.topic;
             try {
-                this._maps[slug] ??= await api('GET', withLang(`/api/map/${encodeURIComponent(slug)}`));
+                this._maps[key] ??= await api('GET', withLang(withTopic(`/api/map/${encodeURIComponent(slug)}`, topic)));
             } catch {
-                this._maps[slug] = null;
+                delete this._maps[key];
                 if (this.zoomed === slug) Object.assign(this, { mapState: 'error', zoomed: null });
                 return;
             }
-            if (this.zoomed !== slug) return; // zoomed out or elsewhere meanwhile
-            const map = this._maps[slug];
+            if (this.zoomed !== slug || this.topic !== topic) return; // zoomed out, elsewhere or another topic meanwhile
+            const map = this._maps[key];
             this.$refs.districts.innerHTML = map.html;
             this.districts = map.districts;
             this.mapState = 'ready';
@@ -807,17 +852,19 @@ function divisionMap(divisions) {
         /** Latest posts of a division or district into the panel (cached per area). */
         async load(slug) {
             this._cache ??= {};
-            if (this._cache[slug]) return Object.assign(this, this._cache[slug]);
+            const key = `${slug}|${this.topic}`;
+            if (this._cache[key]) return Object.assign(this, this._cache[key]);
             // Keep what is shown (dimmed) while loading; a skeleton only if it takes a while.
             this.state = 'loading';
             clearTimeout(this._slow);
             this._slow = setTimeout(() => this.area === slug && this.state === 'loading' && !this.html && (this.state = 'slow'), 250);
+            const current = () => `${this.area}|${this.topic}` === key; // not if another was picked meanwhile
             try {
-                const data = await api('GET', withLang(`/api/feed?limit=3&compact=1&area=${encodeURIComponent(slug)}`));
-                this._cache[slug] = { html: data.html, state: data.count ? 'ready' : 'empty' };
-                if (this.area === slug) Object.assign(this, this._cache[slug]); // not if another was picked meanwhile
+                const data = await api('GET', withLang(withTopic(`/api/feed?limit=3&compact=1&area=${encodeURIComponent(slug)}`, this.topic)));
+                this._cache[key] = { html: data.html, state: data.count ? 'ready' : 'empty' };
+                if (current()) Object.assign(this, this._cache[key]);
             } catch {
-                if (this.area === slug) this.state = 'error';
+                if (current()) this.state = 'error';
             }
         },
     };

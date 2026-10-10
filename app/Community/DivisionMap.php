@@ -16,6 +16,11 @@ final class DivisionMap
 {
     public const COUNTS_KEY = 'community.area_counts.v3';
 
+    public const LATEST_KEY = 'community.area_latest.v1';
+
+    /** How many recent posts the hover labels' "newest question" is picked from. */
+    public const LATEST_POOL = 400;
+
     /** [x %, y %] by division slug: where the name is written. */
     public const POSITIONS = [
         'rangpur-division' => [23.1, 15.0],
@@ -66,14 +71,15 @@ final class DivisionMap
      *
      * @return array{view: list<float>, districts: list<array{slug: string, name: string, path: string, x: float, y: float, count: int, recent: int, level: int}>}|null
      */
-    public static function division(string $division): ?array
+    public static function division(string $division, ?int $category = null): ?array
     {
         $areas = Taxonomy::areas();
         if (($areas[$division]['type'] ?? null) !== 'division') {
             return null;
         }
         $shapes = require resource_path('data/bd-districts.php');
-        ['all' => $counts, 'recent' => $recent] = self::counts('district');
+        ['all' => $counts, 'recent' => $recent] = self::counts('district', $category);
+        $latest = self::latest('district', $category);
         $mine = array_filter($areas, fn ($a) => $a['type'] === 'district' && $a['division_slug'] === $division && isset($shapes[$a['slug']]));
         $mineCounts = array_intersect_key($counts, $mine);
 
@@ -85,6 +91,7 @@ final class DivisionMap
             $districts[] = [
                 'slug' => $slug, 'name' => $area['name'], 'path' => $path, 'x' => $x, 'y' => $y,
                 'count' => $counts[$slug] ?? 0, 'recent' => $recent[$slug] ?? 0, 'level' => self::level($counts[$slug] ?? 0, $mineCounts),
+                'latest' => $latest[$slug] ?? null,
             ];
         }
         if (! $districts) {
@@ -117,6 +124,61 @@ final class DivisionMap
         }
 
         return ['all' => $all, 'recent' => array_filter($recent)];
+    }
+
+    /**
+     * The topic lens: for "all" and every category, each division's shade level, count and newest
+     * question title, so the map can be re-shaded in the browser without a request.
+     *
+     * @return array<string, array<string, array{level: int, count: int, recent: int, latest: ?string}>>
+     */
+    public static function lens(): array
+    {
+        $lens = [];
+        foreach (['all' => null] + array_map(fn ($c) => $c['id'], Taxonomy::categories()) as $key => $category) {
+            ['all' => $counts, 'recent' => $recent] = self::counts('division', $category);
+            $latest = self::latest('division', $category);
+            foreach (array_keys(self::POSITIONS) as $slug) {
+                $lens[$key][$slug] = [
+                    'level' => self::level($counts[$slug] ?? 0, $counts), 'count' => $counts[$slug] ?? 0,
+                    'recent' => $recent[$slug] ?? 0, 'latest' => $latest[$slug] ?? null,
+                ];
+            }
+        }
+
+        return $lens;
+    }
+
+    /**
+     * The newest published post title per division or district (optionally of one category), from the
+     * last LATEST_POOL posts with a place: areas quiet for longer simply have none.
+     *
+     * @return array<string, string>
+     */
+    public static function latest(string $level = 'division', ?int $category = null): array
+    {
+        $areas = array_column(Taxonomy::areas(), null, 'id');
+        $titles = [];
+        foreach (self::latestRows() as [$areaId, $categoryId, $title]) {
+            $area = $areas[$areaId] ?? null;
+            if (! $area || ($category && $categoryId !== $category)) {
+                continue;
+            }
+            $slug = $level === 'division' ? $area['division_slug'] : ($area['type'] === 'district' ? $area['slug'] : null);
+            if ($slug && ! isset($titles[$slug])) {
+                $titles[$slug] = $title;
+            }
+        }
+
+        return $titles;
+    }
+
+    /** [area id, category id, title] of the newest published posts with a place, newest first. */
+    private static function latestRows(): array
+    {
+        return Cache::remember(self::LATEST_KEY, 300, fn () => Post::published()->whereNotNull('area_id')
+            ->latest('id')->limit(self::LATEST_POOL)->get(['area_id', 'category_id', 'title'])
+            ->map(fn ($p) => [(int) $p->area_id, (int) $p->category_id, $p->title])->all());
     }
 
     /** Published posts grouped by area and category: [area id, category id, all, recent]; a few minutes stale is fine. */

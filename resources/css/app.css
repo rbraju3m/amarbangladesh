@@ -386,10 +386,11 @@
         animation-delay: calc(var(--i, 0) * 70ms);
     }
 
-    .division.level-1 { fill: var(--div-1); }
-    .division.level-2 { fill: var(--div-2); }
-    .division.level-3 { fill: var(--div-3); }
-    .division.level-4 { fill: var(--div-4); }
+    /* data-level, not a class: the topic lens changes it in place (and the fill eases to the new shade) */
+    .division[data-level='1'] { fill: var(--div-1); }
+    .division[data-level='2'] { fill: var(--div-2); }
+    .division[data-level='3'] { fill: var(--div-3); }
+    .division[data-level='4'] { fill: var(--div-4); }
 
     .division.is-hover {
         fill: var(--div-hover);
@@ -474,6 +475,18 @@
         fill: var(--red);
         pointer-events: none;
         animation: live-blink 1.6s ease-in-out infinite;
+    }
+
+    .map-tip-latest {
+        @apply mt-1 line-clamp-2 block max-w-56 border-t border-line pt-1 text-xs font-medium whitespace-normal text-ink;
+    }
+
+    .topic-lens {
+        scrollbar-width: none;
+    }
+
+    .topic-lens::-webkit-scrollbar {
+        display: none;
     }
 
     .map-back {

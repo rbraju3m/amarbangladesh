@@ -13,8 +13,8 @@
             <a href="{{ lroute('feed', ['area' => $s['slug']], false) }}" class="division-link" @click.prevent="pick('{{ $s['slug'] }}')"
                 @pointerenter="$event.pointerType === 'mouse' && (hover = '{{ $s['slug'] }}')" @pointerleave="hover === '{{ $s['slug'] }}' && (hover = null)"
                 @focus="$el.matches(':focus-visible') && (hover = '{{ $s['slug'] }}')" @blur="hover === '{{ $s['slug'] }}' && (hover = null)"
-                aria-label="{{ __(':name বিভাগ', ['name' => $s['name']]) }}: {{ \App\Support\Lang::choice(':nটি আলোচনা', $s['count']) }}">
-                <path d="{{ $s['path'] }}" data-division="{{ $s['slug'] }}" style="--i: {{ $i }}" class="division level-{{ $s['level'] }}" :class="{ 'is-on': spot === '{{ $s['slug'] }}', 'is-hover': hover === '{{ $s['slug'] }}' }" />
+                aria-label="{{ __(':name বিভাগ', ['name' => $s['name']]) }}: {{ \App\Support\Lang::choice(':nটি আলোচনা', $s['count']) }}" :aria-label="ariaFor('{{ $s['slug'] }}')">
+                <path d="{{ $s['path'] }}" data-division="{{ $s['slug'] }}" style="--i: {{ $i }}" class="division" data-level="{{ $s['level'] }}" :data-level="level('{{ $s['slug'] }}')" :class="{ 'is-on': spot === '{{ $s['slug'] }}', 'is-hover': hover === '{{ $s['slug'] }}' }" />
             </a>
         @endforeach
         {{-- The zoomed-in division's districts (partials/district-map), one listener for all of them --}}
@@ -32,21 +32,16 @@
     {{-- Each division's name on its shape; a pulsing dot where people posted this week --}}
     @foreach ($spots as $i => $s)
         <span class="map-name" x-show="!zoomed" x-transition.opacity style="left: {{ $s['x'] }}%; top: {{ $s['y'] }}%; --i: {{ $i }}" :class="(spot === '{{ $s['slug'] }}' || hover === '{{ $s['slug'] }}') && 'is-on'" aria-hidden="true">
-            @if ($s['recent'])<span class="map-live"><span class="map-ping"></span></span>@endif{{ $s['name'] }}
+            @if ($s['recent'])<span class="map-live" x-show="!topic"><span class="map-ping"></span></span>@endif{{ $s['name'] }}
         </span>
     @endforeach
 
-    {{-- Hover / focus label --}}
-    @foreach ($spots as $s)
-        <span x-show="!zoomed && hover === '{{ $s['slug'] }}' && spot !== '{{ $s['slug'] }}'" x-cloak class="map-tip" style="left: {{ $s['x'] }}%; top: {{ $s['y'] }}%" aria-hidden="true">
-            <span class="block font-bold">{{ __(':name বিভাগ', ['name' => $s['name']]) }}</span>
-            <span class="block text-xs text-ink-2">{{ \App\Support\Lang::choice(':nটি আলোচনা', $s['count']) }}@if ($s['recent']) · {{ __('এই সপ্তাহে :n', ['n' => \App\Support\Lang::num($s['recent'])]) }}@endif</span>
-        </span>
-    @endforeach
-    <template x-if="hoveredDistrict">
-        <span class="map-tip" :style="tipStyle(hoveredDistrict)" aria-hidden="true">
-            <span class="block font-bold" x-text="hoveredDistrict.name"></span>
-            <span class="block text-xs text-ink-2" x-text="hoveredDistrict.label"></span>
+    {{-- Hover / focus label: the division or district, its counts and its newest question --}}
+    <template x-if="tip">
+        <span class="map-tip" :style="tip.style" aria-hidden="true">
+            <span class="block font-bold" x-text="tip.name"></span>
+            <span class="block text-xs text-ink-2" x-text="tip.label"></span>
+            <span x-show="tip.latest" class="map-tip-latest" x-text="tip.latest"></span>
         </span>
     </template>
 

@@ -13,7 +13,7 @@
     beside the text: left = text, ask box, picked division, lists; right = map, topics, quiz.
     On phones both columns are `contents`, so their children are ordered with `order-*`.
 --}}
-<div class="mx-auto flex max-w-5xl flex-col px-4 pt-6 lg:grid lg:grid-cols-[1fr_22rem] lg:items-start lg:gap-10 lg:pt-10" x-data="divisionMap(@js(collect($spots)->mapWithKeys(fn ($s) => [$s['slug'] => ['name' => __(':name বিভাগ', ['name' => $s['name']]), 'url' => lroute('feed', ['area' => $s['slug']], false)]])))">
+<div class="mx-auto flex max-w-5xl flex-col px-4 pt-6 lg:grid lg:grid-cols-[1fr_22rem] lg:items-start lg:gap-10 lg:pt-10" x-data="divisionMap(@js(collect($spots)->mapWithKeys(fn ($s) => [$s['slug'] => ['name' => __(':name বিভাগ', ['name' => $s['name']]), 'url' => lroute('feed', ['area' => $s['slug']], false), 'x' => $s['x'], 'y' => $s['y']]])), @js($lens), @js(collect($categories)->map(fn ($c) => $c['emoji'].' '.$c['name'])))">
     <div class="contents lg:block lg:min-w-0">
         <div class="home-hero order-1">
             {{-- Flag motif: a soft green field and the red sun behind the heading --}}
@@ -69,6 +69,13 @@
         <section class="map-card order-2 mt-6 lg:mt-0" aria-labelledby="map-title">
             <h2 id="map-title" class="text-lg font-bold">{{ __('কোন এলাকায় কী নিয়ে কথা হচ্ছে?') }}</h2>
             <p class="mb-4 text-sm text-ink-2"><span x-show="!zoomed">{{ __('ম্যাপে একটা বিভাগ বেছে নিন') }}</span><span x-show="zoomed" x-cloak>{{ __('এবার একটা জেলা বেছে নিন') }}</span></p>
+            {{-- Topic lens: re-shades the map (and the picked area's posts) for one topic --}}
+            <div class="topic-lens -mx-1 mb-3 flex gap-1.5 overflow-x-auto px-1 pb-1" role="group" aria-label="{{ __('বিষয় দিয়ে ম্যাপ দেখুন') }}">
+                <a href="{{ lroute('feed', [], false) }}" class="filter-chip shrink-0 !text-xs" :class="!topic && 'is-on'" :aria-pressed="!topic" @click.prevent="setTopic('')">{{ __('সব বিষয়') }}</a>
+                @foreach ($categories as $c)
+                    <a href="{{ lroute('feed', ['category' => $c['slug']], false) }}" class="filter-chip shrink-0 !text-xs" :class="topic === '{{ $c['slug'] }}' && 'is-on'" :aria-pressed="topic === '{{ $c['slug'] }}'" @click.prevent="setTopic('{{ $c['slug'] }}')"><span aria-hidden="true">{{ $c['emoji'] }}</span> {{ $c['name'] }}</a>
+                @endforeach
+            </div>
             @include('community.partials.division-map', ['spots' => $spots])
         </section>
 

@@ -44,6 +44,9 @@ class PageController extends Controller
         return view('community.home', [
             'lists' => $lists,
             'spots' => DivisionMap::spots(),
+            'lens' => collect(DivisionMap::lens())->map(fn ($divisions) => collect($divisions)->map(fn ($d) => [
+                'level' => $d['level'], 'latest' => $d['latest'], 'label' => self::areaLabel($d['count'], $d['recent']),
+            ])),
             'categories' => Taxonomy::categories(),
         ]);
     }
@@ -97,9 +100,10 @@ class PageController extends Controller
      * The home map zoomed into one division: the box to show, its districts drawn as SVG (HTML from
      * `partials/district-map`) and their names and counts for the hover label and the chips.
      */
-    public function mapDivision(string $division): JsonResponse
+    public function mapDivision(Request $request, string $division): JsonResponse
     {
-        $map = DivisionMap::division($division);
+        $category = Taxonomy::categories()[(string) $request->query('category')]['id'] ?? null;
+        $map = DivisionMap::division($division, $category);
         abort_unless($map, 404);
         $font = round($map['view'][2] / DivisionMap::WIDTH * 14, 2);
 
@@ -109,9 +113,15 @@ class PageController extends Controller
             'districts' => collect($map['districts'])->map(fn ($d) => [
                 'slug' => $d['slug'], 'name' => __(':name জেলা', ['name' => $d['name']]), 'short' => $d['name'],
                 'url' => lroute('feed', ['area' => $d['slug']], false), 'x' => $d['x'], 'y' => $d['y'],
-                'label' => Lang::choice(':nটি আলোচনা', $d['count']).($d['recent'] ? ' · '.__('এই সপ্তাহে :n', ['n' => Lang::num($d['recent'])]) : ''),
+                'label' => self::areaLabel($d['count'], $d['recent']), 'latest' => $d['latest'],
             ])->values(),
         ]);
+    }
+
+    /** "12 discussions · 3 this week", for the map's hover labels. */
+    private static function areaLabel(int $count, int $recent): string
+    {
+        return Lang::choice(':nটি আলোচনা', $count).($recent ? ' · '.__('এই সপ্তাহে :n', ['n' => Lang::num($recent)]) : '');
     }
 
     /**

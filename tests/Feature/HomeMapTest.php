@@ -81,5 +81,20 @@ class HomeMapTest extends TestCase
 
         $this->assertSame(2, DivisionMap::counts()['all']['sylhet-division']);
         $this->assertSame(['sylhet-division' => 1], DivisionMap::counts('division', $health)['all']);
+
+        // The topic lens: every topic's shade and newest question per division, in the page.
+        $lens = DivisionMap::lens();
+        $this->assertSame(['level' => 4, 'count' => 2, 'recent' => 2, 'latest' => 'Tea?'], $lens['all']['sylhet-division']);
+        $this->assertSame('Doctor?', $lens['health']['sylhet-division']['latest']);
+        $this->assertSame(0, $lens['health']['dhaka-division']['level']);
+        $this->assertNull($lens['education']['sylhet-division']['latest']);
+        $this->get('/')->assertOk()->assertSee('Doctor?', false)->assertSee('data-level="4"', false);
+
+        // Zoomed in with a topic: districts counted for that topic only.
+        $districts = collect($this->getJson('/api/map/sylhet-division?category=education')->json('districts'))->keyBy('slug');
+        $this->assertStringStartsWith('০টি আলোচনা', $districts['sylhet']['label']);
+        $this->assertNull($districts['sylhet']['latest']);
+        $districts = collect($this->getJson('/api/map/sylhet-division?category=health')->json('districts'))->keyBy('slug');
+        $this->assertSame('Doctor?', $districts['sylhet']['latest']);
     }
 }

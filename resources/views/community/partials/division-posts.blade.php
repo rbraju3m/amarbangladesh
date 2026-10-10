@@ -2,12 +2,17 @@
     The picked division's (or, zoomed in, district's) latest posts (shares the `divisionMap` scope with partials/division-map).
     Shown once a division is picked. Desktop: under the ask box. Phones: under the map.
 --}}
-<div x-show="spot" x-cloak class="rounded-3xl border border-line bg-card p-4 text-left lg:p-5">
+<div x-show="spot" x-cloak class="rounded-3xl border border-line bg-card p-4 text-left lg:p-5" @touchstart.passive="swipeStart($event)" @touchend="swipeEnd($event)">
     {{-- Screen readers hear a short summary, not every card --}}
     <p class="sr-only" aria-live="polite" x-text="announcement"></p>
-    <div class="flex items-baseline justify-between gap-2">
-        <p class="text-lg font-bold" x-text="name"></p>
-        <button type="button" class="act-quiet !min-h-8 !px-2 text-sm" @click="spot = null" aria-label="{{ __('বন্ধ করুন') }}">✕</button>
+    <div class="flex items-center justify-between gap-2">
+        <p class="min-w-0 text-lg font-bold"><span x-text="name"></span><span x-show="topicName" class="ml-1.5 align-middle text-sm font-semibold text-ink-2" x-text="topicName"></span></p>
+        <div class="flex shrink-0 items-center gap-0.5">
+            {{-- Walk through the divisions (or, zoomed in, the districts); swipe on phones --}}
+            <button type="button" class="act-quiet !min-h-9 !px-2.5" @click="step(-1)" aria-label="{{ __('আগের এলাকা') }}">‹</button>
+            <button type="button" class="act-quiet !min-h-9 !px-2.5" @click="step(1)" aria-label="{{ __('পরের এলাকা') }}">›</button>
+            <button type="button" class="act-quiet !min-h-9 !px-2 text-sm" @click="close()" aria-label="{{ __('বন্ধ করুন') }}">✕</button>
+        </div>
     </div>
     <div x-show="state === 'slow'" class="mt-3 space-y-2" aria-hidden="true"><div class="h-16 animate-pulse rounded-2xl bg-paper-2"></div><div class="h-16 animate-pulse rounded-2xl bg-paper-2"></div></div>
     <div x-show="html" class="mt-3 space-y-2 transition-opacity" :class="state === 'loading' && 'opacity-60'" x-html="html"></div>
