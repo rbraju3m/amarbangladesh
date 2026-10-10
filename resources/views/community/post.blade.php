@@ -20,7 +20,7 @@
 <div class="mx-auto max-w-2xl px-4 pt-4" x-init="postId = {{ $post->id }}; accepted = {{ $post->accepted_answer_id ?? 'null' }}; answersCount = {{ $post->answers_count }}">
     <a href="{{ lroute('feed', [], false) }}" class="inline-flex items-center gap-1 text-sm font-semibold text-ink-2 hover:text-ink">{{ __('‹ সব আলোচনা') }}</a>
 
-    <article class="mt-3" data-own="post:{{ $post->id }}" x-data="{ editing: false }">
+    <article class="mt-3" data-own="post:{{ $post->id }}" data-post-view="{{ $post->id }}" x-data="{ editing: false }">
         @include('community.partials.tags', ['post' => $post])
         <template data-raw-title>{{ $post->title }}</template><template data-raw>{{ $post->body }}</template><template data-raw-html>{{ $post->body_html }}</template><template data-raw-photos>@json($post->photos->map->present())</template>
         <h1 x-show="!editing" id="post-title" class="mt-3 text-[1.7rem] leading-snug font-bold md:text-3xl">{{ $post->title }}</h1>
@@ -29,6 +29,9 @@
             <span class="text-ink-2" aria-hidden="true">·</span>
             <time datetime="{{ $post->created_at->toIso8601String() }}" class="text-ink-2">{{ \App\Support\Lang::ago($post->created_at) }}</time>
             <span id="post-edited" @class(['text-xs text-ink-2', 'hidden' => ! $post->edited_at])>{{ __('(সম্পাদিত)') }}</span>
+            @if (\App\Community\Views::shown($post))
+                <span class="ml-auto shrink-0 text-ink-2" title="{{ __('প্রতিটি ব্রাউজার দিনে একবার গোনা হয়') }}"><span aria-hidden="true">👁</span> {{ \App\Support\Lang::choice(':n বার দেখা হয়েছে', $post->views_count) }}</span>
+            @endif
         </div>
         <div x-show="!editing" id="post-body" class="prose-text mt-4 text-lg empty:hidden">@if ($post->body){{ \App\Community\RichText::render($post) }}@endif</div>
         <div x-show="!editing" id="post-photos" class="mt-4 empty:hidden">@include('community.partials.photo-grid', ['photos' => $post->photos, 'title' => $post->title, 'big' => true])</div>

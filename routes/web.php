@@ -72,6 +72,7 @@ Route::withoutMiddleware([
 
     Route::prefix('api')->group(function () {
         Route::get('/feed', [PageController::class, 'feedItems'])->middleware('cache.headers:public;max_age=0;s_maxage=20;etag')->name('feed.items');
+        Route::post('/posts/{post}/view', [PostController::class, 'view'])->whereNumber('post')->middleware('throttle:views')->name('posts.view');
         Route::get('/map/{division}', [PageController::class, 'mapDivision'])->middleware('cache.headers:public;max_age=60;s_maxage=60;etag')->name('map.division');
         Route::get('/answers/{answer}/replies', [AnswerController::class, 'replies'])->whereNumber('answer')->middleware('cache.headers:public;max_age=0;s_maxage=20;etag')->name('answers.replies');
         Route::get('/posts/similar', [PageController::class, 'similar'])->middleware(['cache.headers:public;max_age=0;s_maxage=60;etag', 'throttle:search'])->name('posts.similar');

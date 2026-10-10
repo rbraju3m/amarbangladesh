@@ -111,7 +111,9 @@ function community() {
             this.restoreDraft();
             setTrackingContext({ visitor_id: visitorId() });
             const event = PAGE_EVENTS.find(([re]) => re.test(location.pathname.replace(/^\/en(?=\/|$)/, '')));
-            if (event) track(event[1]);
+            const viewed = Number(document.querySelector('[data-post-view]')?.dataset.postView) || null;
+            if (event) track(event[1], viewed ? { meta: { post: viewed } } : {});
+            if (viewed) this.countView(viewed);
             this.refreshMine();
             this.refreshUnread();
             const url = new URL(location.href);
@@ -350,6 +352,13 @@ function community() {
                 items.filter((k) => k.startsWith('post:')).forEach((k) => this.rememberSaved(+k.slice(5), saved.has(k)));
                 this.paintSaved();
             } catch {}
+        },
+
+        /** Reports a post view (the server counts it at most once a day per browser and never the author's). */
+        countView(id) {
+            const headers = { Accept: 'application/json', 'X-Visitor': visitorId() };
+            if (this.member?.token) headers['X-Member-Token'] = this.member.token;
+            fetch(`/api/posts/${id}/view`, { method: 'POST', keepalive: true, headers }).catch(() => {});
         },
 
         // ---------- saved posts ----------

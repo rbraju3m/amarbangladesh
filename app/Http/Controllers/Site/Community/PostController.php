@@ -8,6 +8,7 @@ use App\Community\Photos;
 use App\Community\RichText;
 use App\Community\Taxonomy;
 use App\Community\Text;
+use App\Community\Views;
 use App\Http\Controllers\Controller;
 use App\Models\AnalyticsEvent;
 use App\Models\Answer;
@@ -23,6 +24,14 @@ use Illuminate\Validation\ValidationException;
 
 class PostController extends Controller
 {
+    /** A reader opened the post (sent by the page; counted at most once a day per browser, see Views). */
+    public function view(Request $request, Post $post): Response
+    {
+        Views::record($post, $request->header(AnalyticsEvent::VISITOR_HEADER), Member::fromToken($request->header('X-Member-Token')), $request->userAgent());
+
+        return response()->noContent();
+    }
+
     public function store(Request $request): JsonResponse
     {
         [$body, $html] = RichText::input($request, headings: true);

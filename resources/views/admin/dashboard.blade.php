@@ -163,6 +163,33 @@
             <p class="mt-2 text-xs text-ink-2">From the <a href="{{ route('admin.community.log') }}" class="underline">moderation log</a>, which began on 10 Oct 2026. <a href="{{ route('admin.community') }}" class="underline">Open moderation →</a></p>
         </div>
     </div>
+
+    {{-- Reads (App\Community\Views): once per browser per post per day, authors and bots left out --}}
+    @php($v = $health['views'])
+    @php($vmax = max([1, ...array_column($v['by_category'], 'views')]))
+    <div class="mt-6 grid gap-6 border-t border-line pt-5 lg:grid-cols-2">
+        <div>
+            <h3 class="text-sm font-semibold">Views by topic <small class="font-normal text-ink-2">{{ $fmt($v['total']) }} views of {{ $fmt($v['posts']) }} posts created in this period</small></h3>
+            <div class="mt-2 space-y-1 text-xs">
+                @forelse ($v['by_category'] as $row)
+                    <div class="flex items-center gap-2"><span class="w-28 truncate text-ink-2">{{ $row['name'] }}</span><div class="h-3 flex-1 rounded-full bg-paper-2"><div class="h-full rounded-full bg-viz-1" style="width: {{ round(100 * $row['views'] / $vmax) }}%"></div></div><span class="w-20 text-right tabular-nums">{{ $fmt($row['views']) }} <span class="text-ink-2">/ {{ $row['posts'] }}</span></span></div>
+                @empty
+                    <p class="text-ink-2">No posts in this period.</p>
+                @endforelse
+            </div>
+        </div>
+        <div>
+            <h3 class="text-sm font-semibold">Most read <small class="font-normal text-ink-2">posts created in this period</small></h3>
+            <ol class="mt-2 space-y-1.5 text-sm">
+                @forelse ($v['top'] as $row)
+                    <li class="flex justify-between gap-3"><a href="{{ lroute('posts.show', ['post' => $row['id']]) }}" target="_blank" class="truncate hover:underline">{{ $row['title'] }}</a><b class="shrink-0 tabular-nums">{{ $fmt($row['views']) }}</b></li>
+                @empty
+                    <li class="text-ink-2">No views counted yet.</li>
+                @endforelse
+            </ol>
+            <p class="mt-2 text-xs text-ink-2">Each browser counts once per post per day; authors and bots don't count. Someone who clears their browser data counts again. Posts show their count publicly from {{ \App\Community\Views::SHOW_FROM }} views.</p>
+        </div>
+    </div>
 </section>
 
 <div class="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">

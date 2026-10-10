@@ -25,7 +25,7 @@ class DashboardController extends Controller
         $days = array_key_exists($request->query('days'), self::RANGES) ? $request->query('days') : '7';
         $since = $days === '1' ? now()->startOfDay() : now()->subDays((int) $days);
         $funnel = new Funnel($since);
-        $key = "admin.dashboard.{$days}";
+        $key = "admin.dashboard.v2.{$days}"; // bump when the cached arrays change shape
         if ($request->boolean('fresh')) {
             Cache::forget($key);
         }

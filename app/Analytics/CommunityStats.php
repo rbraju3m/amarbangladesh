@@ -133,6 +133,29 @@ final class CommunityStats
         ];
     }
 
+    /**
+     * Reads (App\Community\Views) of the published posts created in the range: total, by category,
+     * and the most-read posts. Counts are lifetime per post (no per-day history is kept).
+     *
+     * @return array{total: int, posts: int, by_category: list<array{name: string, views: int, posts: int}>, top: list<array{id: int, title: string, views: int}>}
+     */
+    public function views(): array
+    {
+        $posts = $this->range(Post::published(), 'posts.created_at');
+        $byCategory = (clone $posts)->leftJoin('categories', 'categories.id', '=', 'posts.category_id')
+            ->groupBy('categories.name_en')->selectRaw('categories.name_en AS name, SUM(posts.views_count) AS views, COUNT(*) AS n')
+            ->orderByDesc('views')->get()
+            ->map(fn ($r) => ['name' => $r->name ?? 'No topic', 'views' => (int) $r->views, 'posts' => (int) $r->n])->all();
+
+        return [
+            'total' => array_sum(array_column($byCategory, 'views')),
+            'posts' => array_sum(array_column($byCategory, 'posts')),
+            'by_category' => $byCategory,
+            'top' => (clone $posts)->where('views_count', '>', 0)->orderByDesc('views_count')->orderByDesc('id')->limit(5)
+                ->get(['id', 'title', 'views_count'])->map(fn ($p) => ['id' => $p->id, 'title' => $p->title, 'views' => $p->views_count])->all(),
+        ];
+    }
+
     /** Everything above, for the dashboard. */
     public function all(): array
     {
@@ -141,6 +164,7 @@ final class CommunityStats
             'weekdays' => $this->postsByWeekday(),
             'first_answers' => $this->firstAnswers(),
             'reports' => $this->reportHandling(),
+            'views' => $this->views(),
         ];
     }
 

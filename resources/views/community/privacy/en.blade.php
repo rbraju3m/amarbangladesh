@@ -25,6 +25,7 @@
 
 <h2>Usage statistics</h2>
 <p>To understand how the site is used, we count a few things ourselves, such as “quiz started”, “result shared”, “discussion page viewed”. They're kept with that random ID: not your IP address or browser details, only phone / tablet / computer. There is no outside analytics company. They're deleted after 180 days.</p>
+<p>We also count how many times a post is read (shown on the post from 10). The same browser counts once per post per day: for that, a hash of the random ID and the post is kept for a day, then deleted. The post keeps only the total, not who read it. Authors' own views aren't counted.</p>
 
 <h2>Community accounts</h2>
 <p>Writing needs a login. Depending on how you log in, we keep:</p>

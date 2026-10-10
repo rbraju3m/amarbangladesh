@@ -536,5 +536,7 @@
     "আলোচনায় আসুন →": "Join the conversation →",
     "শেয়ার করুন": "Share",
     "কপি না হলে লিংকটা চেপে ধরে কপি করুন।": "If copying doesn't work, long-press the link to copy it.",
-    "কপি করা গেলো না। লিংকটা চেপে ধরে কপি করুন।": "Couldn't copy. Long-press the link to copy it."
+    "কপি করা গেলো না। লিংকটা চেপে ধরে কপি করুন।": "Couldn't copy. Long-press the link to copy it.",
+    ":n বার দেখা হয়েছে": ":n view|:n views",
+    "প্রতিটি ব্রাউজার দিনে একবার গোনা হয়": "Each browser counts once a day"
 }
