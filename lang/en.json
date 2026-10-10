@@ -488,5 +488,13 @@
     "ছবিগুলো আবার দিন।": "Please add the photos again.",
     "বেনামে লিখলে ছবি দেওয়া যায় না। ছবি দিতে চাইলে বেনামী বন্ধ করুন।": "Anonymous posts can't have photos. Turn off anonymous to add them.",
     "জবাবে ছবি দেওয়া যায় না।": "Replies can't have photos.",
-    "একটা ছবি বেছে নিন।": "Please choose a photo."
+    "একটা ছবি বেছে নিন।": "Please choose a photo.",
+    "ছবি যোগ করুন": "Add photos",
+    "বেনামী পোস্টে ছবি দেওয়া যায় না।": "Anonymous posts can't have photos.",
+    "ছবি থাকলে বেনামী করা যায় না।": "Posts with photos can't be anonymous.",
+    "ছবি :n আপলোড হচ্ছে": "Uploading photo :n",
+    "ছবি :n সরান": "Remove photo :n",
+    "ছবি আপলোড হচ্ছে, একটু অপেক্ষা করুন।": "Photos are still uploading, one moment.",
+    "ছবিটা আপলোড করা গেলো না। আবার চেষ্টা করুন।": "That photo couldn't be uploaded. Please try again.",
+    "ছবিটা আপলোড করা গেলো না। ইন্টারনেট দেখে আবার চেষ্টা করুন।": "That photo couldn't be uploaded. Check your connection and try again."
 }

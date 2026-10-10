@@ -1,7 +1,8 @@
 {{--
     Inline editing of an answer or reply by its author. The text comes from the item's
     <template data-raw> (exactly what was written), so links and line breaks survive the round trip.
-    Answers (`rich`) open the formatting editor on <template data-raw-html>; replies stay plain.
+    Answers (`rich`) open the formatting editor on <template data-raw-html> and, unless anonymous, edit
+    their photos (`photos`); replies stay plain.
 --}}
 <template x-if="editing">
     <form class="mt-2" @submit.prevent="saveAnswer({{ $id }}, $el)">
@@ -10,6 +11,9 @@
             <input type="hidden" name="format" value="">
             <textarea id="edit-{{ $type }}-{{ $id }}" name="body" rows="4" maxlength="20000" required class="field" x-rich.now
                 x-init="editText($el); $el.focus()"></textarea>
+            @if ($photos ?? false)
+                @include('community.partials.photo-picker', ['class' => 'mt-2', 'fromItem' => true])
+            @endif
         @else
             <textarea id="edit-{{ $type }}-{{ $id }}" name="body" rows="4" maxlength="5000" required class="field"
                 x-init="editText($el); $el.focus()"></textarea>

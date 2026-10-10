@@ -538,6 +538,47 @@
         @apply block w-full rounded-2xl border-2 border-line bg-paper px-3.5 py-3 text-base outline-none transition placeholder:text-ink-2/70 focus:border-accent;
     }
 
+    /* Photo picker in composers (partials/photo-picker) */
+    .photo-tiles {
+        @apply mb-2 grid grid-cols-4 gap-2;
+    }
+
+    .photo-tile {
+        @apply relative aspect-square overflow-hidden rounded-2xl border border-line bg-paper-2;
+    }
+
+    .photo-tile.is-error img {
+        @apply opacity-30;
+    }
+
+    .photo-remove {
+        @apply absolute top-1 right-1 flex size-8 items-center justify-center rounded-full bg-ink/75 text-sm font-bold text-paper transition active:scale-90;
+    }
+
+    /* Upload progress: a ring filled to --p percent */
+    .photo-progress {
+        @apply absolute inset-0 m-auto size-10 rounded-full;
+        background: conic-gradient(var(--accent) calc(var(--p) * 1%), rgb(255 255 255 / 0.7) 0);
+        mask: radial-gradient(circle, transparent 55%, #000 56%);
+    }
+
+    .photo-error {
+        @apply absolute inset-x-1 bottom-1 rounded-lg bg-card/95 px-1.5 py-1 text-[0.7rem] leading-tight font-semibold text-danger;
+    }
+
+    .photo-add {
+        @apply inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border-2 border-dashed border-line px-4 text-sm font-semibold transition hover:border-ink-2;
+    }
+
+    .photo-add:focus-within {
+        outline: 3px solid var(--accent);
+        outline-offset: 3px;
+    }
+
+    .photo-add.is-off {
+        @apply cursor-not-allowed opacity-50 hover:border-line;
+    }
+
     .filter-chip {
         @apply inline-flex shrink-0 items-center gap-1 rounded-full border border-line bg-card px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-ink-2 transition active:scale-95;
     }

@@ -8,8 +8,9 @@
         @if ($answer->edited_at)<span class="shrink-0 text-xs text-ink-2">{{ __('(সম্পাদিত)') }}</span>@endif
     </div>
     <template data-raw>{{ $answer->body }}</template>@if ($answer->body_html)<template data-raw-html>{{ $answer->body_html }}</template>@endif
+    @if ($answer->photos->isNotEmpty())<template data-raw-photos>@json($answer->photos->map->present())</template>@endif
     <div x-show="!editing" class="prose-text mt-2">{{ \App\Community\RichText::render($answer) }}</div>
-    @include('community.partials.edit-form', ['id' => $answer->id, 'type' => 'answer', 'rich' => true])
+    @include('community.partials.edit-form', ['id' => $answer->id, 'type' => 'answer', 'rich' => true, 'photos' => ! $answer->is_anonymous])
     <div x-show="!editing" class="mt-3 flex flex-wrap items-center gap-2">
         <button type="button" class="act" :aria-pressed="marked('answer:{{ $answer->id }}')" x-show="!mine('answer', {{ $answer->id }})"
             @click="helpful('answer', {{ $answer->id }})">{{ __('🙏 কাজে লেগেছে') }} <span class="tabular-nums" x-text="count('answer:{{ $answer->id }}', {{ $answer->helpful_count }})">{{ $answer->helpful_count ? \App\Support\Lang::num($answer->helpful_count) : '' }}</span></button>

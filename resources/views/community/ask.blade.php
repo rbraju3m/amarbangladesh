@@ -21,7 +21,7 @@
     <p x-show="!signedIn" x-cloak class="mt-3 rounded-2xl bg-flag-green/10 px-4 py-2.5 text-sm text-green-text">🔐 {{ __('পোস্ট করার সময় লগইন করতে বলা হবে। আগে লিখে ফেলুন, লেখা হারাবে না।') }}</p>
 
     <form class="mt-5" data-draft @submit.prevent="submitPost($el)"
-        x-data="{ type: @js($prefill['type']), title: @js($prefill['title']), details: false, anon: false, category: @js($prefill['category']), ex: 0, examples: @js($examples) }"
+        x-data="{ type: @js($prefill['type']), title: @js($prefill['title']), details: false, anon: false, photoCount: 0, category: @js($prefill['category']), ex: 0, examples: @js($examples) }"
         x-init="setInterval(() => title || (ex = (ex + 1) % examples.length), 3500)">
 
         <div class="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]" role="radiogroup" aria-label="{{ __('পোস্টের ধরন') }}">
@@ -51,6 +51,8 @@
             <input type="hidden" name="format" value="">
             <textarea id="ask-body" name="body" x-ref="body" x-rich.eager="'post'" rows="5" maxlength="20000" class="field mt-1" placeholder="{{ __('কী চেষ্টা করেছেন, কোথায় আটকে আছেন, বাজেট কত — যা জানালে উত্তর দিতে সুবিধা হয়') }}"></textarea>
         </div>
+
+        @include('community.partials.photo-picker', ['class' => 'mt-4'])
 
         <fieldset class="mt-5">
             <legend class="text-sm font-semibold">{{ __('বিষয়') }} <span class="font-medium text-ink-2">{{ __('(ঐচ্ছিক)') }}</span></legend>

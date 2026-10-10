@@ -18,7 +18,7 @@
 
     <article class="mt-3" data-own="post:{{ $post->id }}" x-data="{ editing: false }">
         @include('community.partials.tags', ['post' => $post])
-        <template data-raw-title>{{ $post->title }}</template><template data-raw>{{ $post->body }}</template><template data-raw-html>{{ $post->body_html }}</template>
+        <template data-raw-title>{{ $post->title }}</template><template data-raw>{{ $post->body }}</template><template data-raw-html>{{ $post->body_html }}</template><template data-raw-photos>@json($post->photos->map->present())</template>
         <h1 x-show="!editing" id="post-title" class="mt-3 text-[1.7rem] leading-snug font-bold md:text-3xl">{{ $post->title }}</h1>
         <div class="mt-3 flex items-center gap-2 text-sm">
             @include('community.partials.author', ['item' => $post])
@@ -37,6 +37,9 @@
                 <label for="edit-body" class="text-sm font-semibold">{{ __('বিস্তারিত') }}</label>
                 <input type="hidden" name="format" value="">
                 <textarea id="edit-body" name="body" rows="5" maxlength="20000" class="field" x-rich.now="'post'" x-init="editText($el)"></textarea>
+                @unless ($post->is_anonymous)
+                    @include('community.partials.photo-picker', ['fromItem' => true])
+                @endunless
                 <div class="flex items-center gap-2">
                     <button class="btn-primary !min-h-11 !w-auto !px-5 !text-base" :disabled="busy">{{ __('সেভ') }}</button>
                     <button type="button" class="act-quiet" @click="editing = false">{{ __('থাক') }}</button>
@@ -82,11 +85,12 @@
         </div>
 
         {{-- Answer composer --}}
-        <form class="composer mt-5" data-draft @submit.prevent="submitAnswer({{ $post->id }}, $el)" x-data="{ body: '', anon: false }">
+        <form class="composer mt-5" data-draft @submit.prevent="submitAnswer({{ $post->id }}, $el)" x-data="{ body: '', anon: false, photoCount: 0 }">
             <label for="answer-body" class="font-bold">{{ $post->isQuestion() ? __('✍️ আপনার উত্তর') : __('✍️ আপনার মত') }}</label>
             <input type="hidden" name="format" value="">
             <textarea id="answer-body" name="body" x-model="body" x-rich rows="4" maxlength="20000" required class="field mt-2"
                 placeholder="{{ $post->isQuestion() ? __('নিজের অভিজ্ঞতা বা জানা তথ্য থেকে লিখুন…') : __('আপনার অভিজ্ঞতা বা মতামত লিখুন…') }}"></textarea>
+            @include('community.partials.photo-picker', ['class' => 'mt-3'])
             <template x-if="signedIn && !myName">
                 <div class="mt-2">
                     <label for="answer-name" class="text-sm font-semibold">{{ __('আপনার নাম') }} <span class="font-medium text-ink-2">{{ __('(সবাই দেখবে)') }}</span></label>

@@ -164,7 +164,7 @@ class CommunityTest extends TestCase
 
         $html = $this->as($token)->postJson("/api/posts/{$post->id}/answers", ['body' => 'দেখো "><img src=x onerror=alert(1)> এটা'])->json('html');
 
-        $this->assertStringNotContainsString('<img', $html);
+        $this->assertStringNotContainsString('<img src=x', $html); // (the edit form's photo picker has its own <img>)
     }
 
     public function test_helpful_toggles_once_per_member_and_not_on_your_own_post(): void

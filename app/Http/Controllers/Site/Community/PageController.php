@@ -100,12 +100,12 @@ class PageController extends Controller
     public function show(Request $request, Post $post): View
     {
         abort_unless($post->isPublished(), 404);
-        $post->load(['member:id,code,name,deleted_at', 'category', 'area']);
+        $post->load(['member:id,code,name,deleted_at', 'category', 'area', 'photos']);
         $member = 'member:id,code,name,deleted_at';
 
         $answers = $post->answers()->whereNull('parent_id')
             ->where(fn ($q) => $q->where('status', Post::PUBLISHED)->orWhere('replies_count', '>', 0))
-            ->with($member)
+            ->with([$member, 'photos'])
             ->orderByRaw('id = ? desc', [(int) $post->accepted_answer_id])
             ->orderByDesc('helpful_count')->orderBy('id')
             ->paginate(self::ANSWERS_PAGE)->withQueryString();

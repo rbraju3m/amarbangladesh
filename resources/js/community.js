@@ -2,6 +2,7 @@ import Alpine from 'alpinejs';
 import { lang, loadDictionary, localeHeaders, num, path, t, withLang } from './i18n';
 import infinite from './infinite';
 import modal from './modal';
+import { photoPicker, send as sendPhoto } from './photos';
 import { copyText, isMobile, shareLinks } from './share';
 import { store, visitorId } from './store';
 import { setTrackingContext, track } from './track';
@@ -57,6 +58,21 @@ async function api(method, url, body = null, token = null) {
         throw Object.assign(new Error(message), { status: res.status });
     }
     return data;
+}
+
+/**
+ * A composer's fields as JSON. Forms with a photo picker also send `photos` (the uploaded ids, in
+ * order, possibly none, so an edit can remove them all); posting waits until uploads have finished.
+ */
+function formPayload(form) {
+    const data = new FormData(form);
+    const payload = Object.fromEntries([...data].filter(([name]) => name !== 'photos[]'));
+    const picker = form.querySelector('[data-photos]');
+    if (picker) {
+        if (picker.dataset.busy) throw new Error(t('ছবি আপলোড হচ্ছে, একটু অপেক্ষা করুন।'));
+        payload.photos = data.getAll('photos[]').map(Number);
+    }
+    return payload;
 }
 
 function community() {
@@ -277,6 +293,21 @@ function community() {
             }
         },
 
+        /** One photo for a composer (resources/js/photos.js), signed in like any other write. */
+        async uploadPhoto(blob, onProgress) {
+            if (!this.signedIn) await this.openLogin();
+            const headers = () => ({ Accept: 'application/json', ...localeHeaders(), 'X-Member-Token': this.member.token, 'X-Visitor': visitorId() });
+            try {
+                return await sendPhoto(blob, headers(), onProgress);
+            } catch (e) {
+                if (e.status !== 401) throw e;
+                this.member = this.member?.account ? null : this.member;
+                store.set(MEMBER, this.member);
+                await this.openLogin();
+                return sendPhoto(blob, headers(), onProgress);
+            }
+        },
+
         // Interface text: Bangla is the key; English pages translate it (resources/js/i18n.js).
         t,
 
@@ -426,7 +457,7 @@ function community() {
         async saveAnswer(id, form) {
             this.busy = true;
             try {
-                const data = await this.call('PATCH', `/api/answers/${id}`, Object.fromEntries(new FormData(form)));
+                const data = await this.call('PATCH', `/api/answers/${id}`, formPayload(form));
                 document.getElementById(`answer-${id}`)?.replaceWith(Object.assign(document.createElement('template'), { innerHTML: data.html.trim() }).content.firstChild);
                 this.flash(t('সম্পাদনা সেভ হয়েছে'));
             } catch (e) {
@@ -439,7 +470,7 @@ function community() {
         async savePost(id, form) {
             this.busy = true;
             try {
-                const data = await this.call('PATCH', `/api/posts/${id}`, Object.fromEntries(new FormData(form)));
+                const data = await this.call('PATCH', `/api/posts/${id}`, formPayload(form));
                 const article = form.closest('article');
                 document.getElementById('post-title').textContent = data.title;
                 document.getElementById('post-body').innerHTML = data.body_html;
@@ -449,6 +480,8 @@ function community() {
                 article.querySelector('template[data-raw]').content.append(data.body ?? '');
                 article.querySelector('template[data-raw-html]').innerHTML = '';
                 article.querySelector('template[data-raw-html]').content.append(data.raw_html ?? '');
+                article.querySelector('template[data-raw-photos]').innerHTML = '';
+                article.querySelector('template[data-raw-photos]').content.append(JSON.stringify(data.photos ?? []));
                 document.getElementById('post-edited')?.classList.remove('hidden');
                 document.title = `${data.title} — ${document.title.split(' — ').pop()}`;
                 Alpine.$data(article).editing = false;
@@ -461,11 +494,10 @@ function community() {
         },
 
         async submitPost(form) {
-            const payload = Object.fromEntries(new FormData(form));
             this.formError = '';
             this.busy = true;
             try {
-                const data = await this.call('POST', '/api/posts', payload);
+                const data = await this.call('POST', '/api/posts', formPayload(form));
                 this.saveMember(data.member);
                 location.href = data.post.url;
             } catch (e) {
@@ -475,11 +507,10 @@ function community() {
         },
 
         async submitAnswer(postId, form) {
-            const payload = Object.fromEntries(new FormData(form));
             this.formError = '';
             this.busy = true;
             try {
-                const data = await this.call('POST', `/api/posts/${postId}/answers`, payload);
+                const data = await this.call('POST', `/api/posts/${postId}/answers`, formPayload(form));
                 this.saveMember(data.member);
                 this.owned[`answer:${data.answer.id}`] = true;
                 if (!document.getElementById(`answer-${data.answer.id}`)) {
@@ -716,6 +747,7 @@ Alpine.directive('rich', (el, { expression, modifiers }, { evaluate, cleanup }) 
 Alpine.data('community', community);
 Alpine.data('divisionMap', divisionMap);
 Alpine.data('infinite', infinite);
+Alpine.data('photoPicker', photoPicker);
 Alpine.data('similarQuestions', similarQuestions);
 window.Alpine = Alpine;
 loadDictionary().then(() => Alpine.start());
