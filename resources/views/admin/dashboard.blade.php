@@ -113,6 +113,58 @@
     <p class="mt-3 text-xs text-ink-2">People are matched by the anonymous visitor id in their browser. Writes before 2026-10-09 carry no visitor id, so older contributions don't count here.</p>
 </section>
 
+{{-- Community health, from the community tables (App\Analytics\CommunityStats) --}}
+{{-- (inline @php: a @php block after inline ones confuses Blade's parser) --}}
+@php([$h, $fa, $rp] = [$health, $health['first_answers'], $health['reports']])
+@php($dur = fn ($m) => $m === null ? '—' : ($m < 60 ? $m.' min' : ($m < 1440 ? round($m / 60, 1).' h' : round($m / 1440, 1).' days')))
+@php($pct = fn ($v) => $v === null ? '—' : $v.'%')
+<section class="panel mt-4">
+    <h2 class="panel-title">Community health <small>{{ $h['today'] ? 'last 7 days' : $ranges[$days] }}{{ $h['daily']['weekly'] ? ' · per week' : ' · per day' }}</small></h2>
+    <div class="grid gap-5 lg:grid-cols-3">
+        @foreach (['members' => ['New members', 'bg-viz-1'], 'posts' => ['Posts', 'bg-viz-2'], 'answers' => ['Answers & replies', 'bg-viz-3']] as $key => [$label, $colour])
+            @php($values = array_column($h['daily']['rows'], $key))
+            @php($max = max([1, ...$values]))
+            <div>
+                <div class="flex items-baseline justify-between text-sm"><span class="font-semibold">{{ $label }}</span><b class="tabular-nums text-lg">{{ $fmt(array_sum($values)) }}</b></div>
+                <div class="mt-2 flex h-16 items-end gap-px" role="img" aria-label="{{ $label }} per {{ $h['daily']['weekly'] ? 'week' : 'day' }}: {{ collect($h['daily']['rows'])->map(fn ($r) => \Illuminate\Support\Carbon::parse($r['date'])->format('j M').' '.$r[$key])->join(', ') }}">
+                    @foreach ($h['daily']['rows'] as $row)
+                        <div class="min-w-0 flex-1 rounded-t-sm {{ $row[$key] ? $colour : 'bg-paper-2' }}" style="height: {{ $row[$key] ? max(6, round(100 * $row[$key] / $max)) : 4 }}%" title="{{ \Illuminate\Support\Carbon::parse($row['date'])->format($h['daily']['weekly'] ? '\w\e\e\k \o\f j M' : 'D j M') }}: {{ $row[$key] }}"></div>
+                    @endforeach
+                </div>
+            </div>
+        @endforeach
+    </div>
+
+    <div class="mt-6 grid gap-6 border-t border-line pt-5 lg:grid-cols-3">
+        <div>
+            <h3 class="text-sm font-semibold">Posts by weekday</h3>
+            @php($wmax = max([1, ...array_column($h['weekdays'], 'posts')]))
+            <div class="mt-2 space-y-1 text-xs">
+                @foreach ($h['weekdays'] as $w)
+                    <div class="flex items-center gap-2"><span class="w-8 text-ink-2">{{ $w['day'] }}</span><div class="h-3 flex-1 rounded-full bg-paper-2"><div class="h-full rounded-full bg-viz-2" style="width: {{ round(100 * $w['posts'] / $wmax) }}%"></div></div><span class="w-8 text-right tabular-nums">{{ $w['posts'] }}</span></div>
+                @endforeach
+            </div>
+        </div>
+        <div>
+            <h3 class="text-sm font-semibold">Time to first answer <small class="font-normal text-ink-2">questions & help posts</small></h3>
+            <div class="mt-2 grid grid-cols-3 gap-2">
+                <div class="stat !p-3"><div class="text-xs text-ink-2">Median</div><div class="mt-1 text-xl font-bold tabular-nums">{{ $dur($fa['median_minutes']) }}</div></div>
+                <div class="stat !p-3"><div class="text-xs text-ink-2">Within 1 h</div><div class="mt-1 text-xl font-bold tabular-nums">{{ $pct($fa['within_1h']) }}</div></div>
+                <div class="stat !p-3"><div class="text-xs text-ink-2">Within 24 h</div><div class="mt-1 text-xl font-bold tabular-nums">{{ $pct($fa['within_24h']) }}</div></div>
+            </div>
+            <p class="mt-2 text-xs text-ink-2">{{ $fmt($fa['asked']) }} asked · {{ $fmt($fa['answered']) }} answered · <b class="{{ $fa['unanswered'] ? 'text-warn' : '' }}">{{ $fmt($fa['unanswered']) }} still unanswered</b>. First answer = by someone other than the asker. The 1 h / 24 h rates count only posts at least that old.</p>
+        </div>
+        <div>
+            <h3 class="text-sm font-semibold">Report handling <small class="font-normal text-ink-2">first report → first admin action</small></h3>
+            <div class="mt-2 grid grid-cols-2 gap-2">
+                <div class="stat !p-3"><div class="text-xs text-ink-2">Median wait</div><div class="mt-1 text-xl font-bold tabular-nums">{{ $dur($rp['median_minutes']) }}</div><div class="text-xs text-ink-2">{{ $fmt($rp['handled']) }} handled</div></div>
+                <div class="stat !p-3"><div class="text-xs text-ink-2">Waiting now</div><div class="mt-1 text-xl font-bold tabular-nums {{ $rp['waiting'] ? 'text-warn' : '' }}">{{ $fmt($rp['waiting']) }}</div><div class="text-xs text-ink-2">oldest report {{ $dur($rp['oldest_waiting_minutes']) }}</div></div>
+            </div>
+            <p class="mt-2 text-xs text-ink-2">From the <a href="{{ route('admin.community.log') }}" class="underline">moderation log</a>, which began on 10 Oct 2026. <a href="{{ route('admin.community') }}" class="underline">Open moderation →</a></p>
+        </div>
+    </div>
+</section>
+
 <div class="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
     <div class="stat"><div class="text-xs font-semibold text-ink-2">From shared links</div><div class="mt-1 text-2xl font-bold tabular-nums">{{ $fmt($s['referral_visitors']) }}</div><div class="text-xs text-ink-2">visitors via a friend's result</div></div>
     <div class="stat"><div class="text-xs font-semibold text-ink-2">Played via links</div><div class="mt-1 text-2xl font-bold tabular-nums">{{ $fmt($s['referred_players']) }}</div><div class="text-xs text-ink-2">people · {{ $s['referral_conversion'] }}% of link visitors</div></div>

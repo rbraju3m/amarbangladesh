@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Analytics\CommunityStats;
 use App\Analytics\Funnel;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -29,7 +30,11 @@ class DashboardController extends Controller
             Cache::forget($key);
         }
 
-        return view('admin.dashboard', Cache::remember($key, self::CACHE_SECONDS[$days], fn () => self::numbers($days, $since, $funnel)) + [
+        $numbers = Cache::remember($key, self::CACHE_SECONDS[$days], fn () => self::numbers($days, $since, $funnel));
+        // Reports waiting right now must not come from an hour-old cache; this part is cheap.
+        $numbers['health']['reports'] = (new CommunityStats($days === '1' ? now()->subDays(6)->startOfDay() : $since))->reportHandling();
+
+        return view('admin.dashboard', $numbers + [
             'days' => $days,
             'ranges' => self::RANGES,
             'recent' => $funnel->recentPlays(), // live, and cheap
@@ -50,6 +55,8 @@ class DashboardController extends Controller
             'previous' => $previous->summary(),
             'entries' => $funnel->startRateByEntry(),
             'community' => $funnel->community(),
+            // From the community tables: growth, weekdays, time to first answer, report handling.
+            'health' => (new CommunityStats($days === '1' ? now()->subDays(6)->startOfDay() : $since))->all() + ['today' => $days === '1'],
             'trend' => $trend->trend(),
             'hourly' => $funnel->hourly(),
             'distribution' => $funnel->resultDistribution(),
