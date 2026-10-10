@@ -8,12 +8,19 @@ use App\Models\Post;
 use App\Quiz\QuizConfig;
 use Database\Seeders\QuizContentSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class LayoutTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Storage::fake('public'); // demo content includes photos
+    }
 
     protected $seeder = QuizContentSeeder::class;
 

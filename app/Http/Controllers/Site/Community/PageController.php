@@ -30,7 +30,7 @@ class PageController extends Controller
     private const PROFILE_PAGE = 20;
 
     /** Change when the privacy page's content changes. */
-    public const PRIVACY_UPDATED = '2026-10-09';
+    public const PRIVACY_UPDATED = '2026-10-10';
 
     /** The home page: the community first (ask, the map by division, what's new / unanswered / solved), the quiz as a teaser. */
     public function home(): View

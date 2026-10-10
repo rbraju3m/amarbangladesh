@@ -98,6 +98,16 @@ final class DemoContent
                     $answers++;
                 }
 
+                // Photos: drawn scenes (DemoPhotos) through the real upload path, on the post and/or its answers.
+                $spec = $data['photos'][$i] ?? [];
+                if ($spec['post'] ?? null) {
+                    self::photos($author, $post, $spec['post']);
+                }
+                foreach ($spec['answers'] ?? [] as $answerIndex => $scenes) {
+                    $answer = Answer::find($ids[$answerIndex]);
+                    self::photos($answer->member, $answer, $scenes);
+                }
+
                 // Replies: [answer index, [[body, helpful marks, reply index it answers (null = the answer)], …]]
                 foreach ($data['replies'][$i] ?? [] as [$answerIndex, $thread]) {
                     $root = Answer::find($ids[$answerIndex]);
@@ -217,6 +227,11 @@ final class DemoContent
         $html = RichText::clean(implode('', $blocks), $headings);
 
         return ['body' => RichText::toText($html), 'body_html' => $html];
+    }
+
+    private static function photos(Member $member, Post|Answer $item, array $scenes): void
+    {
+        Photos::attach($member, $item, array_map(fn ($scene) => Photos::store($member, DemoPhotos::file($scene))->id, $scenes));
     }
 
     private static function later(Carbon $from, Carbon $now, int $minutes): Carbon

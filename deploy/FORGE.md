@@ -54,9 +54,28 @@ $FORGE_COMPOSER install --no-dev --no-interaction --prefer-dist --optimize-autol
 npm ci --no-audit --no-fund
 npm run build
 $FORGE_PHP artisan migrate --force
+$FORGE_PHP artisan storage:link  # public/storage → storage/app/public, where photos live (harmless if it exists)
 $FORGE_PHP artisan optimize
 $FORGE_PHP artisan cache:clear   # drops the cached quiz content so new content/URLs show up
 ```
+
+## Photos (since 2026-10-10)
+
+Members can add photos to posts and answers. They're stored on this server, under
+`storage/app/public/photos` (re-encoded as WebP, no metadata), and served by nginx from
+`public/storage`. With zero-downtime deploys Forge shares `storage/` between releases, so photos
+survive a deploy; each release only needs the `storage:link` line above, or every photo is a 404.
+After the first deploy with photos, post one, deploy again, and check it still shows.
+
+- **Upload size:** the browser shrinks photos (to about 0.3 MB) before uploading, so the default
+  limits work. For phones where that fails, raise them a little: Forge → PHP → Edit php.ini
+  (`upload_max_filesize = 8M`, `post_max_size = 10M`) and `client_max_body_size 8m;` in the site's
+  nginx config (`deploy/nginx.conf` has it).
+- **Scheduler:** `community:prune-photos` runs hourly (photos never posted, and those of removed
+  posts after 30 days). The web server and the scheduler must be able to delete each other's files:
+  on Forge both run as `forge`, so nothing to do.
+- **Disk and backups:** about 350 kB per photo (two sizes, plus a JPEG copy of each post's first
+  photo for link previews); 10,000 photos ≈ 3.5 GB. Include `storage/app/public/photos` in backups.
 
 ## Static file caching (Site → Edit Nginx Configuration)
 

@@ -33,10 +33,13 @@
     <li><strong>Phone:</strong> your mobile number.</li>
     <li><strong>Email:</strong> your email address and password (stored so that even we can't read it).</li>
 </ul>
-<p>Also the name you choose, your posts and answers, your “Helpful” marks, reports, and whether you use the site in Bangla or English. Everyone can see your name, posts and answers; nobody can see your phone number or email.</p>
+<p>Also the name you choose, your posts and answers (and their photos), your “Helpful” marks, reports, and whether you use the site in Bangla or English. Everyone can see your name, posts and answers; nobody can see your phone number or email.</p>
 
 <h2>Anonymous posts</h2>
 <p>If you post anonymously, readers never learn who wrote it: your name and profile link aren't on the page. Only the site's admins can see the author's account, and only to deal with harmful posts.</p>
+
+<h2>Photos</h2>
+<p>You can add up to 4 photos to a post or answer (not to anonymous ones, and not to replies). Your phone first makes a photo smaller; then our server saves it again as a new file, so the location (GPS), camera details and date stored inside the original are removed, and the original isn't kept. Photos are stored on our own server, and like your post, anyone can see them. Please don't upload photos of other people's faces, ID cards, phone numbers or addresses without their permission.</p>
 
 <h2>Email</h2>
 <p>Your email address is used only to log in, reset your password, and tell you when your question gets an answer. You can turn notification emails off from the link at the bottom of any email or on the <a href="{{ lroute('notifications', [], false) }}">Notifications</a> page. We send no ads or newsletters.</p>
@@ -55,6 +58,7 @@
     <li>Usage statistics and notifications: 180 days.</li>
     <li>Phone login codes: 10 minutes. Password reset links: 1 hour.</li>
     <li>Posts, answers and quiz results: until they're deleted.</li>
+    <li>Photos: deleted at once when you delete their post or answer; if an admin removes a post, its photos are deleted 30 days later. Photos uploaded but never posted: after a day.</li>
     <li>Accounts: until you delete them.</li>
 </ul>
 
@@ -71,7 +75,7 @@
 <ul>
     <li>All your ways of logging in, your email, phone number and password are deleted, and every device is logged out.</li>
     <li>Your notifications, “Helpful” marks and reports are deleted.</li>
-    <li>Your posts and answers stay, so other people's questions keep their answers, but the author shows as “Deleted account” and your profile page is gone. If you prefer, tick a box to delete your posts and answers too.</li>
+    <li>Your posts and answers stay, so other people's questions keep their answers, but the author shows as “Deleted account” and your profile page is gone. If you prefer, tick a box to delete your posts and answers too, with their photos.</li>
 </ul>
 <p>If you can't log in any more (for example, you lost the number or account), write to <a href="mailto:{{ $email }}">{{ $email }}</a> saying how you used to log in, and we'll delete it.</p>
 

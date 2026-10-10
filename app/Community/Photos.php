@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use RuntimeException;
 
 /**
  * Photos on posts and top-level answers. The browser shrinks a photo before uploading it; here it is
@@ -85,7 +86,11 @@ final class Photos
             ob_start();
             imagewebp($scaled, null, $size === 'full' ? 80 : 72);
             $data = (string) ob_get_clean();
-            Storage::disk(self::DISK)->put("{$path}-{$size}.webp", $data);
+            // The disk doesn't throw (config), so check: a row without its file would be a broken image.
+            if (! Storage::disk(self::DISK)->put("{$path}-{$size}.webp", $data)) {
+                Storage::disk(self::DISK)->delete(array_map(fn ($s) => "{$path}-{$s}.webp", array_keys(self::SIZES)));
+                throw new RuntimeException("Could not write {$path}-{$size}.webp to the public disk (permissions or space?)");
+            }
             $bytes += strlen($data);
             if ($size === 'full') {
                 [$width, $height] = [imagesx($scaled), imagesy($scaled)];

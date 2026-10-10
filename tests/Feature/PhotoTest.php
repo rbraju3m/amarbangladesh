@@ -112,6 +112,20 @@ class PhotoTest extends TestCase
         $this->flushHeaders()->post('/api/photos', ['photo' => UploadedFile::fake()->image('a.jpg')], ['Accept' => 'application/json'])->assertUnauthorized();
     }
 
+    public function test_a_photo_that_cannot_be_written_is_not_saved_half_way(): void
+    {
+        // A file where the "photos" folder should be: the disk can't create anything under it.
+        Storage::disk('public')->put('photos', 'not a folder');
+
+        $this->withoutExceptionHandling();
+        $this->expectException(\RuntimeException::class);
+        try {
+            $this->upload($this->token());
+        } finally {
+            $this->assertSame(0, Photo::count());
+        }
+    }
+
     public function test_one_member_cannot_pile_up_unattached_uploads(): void
     {
         $token = $this->token();

@@ -6,15 +6,23 @@ use App\Community\DemoContent;
 use App\Models\Answer;
 use App\Models\HelpfulMark;
 use App\Models\Member;
+use App\Models\Photo;
 use App\Models\Post;
 use Database\Seeders\QuizContentSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 use Tests\TestCase;
 
 class DemoContentTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Storage::fake('public'); // demo content includes photos
+    }
 
     protected $seeder = QuizContentSeeder::class;
 
@@ -55,6 +63,12 @@ class DemoContentTest extends TestCase
             ->whereColumn('answers.member_id', 'helpful_marks.member_id')->count());
 
         $this->get('/feed')->assertOk()->assertSee(Post::latest('id')->value('title'));
+
+        // Drawn photos on a few threads, through the real upload path; a second seed replaced the first.
+        $this->assertSame(9, Photo::count());
+        $this->assertSame(3, Photo::where('photoable_type', 'post')->distinct()->count('photoable_id'));
+        $this->assertSame(3, Photo::where('photoable_type', 'answer')->count());
+        $this->assertCount(9 * 2 + 3, Storage::disk('public')->allFiles('photos')); // two sizes each + a share copy per post
     }
 
     public function test_purging_keeps_real_content_and_fixes_its_counts(): void
@@ -69,6 +83,8 @@ class DemoContentTest extends TestCase
         $real->forceFill(['answers_count' => 1, 'helpful_count' => 1])->save();
 
         $this->artisan('community:purge-demo', ['--force' => true])->assertSuccessful();
+        $this->assertSame(0, Photo::count());
+        $this->assertSame([], Storage::disk('public')->allFiles('photos')); // files too
 
         $this->assertSame(0, Member::where('is_demo', true)->count());
         $this->assertSame([$real->id], Post::pluck('id')->all());

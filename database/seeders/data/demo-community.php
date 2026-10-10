@@ -7,6 +7,8 @@
  *
  * Post: [type, category, area|null, title, body|null, answers, accepted answer index|null, "need" marks, anonymous?]
  * Answer: [body, helpful marks] (an optional third item `true` posts it anonymously)
+ * Photos: [post index => ['post' => [scene, …], 'answers' => [answer index => [scene, …]]]], scenes from
+ * App\Community\DemoPhotos (drawn, no real people or places).
  * Bodies: lines starting with "• " or "১. " become lists and **bold** / *italic* are formatted (DemoContent::bodies()).
  */
 
@@ -313,5 +315,14 @@ return [
             ['আমরা দুই দিন থেকে দ্বিতীয় দিন দেখেছি।', 5, 5],
             ['শিলিগুড়ির দিক থেকেও দেখা যায় শুনেছি।', 0, null],
         ]]],
+    ],
+
+    // Drawn scenes on a few travel and food threads, so the UI review shows photo grids and card thumbnails.
+    'photos' => [
+        10 => ['post' => ['tea', 'tea-path'], 'answers' => [0 => ['tea']]],
+        18 => ['post' => ['beach']],
+        28 => ['post' => ['hills', 'river', 'tea-path']],
+        38 => ['answers' => [0 => ['food']]],
+        43 => ['answers' => [0 => ['mangrove']]],
     ],
 ];
