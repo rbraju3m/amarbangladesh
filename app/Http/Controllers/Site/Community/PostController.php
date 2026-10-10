@@ -52,7 +52,7 @@ class PostController extends Controller
             ]);
 
         if ($post->wasRecentlyCreated) {
-            AnalyticsEvent::server('post_created', $request, ['type' => $post->type, 'anon' => $post->is_anonymous ? 1 : 0]);
+            AnalyticsEvent::server('post_created', $request, ['type' => $post->type, 'anon' => $post->is_anonymous ? 1 : 0, 'rich' => RichText::isFormatted($post->body_html) ? 1 : 0]);
         }
 
         return response()->json(['post' => ['id' => $post->id, 'url' => $post->url()], 'member' => MemberController::present($member)], 201);

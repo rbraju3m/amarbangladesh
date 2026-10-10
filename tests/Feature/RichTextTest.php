@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Analytics\Funnel;
 use App\Community\Accounts;
 use App\Community\RichText;
+use App\Models\AnalyticsEvent;
 use App\Models\Answer;
 use App\Models\Post;
 use Database\Seeders\QuizContentSeeder;
@@ -143,6 +145,19 @@ class RichTextTest extends TestCase
         $this->as($token)->patchJson("/api/posts/{$post->id}", ['title' => $post->title, 'body' => 'শুধু লেখা'])
             ->assertOk()->assertJson(['body' => 'শুধু লেখা', 'body_html' => 'শুধু লেখা', 'raw_html' => null]);
         $this->assertNull($post->fresh()->body_html);
+    }
+
+    public function test_write_events_say_whether_formatting_was_used(): void
+    {
+        $token = $this->token();
+        $plain = $this->ask($token, ['format' => 'html', 'body' => '<p>শুধু লেখা, কোনো ফরম্যাট নেই</p>']);
+        $this->ask($token, ['title' => 'ড্রাইভিং লাইসেন্স করতে কত দিন লাগে?', 'format' => 'html', 'body' => '<ul><li>এক</li></ul>']);
+        $this->as($this->token('মিতু'))->postJson("/api/posts/{$plain->id}/answers", ['format' => 'html', 'body' => '<p><em>আগে</em> অনলাইনে দেখুন</p>'])->assertCreated();
+
+        $rich = AnalyticsEvent::whereIn('name', ['post_created', 'answer_created'])->orderBy('id')->get()->map(fn ($e) => [$e->name, $e->meta['rich']]);
+        $this->assertSame([['post_created', 0], ['post_created', 1], ['answer_created', 1]], $rich->all());
+        $community = (new Funnel(now()->subDay()))->community();
+        $this->assertSame([3, 2], [$community['writes'], $community['writes_rich']]);
     }
 
     public function test_edit_forms_get_the_formatted_source_and_replies_stay_plain(): void

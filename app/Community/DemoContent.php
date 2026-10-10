@@ -68,7 +68,7 @@ final class DemoContent
                     'is_anonymous' => (bool) ($row[8] ?? false),
                     'type' => $type,
                     'title' => $title,
-                    'body' => $body,
+                    ...self::bodies($body, headings: true),
                     'category_id' => $categories[$category]['id'] ?? null,
                     'area_id' => $area ? ($areas[$area]['id'] ?? null) : null,
                     'status' => Post::PUBLISHED,
@@ -85,7 +85,7 @@ final class DemoContent
                         'post_id' => $post->id,
                         'member_id' => $others[mt_rand(0, count($others) - 1)]->id,
                         'is_anonymous' => (bool) ($reply[2] ?? false),
-                        'body' => $reply[0],
+                        ...self::bodies($reply[0]),
                         'status' => Post::PUBLISHED,
                         'created_at' => $answerAt,
                         'updated_at' => $answerAt,
@@ -183,6 +183,38 @@ final class DemoContent
         ], array_slice($pool, 0, $n));
         HelpfulMark::insert($rows);
         $item->helpful_count = count($rows); // saved by the caller
+    }
+
+    /**
+     * `body` and `body_html` for a demo text. Lines starting with "• " or "১. " become lists and
+     * **bold** / *italic* become tags, so the UI review shows formatted posts; other text stays plain.
+     */
+    private static function bodies(?string $text, bool $headings = false): array
+    {
+        $isList = fn (array $lines, string $pattern) => $lines && collect($lines)->every(fn ($l) => preg_match($pattern, $l));
+        $blocks = [];
+        $formatted = false;
+        foreach (preg_split('~\n{2,}~u', (string) $text) as $block) {
+            $lines = explode("\n", e($block));
+            $inline = fn (string $s) => preg_replace(['~\*\*(.+?)\*\*~u', '~\*(.+?)\*~u'], ['<strong>$1</strong>', '<em>$1</em>'], $s);
+            if ($isList($lines, '~^• ~u')) {
+                $blocks[] = '<ul>'.implode('', array_map(fn ($l) => '<li>'.$inline(mb_substr($l, 2)).'</li>', $lines)).'</ul>';
+                $formatted = true;
+            } elseif ($isList($lines, '~^[০-৯0-9]+\. ~u')) {
+                $blocks[] = '<ol>'.implode('', array_map(fn ($l) => '<li>'.$inline(preg_replace('~^[০-৯0-9]+\. ~u', '', $l)).'</li>', $lines)).'</ol>';
+                $formatted = true;
+            } else {
+                $html = $inline(implode('<br>', $lines));
+                $formatted = $formatted || $html !== implode('<br>', $lines);
+                $blocks[] = "<p>{$html}</p>";
+            }
+        }
+        if ($text === null || ! $formatted) {
+            return ['body' => $text];
+        }
+        $html = RichText::clean(implode('', $blocks), $headings);
+
+        return ['body' => RichText::toText($html), 'body_html' => $html];
     }
 
     private static function later(Carbon $from, Carbon $now, int $minutes): Carbon

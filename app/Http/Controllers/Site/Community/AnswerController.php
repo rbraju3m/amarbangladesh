@@ -54,7 +54,7 @@ class AnswerController extends Controller
             } else {
                 $post->refreshAnswerCount();
                 Notifier::answered($answer);
-                AnalyticsEvent::server('answer_created', $request, ['type' => $post->type]);
+                AnalyticsEvent::server('answer_created', $request, ['type' => $post->type, 'rich' => RichText::isFormatted($answer->body_html) ? 1 : 0]);
             }
         }
         $answer->setRelation('member', $member);

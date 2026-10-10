@@ -101,7 +101,7 @@
     <div class="mt-5 grid grid-cols-2 gap-3 border-t border-line pt-4 text-sm lg:grid-cols-4">
         <div><div class="text-xs font-semibold text-ink-2">Community visitors</div><div class="mt-1 text-xl font-bold tabular-nums">{{ $fmt($c['viewers']) }}</div><div class="text-xs text-ink-2">{{ $fmt($c['viewers_played']) }} of them played the quiz</div></div>
         <div><div class="text-xs font-semibold text-ink-2">Sign-ups</div><div class="mt-1 text-xl font-bold tabular-nums">{{ $fmt($c['signups']) }}</div><div class="text-xs text-ink-2">new community accounts</div></div>
-        <div><div class="text-xs font-semibold text-ink-2">Posted or answered</div><div class="mt-1 text-xl font-bold tabular-nums">{{ $fmt($c['writers']) }}</div><div class="text-xs text-ink-2">{{ $fmt($c['writers_played']) }} of them played the quiz</div></div>
+        <div><div class="text-xs font-semibold text-ink-2">Posted or answered</div><div class="mt-1 text-xl font-bold tabular-nums">{{ $fmt($c['writers']) }}</div><div class="text-xs text-ink-2">{{ $fmt($c['writers_played']) }} of them played the quiz</div>@if ($c['writes'])<div class="text-xs text-ink-2">{{ round(100 * $c['writes_rich'] / $c['writes']) }}% of {{ $fmt($c['writes']) }} posts/answers used formatting</div>@endif</div>
         <div><div class="text-xs font-semibold text-ink-2">Returning visitors</div><div class="mt-1 text-xl font-bold tabular-nums">{{ $fmt($c['returning']) }}</div><div class="text-xs text-ink-2">seen on 2+ days · of {{ $fmt($c['visitors']) }}</div></div>
     </div>
     @if ($c['by_place'])

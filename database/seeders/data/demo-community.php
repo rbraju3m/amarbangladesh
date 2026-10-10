@@ -7,6 +7,7 @@
  *
  * Post: [type, category, area|null, title, body|null, answers, accepted answer index|null, "need" marks, anonymous?]
  * Answer: [body, helpful marks] (an optional third item `true` posts it anonymously)
+ * Bodies: lines starting with "• " or "১. " become lists and **bold** / *italic* are formatted (DemoContent::bodies()).
  */
 
 return [
@@ -24,7 +25,7 @@ return [
 
     'posts' => [
         ['question', 'government', 'dhaka', 'পাসপোর্ট রিনিউ করতে কী কী কাগজ লাগে?', 'আমার পুরোনো MRP পাসপোর্টের মেয়াদ শেষ। ই-পাসপোর্ট করতে চাই। অনলাইনে আবেদন করেছি, কিন্তু অফিসে কী কী নিয়ে যেতে হবে বুঝতে পারছি না।', [
-            ['পুরোনো পাসপোর্ট (মূল ও ফটোকপি), জাতীয় পরিচয়পত্রের ফটোকপি, অনলাইন আবেদনের প্রিন্ট কপি আর ফি জমার রসিদ। সাথে মূল NID নিয়ে যাবেন, ওরা মিলিয়ে দেখে।', 9],
+            ["**যা নিয়ে যাবেন:**\n\n• পুরোনো পাসপোর্ট (মূল ও ফটোকপি)\n• জাতীয় পরিচয়পত্রের ফটোকপি\n• অনলাইন আবেদনের প্রিন্ট কপি\n• ফি জমার রসিদ\n\nসাথে **মূল NID** নিয়ে যাবেন, ওরা মিলিয়ে দেখে।", 9],
             ['পেশা বদলালে (যেমন ছাত্র থেকে চাকরিজীবী) সেই প্রমাণও নিতে হতে পারে। আগে পাসপোর্ট অফিসের ওয়েবসাইটে নিজের ক্যাটাগরির তালিকাটা দেখে নিন, নিয়ম মাঝে মাঝে বদলায়।', 4],
             ['আমি গত মাসে আগারগাঁও থেকে করলাম। সকাল ৯টার আগে গেলে ভিড় কম পাবেন।', 2],
         ], 0, 6],
@@ -110,7 +111,7 @@ return [
             ['অনেক সময় পরিচয়পত্র দিয়ে যাচাই করতে বলে, সেটা দিয়ে দিন। ধৈর্য ধরুন, কয়েক দিন লাগতে পারে।', 4],
         ], 0, 9],
         ['question', 'lifestyle', 'gazipur', 'গাজীপুরে বাসা ভাড়া নেওয়ার আগে কী কী দেখা উচিত?', null, [
-            ['পানি আর গ্যাসের সমস্যা আছে কিনা পাশের ভাড়াটিয়াকে জিজ্ঞেস করুন। বাড়িওয়ালা সবসময় সব বলেন না।', 10],
+            ["চুক্তির আগে যা দেখি:\n\n১. পানি আর গ্যাসের সমস্যা আছে কিনা **পাশের ভাড়াটিয়াকে** জিজ্ঞেস করুন। বাড়িওয়ালা সবসময় সব বলেন না।\n২. দিনে একবার, রাতে একবার গিয়ে এলাকাটা দেখুন।\n৩. বিদ্যুতের মিটার আলাদা কিনা দেখুন।", 10],
             ['লিখিত চুক্তি করুন: অগ্রিম কত, কবে ফেরত, বিল কে দেবে।', 7],
         ], 0, 2],
         ['question', 'other', null, 'Where can I donate blood safely in Dhaka?', null, [
@@ -182,7 +183,7 @@ return [
             ['বাইরে খেলার সুযোগ থাকলে বাচ্চারা নিজেরাই মোবাইল কম চায়।', 7],
         ], null, 4],
         ['question', 'travel', 'khulna', 'How do I plan a Sundarbans trip from Khulna?', 'First time. How many days, and should I go with a tour group?', [
-            ['Go with a registered tour operator; you need permits and a guide for the forest anyway. 2 nights / 3 days is the common package.', 6],
+            ["Go with a **registered tour operator**; you need permits and a guide for the forest anyway. The common package is *2 nights / 3 days* and usually covers:\n\n• Karamjal\n• Kotka beach and the watchtower\n• Kochikhali", 6],
             ['November to February is the best time, the river is calmer.', 4],
         ], 0, 3],
         ['question', 'shopping', 'dhaka', 'ঢাকায় সেকেন্ড হ্যান্ড ফার্নিচার কোথায় পাওয়া যায়?', null, [], null, 1],

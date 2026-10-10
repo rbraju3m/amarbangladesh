@@ -466,6 +466,11 @@
         @apply list-decimal ps-[1.4em];
     }
 
+    /* Bangla pages number lists with Bangla digits, as people write them (১. ২. ৩.) */
+    :lang(bn) .prose-text ol {
+        list-style-type: bengali;
+    }
+
     .prose-text li + li {
         margin-top: 0.25em;
     }

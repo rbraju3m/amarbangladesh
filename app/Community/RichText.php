@@ -63,6 +63,12 @@ final class RichText
         return Text::clean(html_entity_decode(strip_tags($text), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
     }
 
+    /** Whether cleaned HTML uses any formatting beyond paragraphs (for the `rich` flag on write events). */
+    public static function isFormatted(?string $html): bool
+    {
+        return (bool) preg_match('~<(strong|em|ul|ol|h3|a)[\s>]~i', (string) $html);
+    }
+
     /** Links in cleaned HTML: the <a> tags, plus addresses left as text (www.… isn't linked by the cleaner). */
     public static function linkCount(?string $html): int
     {

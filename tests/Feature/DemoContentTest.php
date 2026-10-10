@@ -30,6 +30,15 @@ class DemoContentTest extends TestCase
         $this->assertGreaterThan(3, Answer::whereNotNull('thread_id')->groupBy('thread_id')->selectRaw('COUNT(*) AS n')->pluck('n')->max()); // a thread long enough for "show more"
         $this->assertTrue(Answer::whereColumn('parent_id', '!=', 'thread_id')->exists()); // and a reply to a reply
 
+        // Some posts and answers are formatted; their plain text drops the markers.
+        $this->assertGreaterThanOrEqual(6, Post::whereNotNull('body_html')->count());
+        $this->assertSame(3, Answer::whereNotNull('body_html')->count());
+        $passport = Answer::where('body_html', 'like', '%<strong>মূল NID</strong>%')->first();
+        $this->assertStringContainsString('<ul><li>পুরোনো পাসপোর্ট (মূল ও ফটোকপি)</li>', $passport->body_html);
+        $this->assertStringStartsWith("যা নিয়ে যাবেন:\n\n• পুরোনো পাসপোর্ট", $passport->body);
+        $this->assertStringNotContainsString('*', Answer::pluck('body')->implode(' ').Post::pluck('body')->implode(' '));
+        $this->assertTrue(Post::where('body_html', 'like', '%<ol><li>Gboard%')->exists());
+
         // Counts match the rows, accepted answers belong to their post, nobody marks their own work.
         foreach (Post::with('answers')->get() as $post) {
             $this->assertSame($post->answers->whereNull('parent_id')->count(), $post->answers_count);
