@@ -550,5 +550,22 @@
     "সেভ হয়েছে": "Saved",
     "ঘোষণা": "Announcement",
     "জরুরি:": "Important:",
-    "ঘোষণাটি বন্ধ করুন": "Close this announcement"
+    "ঘোষণাটি বন্ধ করুন": "Close this announcement",
+    "জরুরি": "Urgent",
+    "রক্তের গ্রুপ": "Blood group",
+    "জরুরি সাহায্য দরকার": "Urgent help needed",
+    "আর :n ঘণ্টা": ":n hour left|:n hours left",
+    "আমার বাংলাদেশ এসব তথ্য যাচাই করেনি। টাকা পাঠানো বা কোথাও যাওয়ার আগে নিজে যাচাই করুন।": "Amar Bangladesh hasn't checked this. Check for yourself before sending money or going anywhere.",
+    "✓ সাহায্য পেয়েছি, জরুরি বন্ধ করুন": "✓ I got help, end urgent",
+    "জরুরি বন্ধ হয়েছে। সাহায্য পেয়েছেন জেনে ভালো লাগলো 🙏": "No longer urgent. Glad you got help 🙏",
+    "জরুরি পোস্ট বেনামী করা যায় না।": "Urgent posts can't be anonymous.",
+    "আপনার একটা জরুরি পোস্ট এখনো চালু আছে। সেটার সময় শেষ হলে বা বন্ধ করলে নতুন জরুরি পোস্ট দিতে পারবেন।": "You already have an urgent post running. You can post a new urgent one when its time is up or you end it.",
+    "🆘 জরুরি?": "🆘 Urgent?",
+    "জরুরি পোস্ট হোম পেজে আর ম্যাপে আলাদা করে দেখানো হয়, সময় শেষ হলে সাধারণ পোস্ট হয়ে যায়। একবারে একটাই জরুরি পোস্ট দেওয়া যায়।": "Urgent posts are shown apart on the home page and the map, and become ordinary posts when the time is up. You can have one urgent post at a time.",
+    "কতক্ষণ জরুরি": "How long it stays urgent",
+    ":n ঘণ্টা": ":n hour|:n hours",
+    "জরুরি না": "Not urgent",
+    "🩸 রক্ত লাগবে?": "🩸 Need blood?",
+    "না": "No",
+    "ফোন নম্বর প্রকাশ্যে দেবেন না। যাঁরা সাহায্য করতে পারবেন, তাঁরা উত্তরে জানাবেন।": "Don't post phone numbers publicly. People who can help will say so in the answers."
 }

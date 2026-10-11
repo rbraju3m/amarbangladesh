@@ -617,6 +617,21 @@ function community() {
             }
         },
 
+        /** The author of an urgent help post says help came: it stays up, just not urgent any more. */
+        async endUrgent(postId) {
+            this.busy = true;
+            try {
+                await this.call('POST', `/api/posts/${postId}/urgent-end`);
+                document.getElementById('post-urgent')?.remove();
+                document.querySelectorAll('.tag-urgent').forEach((el) => el.remove());
+                this.flash(t('জরুরি বন্ধ হয়েছে। সাহায্য পেয়েছেন জেনে ভালো লাগলো 🙏'));
+            } catch (e) {
+                this.flash(e.message);
+            } finally {
+                this.busy = false;
+            }
+        },
+
         async submitAnswer(postId, form) {
             this.formError = '';
             this.busy = true;
@@ -794,6 +809,7 @@ function divisionMap(divisions, lens, topics) {
         mapState: 'idle', // districts: loading | ready | error
         topic: '', // category slug of the topic lens ('' = all)
         html: '',
+        urgentHtml: '', // the area's urgent help, above its posts
         state: 'idle', // posts: loading (old posts dimmed) | slow (skeleton) | ready | empty | error
         init() {
             // District shapes come as plain HTML; their hover / picked look follows the state here.
@@ -975,8 +991,8 @@ function divisionMap(divisions, lens, topics) {
             this._slow = setTimeout(() => this.area === slug && this.state === 'loading' && !this.html && (this.state = 'slow'), 250);
             const current = () => `${this.area}|${this.topic}` === key; // not if another was picked meanwhile
             try {
-                const data = await api('GET', withLang(withTopic(`/api/feed?limit=3&compact=1&area=${encodeURIComponent(slug)}`, this.topic)));
-                this._cache[key] = { html: data.html, state: data.count ? 'ready' : 'empty' };
+                const data = await api('GET', withLang(withTopic(`/api/feed?limit=3&compact=1&urgent=1&area=${encodeURIComponent(slug)}`, this.topic)));
+                this._cache[key] = { html: data.html, urgentHtml: data.urgent_html || '', state: data.count ? 'ready' : 'empty' };
                 if (current()) Object.assign(this, this._cache[key]);
             } catch {
                 if (current()) this.state = 'error';

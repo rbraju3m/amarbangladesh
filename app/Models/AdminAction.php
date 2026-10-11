@@ -23,6 +23,7 @@ class AdminAction extends Model
         'remove' => ['Removed', 'bg-danger/10 text-danger'],
         'block' => ['Member blocked', 'bg-danger/10 text-danger'],
         'unblock' => ['Member unblocked', 'bg-paper-2 text-ink'],
+        'urgent_clear' => ['Urgent cleared', 'bg-warn/10 text-warn'],
         'topic_add' => ['Topic added', 'bg-flag-green/10 text-green-text'],
         'topic_edit' => ['Topic changed', 'bg-paper-2 text-ink'],
         'topic_off' => ['Topic turned off', 'bg-warn/10 text-warn'],

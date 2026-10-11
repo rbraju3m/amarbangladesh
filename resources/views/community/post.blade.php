@@ -33,6 +33,19 @@
                 <span class="ml-auto shrink-0 text-ink-2" title="{{ __('প্রতিটি ব্রাউজার দিনে একবার গোনা হয়') }}"><span aria-hidden="true">👁</span> {{ \App\Support\Lang::choice(':n বার দেখা হয়েছে', $post->views_count) }}</span>
             @endif
         </div>
+        {{-- Urgent help: how long it stays urgent, that we haven't checked it, and (for its author) a way to end it --}}
+        @if ($post->isUrgent())
+            <div id="post-urgent" class="mt-4 rounded-2xl border border-flag-red/30 bg-flag-red/5 px-4 py-3">
+                <p class="flex flex-wrap items-center gap-x-2 gap-y-1 font-bold text-red-text">
+                    <span>🆘 {{ __('জরুরি সাহায্য দরকার') }}</span>
+                    <span class="text-sm font-semibold">· <time datetime="{{ $post->urgent_until->toIso8601String() }}">{{ \App\Support\Lang::choice('আর :n ঘণ্টা', $post->urgentHoursLeft()) }}</time></span>
+                </p>
+                <p class="mt-1 text-sm text-ink-2">{{ __('আমার বাংলাদেশ এসব তথ্য যাচাই করেনি। টাকা পাঠানো বা কোথাও যাওয়ার আগে নিজে যাচাই করুন।') }}</p>
+                <button type="button" class="act mt-2" x-show="mine('post', {{ $post->id }})" x-cloak @click="endUrgent({{ $post->id }})" :disabled="busy">{{ __('✓ সাহায্য পেয়েছি, জরুরি বন্ধ করুন') }}</button>
+            </div>
+        @elseif ($post->type === 'help' && $post->blood_group)
+            <p class="mt-4 text-sm text-ink-2">{{ __('আমার বাংলাদেশ এসব তথ্য যাচাই করেনি। টাকা পাঠানো বা কোথাও যাওয়ার আগে নিজে যাচাই করুন।') }}</p>
+        @endif
         <div x-show="!editing" id="post-body" class="prose-text mt-4 text-lg empty:hidden">@if ($post->body){{ \App\Community\RichText::render($post) }}@endif</div>
         <div x-show="!editing" id="post-photos" class="mt-4 empty:hidden">@include('community.partials.photo-grid', ['photos' => $post->photos, 'title' => $post->title, 'big' => true])</div>
 

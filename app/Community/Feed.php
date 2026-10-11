@@ -4,6 +4,7 @@ namespace App\Community;
 
 use App\Models\Post;
 use Illuminate\Contracts\Pagination\CursorPaginator;
+use Illuminate\Support\Collection;
 
 /**
  * The community feed: newest first, keyset-paginated (cheap at any depth, stable while new posts
@@ -36,13 +37,7 @@ final class Feed
 
     public function posts(int $perPage = self::PER_PAGE): CursorPaginator
     {
-        $areaIds = null;
-        if ($this->area) {
-            // A division covers its districts.
-            $areaIds = $this->area['type'] === 'division'
-                ? array_merge([$this->area['id']], array_column(array_filter(Taxonomy::areas(), fn ($a) => $a['division_bn'] === $this->area['name_bn'] && $a['type'] === 'district'), 'id'))
-                : [$this->area['id']];
-        }
+        $areaIds = $this->areaIds();
 
         return Post::published()
             ->with(['member:id,code,name,deleted_at', 'category:id,slug,name_bn,name_en,emoji', 'area:id,slug,name_bn,name_en', 'photos'])
@@ -53,6 +48,33 @@ final class Feed
             ->orderByDesc('id')
             ->cursorPaginate($perPage)
             ->withQueryString();
+    }
+
+    /**
+     * Urgent help posts that haven't run out, in this view's area and topic (the tab doesn't apply),
+     * newest first: the strip on the home page and above the map's area panel.
+     */
+    public function urgent(int $limit = 6): Collection
+    {
+        $areaIds = $this->areaIds();
+
+        return Post::published()->urgent()
+            ->with(['member:id,code,name,deleted_at', 'area:id,slug,name_bn,name_en'])
+            ->when($this->category, fn ($q) => $q->where('category_id', $this->category['id']))
+            ->when($areaIds, fn ($q) => $q->whereIn('area_id', $areaIds))
+            ->orderByDesc('id')->limit($limit)->get();
+    }
+
+    /** The area's ids (a division covers its districts), or null for the whole country. */
+    private function areaIds(): ?array
+    {
+        if (! $this->area) {
+            return null;
+        }
+
+        return $this->area['type'] === 'division'
+            ? array_merge([$this->area['id']], array_column(array_filter(Taxonomy::areas(), fn ($a) => $a['division_bn'] === $this->area['name_bn'] && $a['type'] === 'district'), 'id'))
+            : [$this->area['id']];
     }
 
     /** The query string for this view with some keys replaced (null drops one), for tab/filter links. */

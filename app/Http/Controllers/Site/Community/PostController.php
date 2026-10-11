@@ -44,15 +44,18 @@ class PostController extends Controller
             'area' => ['nullable', Rule::in(array_keys(Taxonomy::areas()))],
             'name' => ['nullable', 'string', 'max:40'],
             'anonymous' => ['nullable', 'boolean'],
+            'urgent' => ['nullable', Rule::in(array_merge([0], Post::URGENT_HOURS))],
+            'blood_group' => ['nullable', Rule::in(Post::BLOOD_GROUPS)],
         ], self::messages());
 
         $photos = Photos::input($request, anonymous: (bool) ($data['anonymous'] ?? false));
         $member = self::named($request->attributes->get('member'), $data['name'] ?? null)->rememberLocale();
         self::checkLinks($data['title'], $data['body'] ?? null, $html);
+        $urgent = self::urgentHours($data, $member);
 
         // A double tap or a retry after a slow network should not post twice. Photos that can't be
         // attached undo the post, so a retry starts clean.
-        $post = DB::transaction(function () use ($member, $data, $html, $photos) {
+        $post = DB::transaction(function () use ($member, $data, $html, $photos, $urgent) {
             $post = Post::where('member_id', $member->id)->where('title', $data['title'])->where('created_at', '>=', now()->subMinutes(10))->first()
                 ?? Post::create([
                     'member_id' => $member->id,
@@ -63,6 +66,9 @@ class PostController extends Controller
                     'body_html' => $html,
                     'category_id' => Taxonomy::categories()[$data['category'] ?? '']['id'] ?? null,
                     'area_id' => Taxonomy::areas()[$data['area'] ?? '']['id'] ?? null,
+                    // Urgency and blood belong to help posts only.
+                    'urgent_until' => $urgent ? now()->addHours($urgent) : null,
+                    'blood_group' => ($data['type'] ?? null) === 'help' ? ($data['blood_group'] ?? null) : null,
                 ]);
             if ($photos !== null) {
                 Photos::attach($member, $post, $photos);
@@ -72,7 +78,7 @@ class PostController extends Controller
         });
 
         if ($post->wasRecentlyCreated) {
-            AnalyticsEvent::server('post_created', $request, ['type' => $post->type, 'anon' => $post->is_anonymous ? 1 : 0, 'rich' => RichText::isFormatted($post->body_html) ? 1 : 0, 'photos' => count($photos ?? [])]);
+            AnalyticsEvent::server('post_created', $request, ['type' => $post->type, 'anon' => $post->is_anonymous ? 1 : 0, 'rich' => RichText::isFormatted($post->body_html) ? 1 : 0, 'photos' => count($photos ?? []), 'urgent' => $post->urgent_until ? 1 : 0, 'blood' => $post->blood_group ? 1 : 0]);
         }
 
         return response()->json(['post' => ['id' => $post->id, 'url' => $post->url()], 'member' => MemberController::present($member)], 201);
@@ -111,6 +117,41 @@ class PostController extends Controller
             'photos' => ($photos = $post->photos()->get())->map->present()->all(),
             'photos_html' => view('community.partials.photo-grid', ['photos' => $photos, 'title' => $post->title, 'big' => true])->render(),
         ]);
+    }
+
+    /**
+     * Hours a new post stays urgent (0 = not urgent). Only help posts, never anonymous (someone must stand
+     * behind an urgent request), and one urgent post at a time per member.
+     */
+    private static function urgentHours(array $data, Member $member): int
+    {
+        $hours = (int) ($data['urgent'] ?? 0);
+        if (! $hours || ($data['type'] ?? null) !== 'help') {
+            return 0;
+        }
+        if ($data['anonymous'] ?? false) {
+            throw ValidationException::withMessages(['urgent' => __('জরুরি পোস্ট বেনামী করা যায় না।')]);
+        }
+        $open = Post::published()->urgent()->where('member_id', $member->id)
+            ->where('title', '!=', $data['title']) // a retry of this same post isn't a second one
+            ->exists();
+        if ($open) {
+            throw ValidationException::withMessages(['urgent' => __('আপনার একটা জরুরি পোস্ট এখনো চালু আছে। সেটার সময় শেষ হলে বা বন্ধ করলে নতুন জরুরি পোস্ট দিতে পারবেন।')]);
+        }
+
+        return $hours;
+    }
+
+    /** The author says the help came (or isn't needed any more): the post stays, it just isn't urgent. */
+    public function endUrgent(Request $request, Post $post): JsonResponse
+    {
+        abort_unless($post->member_id === $request->attributes->get('member')->id, 403);
+        abort_unless($post->isPublished(), 404);
+        if ($post->isUrgent()) {
+            $post->forceFill(['urgent_until' => null])->save();
+        }
+
+        return response()->json(['urgent' => false]);
     }
 
     /** At most Text::MAX_LINKS links in the title and details together; formatted details count their <a> tags. */

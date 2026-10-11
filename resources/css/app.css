@@ -309,6 +309,15 @@
         @apply border-transparent bg-warn/10 text-warn;
     }
 
+    /* Urgent help (Post::isUrgent) and the blood group it asks for: brand red, text in the readable red. */
+    .tag-urgent {
+        @apply border-transparent bg-flag-red/10 text-red-text;
+    }
+
+    .blood-pill {
+        @apply inline-flex items-center gap-1 rounded-full border border-flag-red/30 bg-card px-2 py-0.5 text-xs font-bold text-red-text tabular-nums;
+    }
+
     .avatar {
         @apply inline-flex shrink-0 items-center justify-center rounded-full leading-none font-bold text-white;
     }

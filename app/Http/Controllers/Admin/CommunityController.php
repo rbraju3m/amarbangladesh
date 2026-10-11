@@ -39,6 +39,7 @@ class CommunityController extends Controller
 
         return view('admin.community', [
             'show' => $show,
+            'urgent' => Post::published()->urgent()->with('member:id,name')->orderBy('urgent_until')->limit(50)->get(),
             'posts' => $posts,
             'answers' => $answers,
             'stats' => [
@@ -87,6 +88,17 @@ class CommunityController extends Controller
         ];
 
         return view('admin.community-log', ['rows' => $rows, 'targets' => $targets, 'action' => $action]);
+    }
+
+    /** Takes the "urgent" off a help post (it stays up), e.g. a request that looks like a scam or is already met. */
+    public function clearUrgent(Request $request, Post $post): RedirectResponse
+    {
+        if ($post->isUrgent()) {
+            Moderation::log($request->user(), 'urgent_clear', $post, ['urgent_until' => $post->urgent_until->toIso8601String(), 'from' => null]);
+            $post->forceFill(['urgent_until' => null])->save();
+        }
+
+        return back()->with('status', 'No longer urgent: the post stays up.');
     }
 
     public function block(Request $request, Member $member, string $action): RedirectResponse

@@ -21,6 +21,12 @@ class Post extends Model
         'help' => ['label' => 'সাহায্য চাই', 'emoji' => '🤝'],
     ];
 
+    /** How long a help post can stay urgent, in hours (picked on the Ask page). */
+    public const URGENT_HOURS = [24, 48, 72];
+
+    /** Blood a help post can ask for. */
+    public const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+
     public const PUBLISHED = 'published';
 
     public const HIDDEN = 'hidden';    // auto-hidden by reports or by an admin; can be restored
@@ -29,14 +35,14 @@ class Post extends Model
 
     public const DELETED = 'deleted';  // deleted by its author
 
-    protected $fillable = ['member_id', 'is_anonymous', 'type', 'title', 'body', 'body_html', 'category_id', 'area_id', 'status', 'accepted_answer_id'];
+    protected $fillable = ['member_id', 'is_anonymous', 'type', 'title', 'body', 'body_html', 'category_id', 'area_id', 'status', 'accepted_answer_id', 'urgent_until', 'blood_group'];
 
     /** The columns' defaults, so a just-created model renders its counts without a reload. */
     protected $attributes = ['answers_count' => 0, 'helpful_count' => 0, 'reports_count' => 0];
 
     protected function casts(): array
     {
-        return ['is_anonymous' => 'boolean', 'edited_at' => 'datetime'];
+        return ['is_anonymous' => 'boolean', 'edited_at' => 'datetime', 'urgent_until' => 'datetime'];
     }
 
     /** The author as the public sees them: null when posted anonymously. */
@@ -48,6 +54,23 @@ class Post extends Model
     public function scopePublished(Builder $query): void
     {
         $query->where('status', self::PUBLISHED);
+    }
+
+    /** Urgent help that hasn't run out yet (nothing runs at expiry: it just stops matching). */
+    public function scopeUrgent(Builder $query): void
+    {
+        $query->where('type', 'help')->where('urgent_until', '>', now());
+    }
+
+    public function isUrgent(): bool
+    {
+        return $this->type === 'help' && $this->urgent_until?->isFuture();
+    }
+
+    /** Whole hours left while urgent (at least 1), for "23 hours left". */
+    public function urgentHoursLeft(): int
+    {
+        return max(1, (int) ceil(now()->diffInMinutes($this->urgent_until) / 60));
     }
 
     public function isPublished(): bool

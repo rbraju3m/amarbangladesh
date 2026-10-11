@@ -21,7 +21,8 @@
     <p x-show="!signedIn" x-cloak class="mt-3 rounded-2xl bg-flag-green/10 px-4 py-2.5 text-sm text-green-text">🔐 {{ __('পোস্ট করার সময় লগইন করতে বলা হবে। আগে লিখে ফেলুন, লেখা হারাবে না।') }}</p>
 
     <form class="mt-5" data-draft @submit.prevent="submitPost($el)"
-        x-data="{ type: @js($prefill['type']), title: @js($prefill['title']), details: false, anon: false, photoCount: 0, category: @js($prefill['category']), ex: 0, examples: @js($examples) }"
+        x-data="{ type: @js($prefill['type']), title: @js($prefill['title']), details: false, anon: false, photoCount: 0, urgent: 0, category: @js($prefill['category']), ex: 0, examples: @js($examples), get urgentOn() { return this.type === 'help' && this.urgent > 0 } }"
+        x-effect="urgentOn && (anon = false)"
         x-init="setInterval(() => title || (ex = (ex + 1) % examples.length), 3500)">
 
         <div class="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]" role="radiogroup" aria-label="{{ __('পোস্টের ধরন') }}">
@@ -53,6 +54,28 @@
         </div>
 
         @include('community.partials.photo-picker', ['class' => 'mt-4'])
+
+        {{-- Help posts only: urgent for 24/48/72 hours (one at a time, never anonymous) and the blood group needed --}}
+        <div x-show="type === 'help'" x-cloak class="mt-5 rounded-2xl border border-line p-4">
+            <fieldset>
+                <legend class="text-sm font-semibold">{{ __('🆘 জরুরি?') }} <span class="font-medium text-ink-2">{{ __('(ঐচ্ছিক)') }}</span></legend>
+                <p class="text-xs text-ink-2">{{ __('জরুরি পোস্ট হোম পেজে আর ম্যাপে আলাদা করে দেখানো হয়, সময় শেষ হলে সাধারণ পোস্ট হয়ে যায়। একবারে একটাই জরুরি পোস্ট দেওয়া যায়।') }}</p>
+                <div class="mt-2 flex flex-wrap gap-2" role="radiogroup" aria-label="{{ __('কতক্ষণ জরুরি') }}">
+                    @foreach (array_merge([0], \App\Models\Post::URGENT_HOURS) as $h)
+                        <button type="button" role="radio" class="filter-chip" :class="urgent === {{ $h }} && 'is-on'" :aria-checked="urgent === {{ $h }}" @click="urgent = {{ $h }}">{{ $h ? \App\Support\Lang::choice(':n ঘণ্টা', $h) : __('জরুরি না') }}</button>
+                    @endforeach
+                </div>
+                <input type="hidden" name="urgent" :value="urgent" :disabled="type !== 'help'">
+            </fieldset>
+            <label for="ask-blood" class="mt-4 block text-sm font-semibold">{{ __('🩸 রক্ত লাগবে?') }} <span class="font-medium text-ink-2">{{ __('(ঐচ্ছিক)') }}</span></label>
+            <select id="ask-blood" name="blood_group" class="field mt-1 !w-auto" :disabled="type !== 'help'">
+                <option value="">{{ __('না') }}</option>
+                @foreach (\App\Models\Post::BLOOD_GROUPS as $g)
+                    <option value="{{ $g }}">{{ $g }}</option>
+                @endforeach
+            </select>
+            <p class="mt-3 text-xs text-ink-2">{{ __('ফোন নম্বর প্রকাশ্যে দেবেন না। যাঁরা সাহায্য করতে পারবেন, তাঁরা উত্তরে জানাবেন।') }}</p>
+        </div>
 
         <fieldset class="mt-5">
             <legend class="text-sm font-semibold">{{ __('বিষয়') }} <span class="font-medium text-ink-2">{{ __('(ঐচ্ছিক)') }}</span></legend>

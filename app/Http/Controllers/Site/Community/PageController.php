@@ -46,6 +46,7 @@ class PageController extends Controller
 
         return view('community.home', [
             'lists' => $lists,
+            'urgent' => (new Feed)->urgent(),
             // The "happening now" ticker under the hero: the newest posts with where they're from.
             'ticker' => Post::published()->with('area:id,slug,name_bn,name_en')->latest('id')->limit(self::TICKER)
                 ->get(['id', 'title', 'type', 'area_id', 'created_at']),
@@ -99,9 +100,12 @@ class PageController extends Controller
     {
         $feed = Feed::fromRequest($request->query());
         $posts = $feed->posts(min(max($request->integer('limit', Feed::PER_PAGE), 1), Feed::PER_PAGE));
+        // The map's area panel asks for that area's urgent help too (first page only).
+        $urgent = $request->boolean('urgent') && ! $request->query('cursor') ? $feed->urgent(3) : collect();
 
         return response()->json([
             'html' => view('community.partials.post-list', ['posts' => $posts, 'compact' => $request->boolean('compact')])->render(),
+            'urgent_html' => $urgent->isEmpty() ? '' : view('community.partials.urgent-strip', ['posts' => $urgent, 'compact' => true])->render(),
             'count' => $posts->count(),
             'next' => $posts->nextPageUrl() ? lroute('feed', $feed->query(['cursor' => $posts->nextCursor()->encode()])) : null,
         ]);

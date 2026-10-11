@@ -102,6 +102,7 @@ Route::withoutMiddleware([
             Route::post('/posts', [PostController::class, 'store'])->middleware('throttle:posts')->name('posts.store');
             Route::patch('/posts/{post}', [PostController::class, 'update'])->middleware('throttle:community')->name('posts.update');
             Route::delete('/posts/{post}', [PostController::class, 'destroy'])->middleware('throttle:community')->name('posts.destroy');
+            Route::post('/posts/{post}/urgent-end', [PostController::class, 'endUrgent'])->middleware('throttle:community')->name('posts.urgent-end');
             Route::post('/posts/{post}/accept', [PostController::class, 'accept'])->middleware('throttle:community')->name('posts.accept');
             Route::post('/posts/{post}/answers', [AnswerController::class, 'store'])->middleware('throttle:answers')->name('answers.store');
             Route::patch('/answers/{answer}', [AnswerController::class, 'update'])->middleware('throttle:community')->name('answers.update');

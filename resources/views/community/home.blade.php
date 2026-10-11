@@ -70,6 +70,11 @@
             @endif
         </div>
 
+        {{-- Urgent help that hasn't run out (Feed::urgent), right under the hero --}}
+        @if ($urgent->isNotEmpty())
+            <div class="order-1 mt-6">@include('community.partials.urgent-strip', ['posts' => $urgent])</div>
+        @endif
+
         <div class="order-3 mt-4 lg:mt-6" x-ref="posts">
             @include('community.partials.division-posts')
         </div>

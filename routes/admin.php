@@ -40,6 +40,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('announcements', AnnouncementController::class)->only(['index', 'store', 'edit', 'update']);
         Route::post('/community/{type}/{id}/{action}', [CommunityController::class, 'moderate'])
             ->whereIn('type', ['post', 'answer'])->whereNumber('id')->whereIn('action', ['hide', 'restore', 'remove', 'dismiss'])->name('community.moderate');
+        Route::post('/community/posts/{post}/urgent-clear', [CommunityController::class, 'clearUrgent'])->name('community.urgent-clear');
         Route::post('/community/members/{member:id}/{action}', [CommunityController::class, 'block'])
             ->whereIn('action', ['block', 'unblock'])->name('community.block');
     });

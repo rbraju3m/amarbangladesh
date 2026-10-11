@@ -34,6 +34,28 @@
     @endif
 </p>
 
+@if ($urgent->isNotEmpty())
+    {{-- Urgent help that hasn't run out: shown on the home page and the map. Clearing keeps the post, just not urgent. --}}
+    <section class="panel mb-6 !p-0" aria-labelledby="urgent-title">
+        <h2 id="urgent-title" class="panel-title border-b border-line px-5 py-4 !mb-0">Urgent now <small>{{ number_format($urgent->count()) }}</small></h2>
+        <ul class="divide-y divide-line">
+            @foreach ($urgent as $post)
+                <li class="flex flex-col gap-2 px-5 py-3 md:flex-row md:items-center md:gap-4">
+                    <div class="min-w-0 flex-1">
+                        <a href="{{ lroute('posts.show', ['post' => $post->id]) }}" target="_blank" class="font-semibold hover:underline" lang="bn">{{ $post->title }}</a>
+                        <p class="mt-0.5 text-xs text-ink-2">
+                            @if ($post->blood_group)<span class="font-bold text-red-text">{{ $post->blood_group }}</span> · @endif
+                            {{ $post->member?->name ?? 'Member #'.$post->member_id }} · posted {{ $post->created_at->format('j M, H:i') }} · urgent until {{ $post->urgent_until->format('j M, H:i') }}
+                            @if ($post->reports_count) · <span class="font-semibold text-danger">{{ $post->reports_count }} {{ \Illuminate\Support\Str::plural('report', $post->reports_count) }}</span>@endif
+                        </p>
+                    </div>
+                    <form method="POST" action="{{ route('admin.community.urgent-clear', $post) }}">@csrf<button class="btn-outline !min-h-9 text-xs">Clear urgent</button></form>
+                </li>
+            @endforeach
+        </ul>
+    </section>
+@endif
+
 @foreach (['post' => $posts, 'answer' => $answers] as $type => $items)
     <section class="panel mb-6 !p-0">
         <h2 class="panel-title border-b border-line px-5 py-4 !mb-0">{{ ucfirst($type) }}s <small>{{ number_format($items->total()) }}</small></h2>
