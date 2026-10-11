@@ -336,6 +336,62 @@
                 </div>
             </div>
 
+            {{-- The owner's friends who played from this link, best match first (fetched with the owner token, never in the page HTML). --}}
+            <section x-show="friends || friendsLoading" x-cloak aria-labelledby="friends-title" class="mt-6 rounded-3xl border border-line bg-card p-4">
+                <div class="flex items-start justify-between gap-3">
+                    <h2 id="friends-title" class="text-lg leading-snug font-bold">{{ __('👥 তোমার সাথে কার মিল সবচেয়ে বেশি?') }}</h2>
+                    <span x-show="friendsNew > 0" class="shrink-0 rounded-full bg-flag-red px-2.5 py-0.5 text-sm font-semibold text-white" x-text="t('+:n নতুন', { n: bn(friendsNew) })"></span>
+                </div>
+                <p class="sr-only" aria-live="polite" x-text="friends ? t(':n জন বন্ধু তোমার লিংক থেকে খেলেছে', { n: bn(friends.total), count: friends.total }) : ''"></p>
+
+                <template x-if="friendsLoading">
+                    <div class="mt-3 space-y-2" aria-hidden="true">
+                        <div class="h-20 animate-pulse rounded-2xl bg-paper-2"></div>
+                        <div class="h-12 animate-pulse rounded-2xl bg-paper-2"></div>
+                    </div>
+                </template>
+
+                <template x-if="friends && !friends.total">
+                    <div>
+                        <p class="mt-1 leading-relaxed text-ink-2">{{ __('এখনো কোনো বন্ধু খেলেনি। লিংকটা পাঠাও, তারপর এখানে দেখবে কার সাথে তোমার মিল সবচেয়ে বেশি।') }}</p>
+                        <button type="button" class="btn-ghost mt-3 w-full !font-semibold" @click="openSheet('friends_empty')">{{ __('বন্ধুদের লিংক পাঠাও 💌') }}</button>
+                    </div>
+                </template>
+
+                <template x-if="friends?.total">
+                    <div>
+                        <p class="mt-0.5 text-sm text-ink-2" x-text="t(':n জন বন্ধু তোমার লিংক থেকে খেলেছে', { n: bn(friends.total), count: friends.total })"></p>
+
+                        {{-- Best match --}}
+                        <div class="mt-3 flex items-center gap-4 rounded-2xl bg-flag-red/10 p-3">
+                            <div class="text-4xl font-bold text-red-text tabular-nums" x-text="`${bn(friends.friends[0].pct)}%`"></div>
+                            <div class="min-w-0 leading-relaxed">
+                                <p class="truncate font-bold" x-text="`🏆 ${friends.friends[0].name || t('একজন বন্ধু')}`"></p>
+                                <p class="text-sm text-ink-2" x-text="friends.friends[0].same ? t('দুজনেরই বাংলাদেশ :place! 🤝', { place: friends.friends[0].location.name }) : t('ওর বাংলাদেশ :place', { place: `${friends.friends[0].location.emoji} ${friends.friends[0].location.name}` })"></p>
+                            </div>
+                        </div>
+
+                        <ul class="mt-1 divide-y divide-line" x-show="friendsShown.length">
+                            <template x-for="(f, i) in friendsShown" :key="i">
+                                <li class="flex items-center gap-3 py-2.5">
+                                    <span class="text-2xl" aria-hidden="true" x-text="f.location.emoji"></span>
+                                    <span class="min-w-0 flex-1">
+                                        <span class="block truncate font-semibold" x-text="f.name || t('একজন বন্ধু')"></span>
+                                        <span class="block text-sm text-ink-2" x-text="`${f.location.name}${f.same ? ' 🤝' : ''} · ${f.ago}`"></span>
+                                    </span>
+                                    <span class="font-bold tabular-nums" x-text="`${bn(f.pct)}%`"></span>
+                                </li>
+                            </template>
+                        </ul>
+                        <button type="button" x-show="!friendsAll && friends.friends.length > 5" @click="friendsAll = true"
+                            class="mt-1 w-full rounded-2xl py-2.5 text-sm font-semibold text-ink-2 hover:bg-paper-2 hover:text-ink"
+                            x-text="t('সবাইকে দেখো (:n)', { n: bn(friends.friends.length) })"></button>
+                        <p x-show="friendsAll && friends.total > friends.friends.length" class="mt-1 text-center text-sm text-ink-2"
+                            x-text="t('সবচেয়ে বেশি মিলের :n জন দেখানো হলো', { n: bn(friends.friends.length) })"></p>
+                    </div>
+                </template>
+            </section>
+
             {{-- Why --}}
             <div class="mt-8">
                 <h2 class="text-lg font-bold" x-text="t('কেন :place?', { place: result.location.name })"></h2>

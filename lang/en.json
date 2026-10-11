@@ -614,5 +614,14 @@
     "শুধু আপনি দেখতে পান। আলোচনায় “আমার এলাকা” চাপলে এই জেলার পোস্ট দেখাবে।": "Only you can see this. “My area” in Discussions shows this district's posts.",
     "বেছে নিন": "Choose",
     "আপনার এলাকা সেভ হয়েছে": "Your area is saved",
-    "এলাকা মুছে দেওয়া হয়েছে": "Your area is cleared"
+    "এলাকা মুছে দেওয়া হয়েছে": "Your area is cleared",
+    "👥 তোমার সাথে কার মিল সবচেয়ে বেশি?": "👥 Who matches you best?",
+    "+:n নতুন": "+:n new",
+    ":n জন বন্ধু তোমার লিংক থেকে খেলেছে": ":n friend played from your link|:n friends played from your link",
+    "এখনো কোনো বন্ধু খেলেনি। লিংকটা পাঠাও, তারপর এখানে দেখবে কার সাথে তোমার মিল সবচেয়ে বেশি।": "No friends have played yet. Send them your link, then see here who matches you best.",
+    "বন্ধুদের লিংক পাঠাও 💌": "Send your link to friends 💌",
+    "একজন বন্ধু": "A friend",
+    "ওর বাংলাদেশ :place": "Theirs is :place",
+    "সবাইকে দেখো (:n)": "See everyone (:n)",
+    "সবচেয়ে বেশি মিলের :n জন দেখানো হলো": "Showing the :n best matches"
 }

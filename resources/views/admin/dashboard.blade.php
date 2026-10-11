@@ -192,11 +192,12 @@
     </div>
 </section>
 
-<div class="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+<div class="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-5">
     <div class="stat"><div class="text-xs font-semibold text-ink-2">From shared links</div><div class="mt-1 text-2xl font-bold tabular-nums">{{ $fmt($s['referral_visitors']) }}</div><div class="text-xs text-ink-2">visitors via a friend's result</div></div>
     <div class="stat"><div class="text-xs font-semibold text-ink-2">Played via links</div><div class="mt-1 text-2xl font-bold tabular-nums">{{ $fmt($s['referred_players']) }}</div><div class="text-xs text-ink-2">people · {{ $s['referral_conversion'] }}% of link visitors</div></div>
     <div class="stat"><div class="text-xs font-semibold text-ink-2">Total plays</div><div class="mt-1 text-2xl font-bold tabular-nums">{{ $fmt($s['plays']) }}</div><div class="text-xs text-ink-2">incl. replays</div></div>
     <div class="stat"><div class="flex items-center justify-between text-xs font-semibold text-ink-2">Viral coefficient <span class="pill {{ $s['viral_k'] >= 1 ? $tone['up'] : $tone['flat'] }}">{{ $s['viral_k'] >= 1 ? 'self-growing' : 'K < 1' }}</span></div><div class="mt-1 text-2xl font-bold tabular-nums">{{ $s['viral_k'] }}</div><div class="text-xs text-ink-2">new players per original player (people, not plays)</div></div>
+    <div class="stat"><div class="text-xs font-semibold text-ink-2">Came back for friends</div><div class="mt-1 text-2xl font-bold tabular-nums">{{ $fmt($s['friends_viewers']) }}</div><div class="text-xs text-ink-2">owners who reopened their result and saw friends · {{ $fmt($s['friends_viewers_new']) }} found new ones</div></div>
 </div>
 
 <section class="panel mt-4">
@@ -242,7 +243,7 @@
         <h2 class="panel-title">Share actions</h2>
         <ul class="divide-y divide-line text-sm">
             @forelse (array_filter($channels) as $channel => $n)
-                <li class="flex justify-between py-2.5"><span>{{ ['sheet' => 'Opened share sheet', 'native' => 'Native share (story)', 'link_copied' => 'Copied link', 'card_saved' => 'Saved card', 'whatsapp' => 'WhatsApp'][$channel] ?? ucfirst($channel) }}</span><b class="tabular-nums">{{ $fmt($n) }}</b></li>
+                <li class="flex justify-between py-2.5"><span>{{ ['sheet' => 'Opened share sheet', 'native' => 'Native share (story)', 'link_copied' => 'Copied link', 'card_saved' => 'Saved card', 'whatsapp' => 'WhatsApp', 'friend' => 'Sent back to the friend', 'friends_empty' => 'From the empty friends list'][$channel] ?? ucfirst($channel) }}</span><b class="tabular-nums">{{ $fmt($n) }}</b></li>
             @empty
                 <li class="py-2 text-ink-2">No data yet.</li>
             @endforelse

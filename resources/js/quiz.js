@@ -30,6 +30,12 @@ export default function quiz(boot) {
         // landing: place focused by hovering/tapping a map dot or card
         focusSlug: null,
 
+        // owner's private list of friends who played from their link (POST /api/results/{code}/friends)
+        friends: null, // { total, friends: [{ name, location, pct, same, ago }] }
+        friendsLoading: false,
+        friendsAll: false,
+        friendsNew: 0, // friends who played since this browser last showed the list
+
         // result entrance animation
         shownPct: 0,
         barsIn: false,
@@ -272,6 +278,7 @@ export default function quiz(boot) {
                 navigator.vibrate?.(30);
             }
             this.animateResult(result, fresh);
+            this.loadFriends(result.code, fresh);
             // Draw the share card right away: the result page previews it before the sheet is opened.
             this.$nextTick(() => this.buildCard());
             document.title = t(':place — তোমার বাংলাদেশ কোথায়?', { place: `${result.location.emoji} ${result.location.name}` });
@@ -393,6 +400,44 @@ export default function quiz(boot) {
             return this.screen === 'result' && this.shareBtnPassed && !this.sheetOpen && !this.placeSlug;
         },
 
+        // Only the owner reaches the result screen (a visitor gets the teaser), so the list is always theirs.
+        async loadFriends(code, fresh) {
+            this.friends = null;
+            this.friendsAll = false;
+            this.friendsNew = 0;
+            const seen = store.get('bd.friends', {});
+            // Nobody can have played from a link that was made a moment ago.
+            if (fresh) {
+                this.friends = { total: 0, friends: [] };
+                store.set('bd.friends', { ...seen, [code]: 0 });
+                return;
+            }
+            this.friendsLoading = true;
+            try {
+                const res = await fetch(`/api/results/${code}/friends`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...localeHeaders() },
+                    body: JSON.stringify({ owner_token: this.ownerToken }),
+                });
+                if (!res.ok || this.result?.code !== code) return;
+                const data = await res.json();
+                // A result from before this list existed has no mark yet: everyone in it is new to the owner.
+                this.friendsNew = Math.max(0, data.total - (seen[code] ?? 0));
+                this.friends = data;
+                store.set('bd.friends', { ...seen, [code]: data.total });
+                track('friends_viewed', { result: code, meta: { count: data.total, new: this.friendsNew } });
+            } catch {
+                // The list is a bonus: without it the result page is simply as before.
+            } finally {
+                this.friendsLoading = false;
+            }
+        },
+
+        get friendsShown() {
+            const list = this.friends?.friends ?? [];
+            return this.friendsAll ? list.slice(1) : list.slice(1, 5);
+        },
+
         // Played from a friend's link: send this result back to them, with how well the two match.
         async replyToFriend() {
             this.persistName();
@@ -419,9 +464,9 @@ export default function quiz(boot) {
             return t('আমার বাংলাদেশ হলো :place — ভাইব ম্যাচ :n%! তোমার বাংলাদেশ কোথায়? 👉', { place: `${r.location.name} ${r.location.emoji}`, n: num(r.match_pct) });
         },
 
-        async openSheet() {
+        async openSheet(channel = 'sheet') {
             this.sheetOpen = true;
-            track('share_clicked', { result: this.result.code, meta: { channel: 'sheet' } });
+            track('share_clicked', { result: this.result.code, meta: { channel } });
             // Invite a name: focus the empty field on desktop (on phones it would pop the keyboard over the card).
             if (!this.liveName && matchMedia('(hover: hover)').matches) this.$nextTick(() => this.$refs.sheetName?.focus());
             if (!this.cardUrl || this.cardName !== this.liveName) await this.buildCard();

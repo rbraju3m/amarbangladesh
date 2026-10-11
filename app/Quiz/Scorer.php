@@ -113,7 +113,8 @@ final class Scorer
      */
     public static function friendMatch(array $a, array $b, bool $samePlace = false): int
     {
-        $sim = self::cosine(array_values($a), array_values($b));
+        // Matched by trait key: a vector read back from MySQL JSON comes with its keys in another order.
+        $sim = self::cosine($a, $b);
         $pct = (int) round(max(20, min(99, 45 + ($sim - 0.6) / 0.35 * 50)));
 
         return $samePlace ? max($pct, 70) : $pct;

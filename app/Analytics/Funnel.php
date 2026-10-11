@@ -45,6 +45,10 @@ final class Funnel
         $sharedResults = $this->events()->whereIn('name', ['share_clicked', 'link_copied', 'card_saved'])
             ->whereNotNull('quiz_result_id')->distinct()->count('quiz_result_id');
         $referralVisitors = $this->distinctVisitors(['share_page_view']);
+        // Owners who came back to their result and found friends on its list (Friend Match).
+        $friendsViewed = $this->events()->where('name', 'friends_viewed')->whereNotNull('visitor_id')->where('meta->count', '>', 0);
+        $friendsViewers = (clone $friendsViewed)->distinct()->count('visitor_id');
+        $friendsViewersNew = (clone $friendsViewed)->where('meta->new', '>', 0)->distinct()->count('visitor_id');
 
         return [
             'visitors' => $visitors,
@@ -60,6 +64,8 @@ final class Funnel
             'referral_conversion' => self::pct($referredFromLinks, $referralVisitors),
             // New players brought in per original (non-referred) player.
             'viral_k' => $originalPlayers > 0 ? round($referredPlayers / $originalPlayers, 2) : 0,
+            'friends_viewers' => $friendsViewers,
+            'friends_viewers_new' => $friendsViewersNew,
         ];
     }
 

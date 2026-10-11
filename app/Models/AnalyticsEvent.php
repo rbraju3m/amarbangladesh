@@ -21,6 +21,7 @@ class AnalyticsEvent extends Model
     public const CLIENT_EVENTS = [
         'landing_view', 'share_page_view', 'quiz_started', 'question_answered', 'result_viewed',
         'share_clicked', 'card_saved', 'link_copied', 'name_added', 'retake_clicked', 'place_opened',
+        'friends_viewed',
         // community (post_created and answer_created are recorded server-side)
         'community_clicked', 'home_view', 'feed_view', 'search_performed', 'similar_shown', 'similar_clicked',
         'feed_page_loaded', 'feed_load_failed', 'post_view', 'ask_view', 'post_shared',

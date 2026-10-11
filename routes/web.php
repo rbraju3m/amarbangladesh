@@ -90,6 +90,7 @@ Route::withoutMiddleware([
 
         Route::post('/results', [ResultController::class, 'store'])->middleware('throttle:results')->name('results.store');
         Route::patch('/results/{result}/name', [ResultController::class, 'updateName'])->middleware('throttle:results')->name('results.name');
+        Route::post('/results/{result}/friends', [ResultController::class, 'friends'])->middleware('throttle:results')->name('results.friends');
         Route::post('/events', [EventController::class, 'store'])->middleware('throttle:events')->name('events.store');
 
         Route::get('/members/me', [MemberController::class, 'show'])->middleware('member')->name('members.me');
