@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Mail\AnswerNotice;
 use App\Models\Member;
 use App\Models\MemberNotification;
+use App\Support\Heartbeat;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Mail;
 use Throwable;
@@ -42,7 +43,7 @@ class SendNotificationEmails extends Command
             // MAX_AGE, a still-unread notice may go out then).
             ->filter(fn ($notice) => $notice->member->wantsNotice('email', $notice->type));
 
-        $sent = 0;
+        $sent = $failed = 0;
         foreach ($pending->groupBy('member_id') as $notices) {
             $member = $notices->first()->member;
             $budget = self::DAILY - $this->emailsSince($member->id, now()->subDay());
@@ -59,6 +60,8 @@ class SendNotificationEmails extends Command
                     Mail::to($member->email)->locale($member->locale)->send(new AnswerNotice($member, $group->first()->post, $group->values()));
                 } catch (Throwable $e) {
                     report($e); // left pending: the next run tries again
+                    Heartbeat::mailFailed($e);
+                    $failed++;
 
                     continue;
                 }
@@ -68,6 +71,7 @@ class SendNotificationEmails extends Command
             }
         }
 
+        Heartbeat::record($this->getName(), ['sent' => $sent, 'failed' => $failed]);
         $this->components->info("Sent {$sent} notification email(s).");
 
         return self::SUCCESS;

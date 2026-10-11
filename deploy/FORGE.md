@@ -124,7 +124,8 @@ back to SUPER_ADMIN_PASSWORD. Then add the scheduler
 answer-notification emails (`community:send-notification-emails`, every 5 minutes) and prunes old
 analytics events and notifications daily. Without it, notifications still show on the site but no
 email goes out. With `MAIL_MAILER=log` the emails are only written to the log; the admin Community
-page says so.
+page says so. After a deploy, open `/admin/system`: every check should say OK and the scheduler's
+last run should be under a minute old (the daily analytics pruning shows "never" until its first night).
 
 ## Going live / exporting the database
 

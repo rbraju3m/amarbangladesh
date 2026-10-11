@@ -18,6 +18,7 @@
         $groups = [
             'Overview' => [
                 ['admin.dashboard', 'Analytics', 'admin.dashboard', 'M4 19V9m6 10V5m6 14v-7m4 7H2'],
+                ['admin.system', 'System', 'admin.system', 'M4 5h16v10H4V5Zm4 14h8m-4-4v4M8 10h2l1-2 2 4 1-2h2'],
             ],
             'Community' => [
                 ['admin.community', 'Moderation', 'admin.community', 'M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.4A8 8 0 1 1 21 12Z'],

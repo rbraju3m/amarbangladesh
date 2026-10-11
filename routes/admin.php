@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\HelplineController;
 use App\Http\Controllers\Admin\LocationController;
 use App\Http\Controllers\Admin\PlayController;
 use App\Http\Controllers\Admin\QuestionController;
+use App\Http\Controllers\Admin\SystemController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin')->name('admin.')->group(function () {
@@ -27,6 +28,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/', DashboardController::class)->name('dashboard');
         Route::get('/plays', PlayController::class)->name('plays');
         Route::get('/balance', BalanceController::class)->name('balance');
+        Route::get('/system', SystemController::class)->name('system');
         Route::get('/export/{type}.csv', ExportController::class)->whereIn('type', ['results', 'daily'])->name('export');
 
         Route::post('/questions/reorder', [QuestionController::class, 'reorder'])->name('questions.reorder');

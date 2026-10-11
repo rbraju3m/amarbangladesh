@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Community\Photos;
+use App\Support\Heartbeat;
 use Illuminate\Console\Command;
 
 class PrunePhotos extends Command
@@ -13,7 +14,9 @@ class PrunePhotos extends Command
 
     public function handle(): int
     {
-        $this->info('Deleted '.Photos::prune().' photos.');
+        $deleted = Photos::prune();
+        Heartbeat::record($this->getName(), ['deleted' => $deleted]);
+        $this->info("Deleted {$deleted} photos.");
 
         return self::SUCCESS;
     }
