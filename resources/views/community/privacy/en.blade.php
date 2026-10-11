@@ -34,7 +34,7 @@
     <li><strong>Phone:</strong> your mobile number.</li>
     <li><strong>Email:</strong> your email address and password (stored so that even we can't read it).</li>
 </ul>
-<p>Also the name you choose, your posts and answers (and their photos), your “Helpful” marks, reports, saved posts (only you can see them), and whether you use the site in Bangla or English. Everyone can see your name, posts and answers; nobody can see your phone number or email.</p>
+<p>Also the name you choose, your posts and answers (and their photos), your “Helpful” marks, reports, saved posts and, if you pick one, your district (only you can see these two), and whether you use the site in Bangla or English. Everyone can see your name, posts and answers; nobody can see your phone number or email.</p>
 
 <p>Your profile can show “Phone verified” or “Email verified”: that only says you logged in with that number or address, which stay hidden. If we give you a professional badge (such as “Doctor”), we keep a short note of how we checked it, seen only by admins, and delete it with your account.</p>
 
@@ -77,7 +77,7 @@
 <p>Log in, open your own page (“Me”), and choose “Delete account”. When you do:</p>
 <ul>
     <li>All your ways of logging in, your email, phone number and password are deleted, and every device is logged out.</li>
-    <li>Your notifications, saved posts, “Helpful” marks and reports are deleted.</li>
+    <li>Your notifications, saved posts, chosen district, “Helpful” marks and reports are deleted.</li>
     <li>Your posts and answers stay, so other people's questions keep their answers, but the author shows as “Deleted account” and your profile page is gone. If you prefer, tick a box to delete your posts and answers too, with their photos.</li>
 </ul>
 <p>If you can't log in any more (for example, you lost the number or account), write to <a href="mailto:{{ $email }}">{{ $email }}</a> saying how you used to log in, and we'll delete it.</p>

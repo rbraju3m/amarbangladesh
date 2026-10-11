@@ -15,9 +15,9 @@ use Illuminate\Support\Str;
  */
 class Member extends Model
 {
-    protected $fillable = ['code', 'name', 'password', 'email', 'email_notifications', 'notification_prefs', 'locale', 'blocked_at', 'deleted_at'];
+    protected $fillable = ['code', 'name', 'password', 'email', 'email_notifications', 'notification_prefs', 'locale', 'district_id', 'blocked_at', 'deleted_at'];
 
-    protected $hidden = ['password', 'email', 'badge_note', 'badge_by'];
+    protected $hidden = ['password', 'email', 'badge_note', 'badge_by', 'district_id'];
 
     /** The columns `partials/author` needs: eager-load authors as `'member:'.Member::AUTHOR_COLUMNS`. */
     public const AUTHOR_COLUMNS = 'id,code,name,deleted_at,badge_bn,badge_en';
@@ -195,5 +195,11 @@ class Member extends Model
     public function savedPosts(): HasMany
     {
         return $this->hasMany(SavedPost::class);
+    }
+
+    /** Their home district (optional, private: only they see it, for "my area"). */
+    public function district(): BelongsTo
+    {
+        return $this->belongsTo(Area::class, 'district_id');
     }
 }

@@ -52,6 +52,24 @@
             <span x-show="unread" class="rounded-full bg-flag-red px-2 text-xs font-bold text-white tabular-nums" x-text="bn(unread)"></span>
         </a>
         <a href="{{ lroute('saved', [], false) }}" class="act mt-3">🔖 {{ __('সেভ করা পোস্ট') }}</a>
+        {{-- Home district: private, for the "my area" shortcut on the feed and the home map --}}
+        <form id="home-area" class="mt-4 border-t border-line pt-4" @submit.prevent="setDistrict($el.district.value)">
+            <label for="my-district" class="text-sm font-semibold">📍 {{ __('আমার এলাকা') }}</label>
+            <p class="text-xs text-ink-2">{{ __('শুধু আপনি দেখতে পান। আলোচনায় “আমার এলাকা” চাপলে এই জেলার পোস্ট দেখাবে।') }}</p>
+            <div class="mt-2 flex gap-2">
+                <select id="my-district" name="district" class="field min-w-0 flex-1" x-effect="$el.value = myDistrict?.slug ?? ''">
+                    <option value="">{{ __('বেছে নিন') }}</option>
+                    @foreach (\App\Community\Taxonomy::districtsByDivision() as $division => $list)
+                        <optgroup label="{{ __(':name বিভাগ', ['name' => $division]) }}">
+                            @foreach ($list as $a)
+                                <option value="{{ $a['slug'] }}">{{ $a['name'] }}</option>
+                            @endforeach
+                        </optgroup>
+                    @endforeach
+                </select>
+                <button class="btn-primary !min-h-11 !w-auto !text-base" :disabled="busy">{{ __('সেভ') }}</button>
+            </div>
+        </form>
         <form x-show="editing" class="mt-3 flex gap-2" @submit.prevent="renameMe($el.name.value).then(ok => ok && (editing = false))">
             <input name="name" maxlength="20" :value="myName" class="field min-w-0 flex-1" aria-label="{{ __('নতুন নাম') }}">
             <button class="btn-primary !min-h-11 !w-auto !text-base" :disabled="busy">{{ __('সেভ') }}</button>

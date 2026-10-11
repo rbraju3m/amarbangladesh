@@ -435,6 +435,13 @@
         animation-delay: calc(var(--i, 0) * 70ms), 0.2s;
     }
 
+    /* The signed-in member's home division (a dashed outline; their district is on their profile) */
+    .division.is-home:not(.is-on) {
+        stroke: var(--ink);
+        stroke-width: 2.2;
+        stroke-dasharray: 5 3;
+    }
+
     /* A picked division stays bright, the rest step back. */
     .division-map.has-spot .division:not(.is-on, .is-hover) {
         opacity: 0.5;

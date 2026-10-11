@@ -609,5 +609,10 @@
     "নম্বরগুলো আমরা যাচাই করে দিই, তবু বদলে যেতে পারে। কোনো নম্বর কাজ না করলে জানান:": "We check these numbers, but they can change. If one doesn't work, tell us:",
     "জরুরি দরকারে হেল্পলাইন নম্বর দেখুন": "See helpline numbers for emergencies",
     "জীবন বা নিরাপত্তার ঝুঁকি থাকলে আগে হেল্পলাইনে ফোন করুন": "If a life or someone's safety is at risk, call a helpline first",
-    "helpline.kind.emergency": "Emergency"
+    "helpline.kind.emergency": "Emergency",
+    "আমার এলাকা": "My area",
+    "শুধু আপনি দেখতে পান। আলোচনায় “আমার এলাকা” চাপলে এই জেলার পোস্ট দেখাবে।": "Only you can see this. “My area” in Discussions shows this district's posts.",
+    "বেছে নিন": "Choose",
+    "আপনার এলাকা সেভ হয়েছে": "Your area is saved",
+    "এলাকা মুছে দেওয়া হয়েছে": "Your area is cleared"
 }

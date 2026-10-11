@@ -128,7 +128,7 @@ final class Accounts
             $member->notifications()->delete();
             $member->savedPosts()->delete();
             $member->update([
-                'name' => null, 'password' => null, 'email' => null, 'email_notifications' => false,
+                'name' => null, 'password' => null, 'email' => null, 'email_notifications' => false, 'district_id' => null,
                 'code' => 'x'.Str::lower(Str::random(11)), // the old profile URL stops working
                 'deleted_at' => now(),
             ]);

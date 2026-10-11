@@ -56,6 +56,9 @@
                 </form>
             </div>
             <div class="-mx-4 flex gap-2 overflow-x-auto px-4 py-2.5 [scrollbar-width:none]">
+                {{-- "My area": the signed-in member's home district (private, so built in the browser) --}}
+                <a x-show="signedIn" x-cloak :href="nearUrl" class="filter-chip" :class="isNear && 'is-on'" :aria-current="isNear ? 'page' : null" @click="track('community_clicked', { meta: { from: 'feed', to: 'my_area', set: myDistrict ? 1 : 0 } })">📍 <span x-show="myDistrict" x-text="myDistrict?.name"></span><span x-show="!myDistrict">{{ __('আমার এলাকা') }}</span></a>
+                <span x-show="signedIn" x-cloak class="my-1 w-px shrink-0 bg-line" aria-hidden="true"></span>
                 <a href="{{ lroute('feed', $feed->query(['category' => null]), false) }}" @class(['filter-chip', 'is-on' => ! $feed->category])>{{ __('সব বিষয়') }}</a>
                 @foreach ($categories as $c)
                     <a href="{{ lroute('feed', $feed->query(['category' => $c['slug']]), false) }}" @class(['filter-chip', 'is-on' => ($feed->category['slug'] ?? null) === $c['slug']])>{{ $c['emoji'] }} {{ $c['name'] }}</a>

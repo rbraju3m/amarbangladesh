@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Site\Community;
 
 use App\Community\Accounts;
+use App\Community\Taxonomy;
 use App\Http\Controllers\Controller;
 use App\Models\AnalyticsEvent;
 use App\Models\Answer;
@@ -48,11 +49,21 @@ class MemberController extends Controller
 
     public function update(Request $request): JsonResponse
     {
-        $data = $request->validate(['name' => ['required', 'string', 'max:40']]);
+        $districts = array_keys(array_filter(Taxonomy::areas(), fn ($a) => $a['type'] === 'district'));
+        $data = $request->validate([
+            'name' => [Rule::requiredIf(! $request->exists('district')), 'string', 'max:40'],
+            'district' => ['nullable', 'string', Rule::in($districts)], // '' or null clears it
+        ]);
         $member = $request->attributes->get('member');
-        $name = Bangla::cleanName($data['name']);
-        abort_unless($name, 422, __('নামটা ঠিকমতো লিখুন।'));
-        $member->update(['name' => $name]);
+        if (array_key_exists('name', $data)) {
+            $name = Bangla::cleanName($data['name']);
+            abort_unless($name, 422, __('নামটা ঠিকমতো লিখুন।'));
+            $member->name = $name;
+        }
+        if ($request->exists('district')) {
+            $member->district_id = filled($data['district'] ?? null) ? Taxonomy::areas()[$data['district']]['id'] : null;
+        }
+        $member->save();
 
         return response()->json(['member' => self::present($member)]);
     }
@@ -76,6 +87,18 @@ class MemberController extends Controller
             'name' => $member->name,
             'url' => lroute('members.show', $member),
             'account' => $member->hasAccount(),
+            // Private: only ever sent to the member themselves (this endpoint and sign-in answers).
+            'district' => self::district($member->district_id),
         ];
+    }
+
+    /** The home district for the browser: slug, its division's slug and both names (the page language can change). */
+    private static function district(?int $id): ?array
+    {
+        $area = $id ? collect(Taxonomy::areas())->firstWhere('id', $id) : null;
+
+        return $area ? [
+            'slug' => $area['slug'], 'division' => $area['division_slug'], 'name_bn' => $area['name_bn'], 'name_en' => $area['name_en'],
+        ] : null;
     }
 }

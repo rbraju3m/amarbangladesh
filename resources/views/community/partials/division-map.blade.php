@@ -14,7 +14,7 @@
                 @pointerenter="$event.pointerType === 'mouse' && (hover = '{{ $s['slug'] }}')" @pointerleave="hover === '{{ $s['slug'] }}' && (hover = null)"
                 @focus="$el.matches(':focus-visible') && (hover = '{{ $s['slug'] }}')" @blur="hover === '{{ $s['slug'] }}' && (hover = null)"
                 aria-label="{{ __(':name বিভাগ', ['name' => $s['name']]) }}: {{ \App\Support\Lang::choice(':nটি আলোচনা', $s['count']) }}" :aria-label="ariaFor('{{ $s['slug'] }}')">
-                <path d="{{ $s['path'] }}" data-division="{{ $s['slug'] }}" style="--i: {{ $i }}" class="division" data-level="{{ $s['level'] }}" :data-level="level('{{ $s['slug'] }}')" :class="{ 'is-on': spot === '{{ $s['slug'] }}', 'is-hover': hover === '{{ $s['slug'] }}' }" />
+                <path d="{{ $s['path'] }}" data-division="{{ $s['slug'] }}" style="--i: {{ $i }}" class="division" data-level="{{ $s['level'] }}" :data-level="level('{{ $s['slug'] }}')" :class="{ 'is-on': spot === '{{ $s['slug'] }}', 'is-hover': hover === '{{ $s['slug'] }}', 'is-home': myDistrict?.division === '{{ $s['slug'] }}' }" />
             </a>
         @endforeach
         {{-- The zoomed-in division's districts (partials/district-map), one listener for all of them --}}
@@ -32,7 +32,7 @@
     {{-- Each division's name on its shape; a pulsing dot where people posted this week --}}
     @foreach ($spots as $i => $s)
         <span class="map-name" x-show="!zoomed" x-transition.opacity style="left: {{ $s['x'] }}%; top: {{ $s['y'] }}%; --i: {{ $i }}" :class="(spot === '{{ $s['slug'] }}' || hover === '{{ $s['slug'] }}') && 'is-on'" aria-hidden="true">
-            @if ($s['recent'])<span class="map-live" x-show="!topic"><span class="map-ping"></span></span>@endif{{ $s['name'] }}
+            @if ($s['recent'])<span class="map-live" x-show="!topic"><span class="map-ping"></span></span>@endif<span x-show="myDistrict?.division === '{{ $s['slug'] }}'" x-cloak>📍</span>{{ $s['name'] }}
         </span>
     @endforeach
 
@@ -51,6 +51,8 @@
 </div>
 
 <div class="mt-4 flex flex-wrap justify-center gap-1.5" x-show="!zoomed">
+    {{-- The signed-in member's home district (private, set on their profile): straight to its posts --}}
+    <button type="button" x-show="myDistrict" x-cloak class="filter-chip !text-xs" @click="pickHome()">📍 {{ __('আমার এলাকা') }} · <span x-text="myDistrict?.name"></span></button>
     @foreach ($spots as $s)
         <a href="{{ lroute('feed', ['area' => $s['slug']], false) }}" class="filter-chip !text-xs" :class="spot === '{{ $s['slug'] }}' && 'is-on'" @click.prevent="pick('{{ $s['slug'] }}')">{{ $s['name'] }}</a>
     @endforeach

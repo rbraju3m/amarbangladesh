@@ -14,7 +14,7 @@ import { setTrackingContext, track } from './track';
  * Every write needs a signed-in account: a signed-out reader gets the sign-in sheet, and the action
  * carries on once they are in.
  */
-const MEMBER = 'bd.member'; // { token, code, name, account }
+const MEMBER = 'bd.member'; // { token, code, name, account, district, checked }
 const RETURN = 'bd.return'; // where to come back to after Google/Facebook
 const DRAFT = 'bd.draft'; // { path, fields } typed text kept across a Google/Facebook round trip
 const MARKS = 'bd.helpful'; // ['post:12', 'answer:40', …]
@@ -116,6 +116,7 @@ function community() {
             if (viewed) this.countView(viewed);
             this.refreshMine();
             this.refreshUnread();
+            this.refreshMember();
             const url = new URL(location.href);
             if (url.searchParams.has('deleted')) {
                 url.searchParams.delete('deleted');
@@ -137,8 +138,53 @@ function community() {
         },
 
         saveMember(member, token = this.member?.token) {
-            this.member = { token, code: member.code, name: member.name, account: member.account };
+            this.member = { token, code: member.code, name: member.name, account: member.account, district: member.district ?? null, checked: Date.now() };
             store.set(MEMBER, this.member);
+        },
+
+        /** Re-reads the account at most once a day (its home district may have been set on another device). */
+        async refreshMember() {
+            if (!this.signedIn || Date.now() - (this.member.checked ?? 0) < 864e5) return;
+            try {
+                this.saveMember((await api('GET', '/api/members/me', null, this.member.token)).member);
+            } catch {}
+        },
+
+        // ---------- home district ("my area", private) ----------
+
+        /** { slug, division, name } in the page language, or null. */
+        get myDistrict() {
+            const d = this.signedIn ? this.member.district : null;
+            return d ? { slug: d.slug, division: d.division, name: lang === 'en' ? d.name_en : d.name_bn } : null;
+        },
+
+        /** The feed narrowed to the home district, keeping the current topic and tab. */
+        get nearUrl() {
+            if (!this.myDistrict) return path(`/u/${this.me}#home-area`); // not set yet: the setting on their profile
+            const url = new URL(location.href);
+            const query = new URLSearchParams(url.pathname.replace(/^\/en(?=\/|$)/, '') === '/feed' ? url.search : '');
+            query.delete('cursor');
+            query.set('area', this.myDistrict.slug);
+            return path(`/feed?${query}`);
+        },
+
+        get isNear() {
+            return !!this.myDistrict && new URLSearchParams(location.search).get('area') === this.myDistrict.slug;
+        },
+
+        async setDistrict(slug) {
+            this.busy = true;
+            try {
+                this.saveMember((await this.call('PATCH', '/api/members/me', { district: slug || null })).member);
+                track('home_district_set', { meta: { set: slug ? 1 : 0 } });
+                this.flash(slug ? t('আপনার এলাকা সেভ হয়েছে') : t('এলাকা মুছে দেওয়া হয়েছে'));
+                return true;
+            } catch (e) {
+                this.flash(e.message);
+                return false;
+            } finally {
+                this.busy = false;
+            }
         },
 
         // ---------- sign-in ----------
@@ -882,6 +928,15 @@ function divisionMap(divisions, lens, topics) {
             track('community_clicked', { meta: { from: 'home_map', to: 'division', area: slug } });
             this.zoomTo(slug);
             this.load(slug);
+        },
+        /** "My area": zooms into the member's division, then picks their district. */
+        pickHome() {
+            const home = this.myDistrict;
+            if (!home) return;
+            track('community_clicked', { meta: { from: 'home_map', to: 'my_area' } });
+            this.spot = home.division;
+            this.district = null;
+            this.zoomTo(home.division).then(() => this.zoomed === home.division && this.pickDistrict(home.slug));
         },
         pickDistrict(slug) {
             if (this.district === slug) return;

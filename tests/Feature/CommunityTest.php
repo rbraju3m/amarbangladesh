@@ -73,7 +73,7 @@ class CommunityTest extends TestCase
         $this->assertStringContainsString('Where to renew a passport', $html);
         $this->assertStringContainsString('href="/ask"', $html);
         $this->assertStringContainsString('href="/quiz"', $html);
-        $this->assertMatchesRegularExpression('~class="map-name"[^>]*>\s*<span class="map-live" x-show="!topic"><span class="map-ping"></span></span>সিলেট\s*</span>~u', $html); // names on the map, a pulse for this week
+        $this->assertMatchesRegularExpression('~class="map-name"[^>]*>\s*<span class="map-live" x-show="!topic"><span class="map-ping"></span></span><span x-show="myDistrict[^"]*" x-cloak>📍</span>সিলেট\s*</span>~u', $html); // names on the map, a pulse for this week
         $this->assertStringContainsString('aria-label="সিলেট বিভাগ: ২টি আলোচনা"', $html); // Sylhet's two posts, districts included
         $this->assertStringNotContainsString('আমার বাংলাদেশ খুঁজে দেখি', $html);
 
