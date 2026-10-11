@@ -2,7 +2,7 @@
 
 A mobile-first Bangla/English community where Bangladeshis ask questions, answer them and find what others already asked, with a one-minute personality quiz ("Where is your Bangladesh?") as a fun way in.
 
-- **Community (home, `/`):** ask right from the home page (with "has this been asked?" suggestions), a happening-now ticker, community numbers, and an interactive map: 8 divisions that zoom into their 64 districts, re-shaded by topic, each showing its latest posts; latest / unanswered / solved lists that follow the chosen topic. Ask (questions, discussions, tips, help requests), answer with simple formatting (bold, lists, links) and up to 4 photos (re-encoded without location or camera data, shown in a grid with a full-screen viewer), reply in threads, mark answers helpful, accept a solution, save posts to read later (`/saved`), share (native share sheet on phones, WhatsApp / Facebook / Messenger / copy elsewhere), search, notifications on the site and by email with a choice per kind. Posts show how many read them from 10 views. Reading is open; writing needs a login (Google, Facebook, phone code or email) and can be anonymous. Reports, auto-hide and moderation keep it civil.
+- **Community (home, `/`):** ask right from the home page (with "has this been asked?" suggestions), a happening-now ticker, community numbers, and an interactive map: 8 divisions that zoom into their 64 districts, re-shaded by topic, each showing its latest posts; latest / unanswered / solved lists that follow the chosen topic. Ask (questions, discussions, tips, help requests, lost & found, jobs), answer with simple formatting (bold, lists, links) and up to 4 photos (re-encoded without location or camera data, shown in a grid with a full-screen viewer), reply in threads, mark answers helpful, accept a solution, save posts to read later (`/saved`), share (native share sheet on phones, WhatsApp / Facebook / Messenger / copy elsewhere), search, notifications on the site and by email with a choice per kind. Posts show how many read them from 10 views. Help requests can be marked urgent for 24–72 hours (with a blood group) and show on the home page and the map; lost & found and job posts leave the feed after 30 days (job posts carry a "never pay to get a job" warning). Verified-contact and admin-given professional badges show next to authors, a site-wide announcement bar can carry news, a helpline directory (`/helplines`) lists checked emergency and service numbers with tap-to-call, and members can set a private home district for a "my area" shortcut on the feed and the map. Reading is open; writing needs a login (Google, Facebook, phone code or email) and can be anonymous. Reports, auto-hide and moderation keep it civil.
 - **Quiz (`/quiz`):** 8 questions → one of 9 places, a share card (story or square, 4 designs × 6 colour themes), and friend links (`/r/{code}`) that show how much two friends match.
 - **Languages:** Bangla at `/…`, English at `/en/…`. Public pages are cookieless and cacheable.
 
@@ -29,9 +29,13 @@ Useful commands: `community:purge-demo` (remove the demo community), `quiz:simul
 `/admin`, grouped by module:
 
 - **Overview · Analytics:** quiz funnel (visitors → started → completed → shared, counted as people, against the previous period), start rate by entry, plays by hour, the quiz → community funnel, share of posts that use formatting, community health (new members / posts / answers per day, posts by weekday, time to first answer, report handling time, views by topic and the most-read posts), CSV export. Numbers are kept a few minutes per range ("count now" recounts).
+- **Overview · System:** is the scheduler running, when each background job last ran, emails sent/failed in 24 h, queue counts, database and disk size, versions, and setup checks (storage link, debug off, APP_URL, disk space). Shows no secrets.
 - **Community · Moderation:** reported and auto-hidden posts and answers with their photos (keep or remove), blocking members; the sidebar shows how many need a look.
+- **Community · Announcements:** the bar under the header on every page (Bangla/English, link, info/warning, start/end times, on/off).
+- **Community · Helplines:** the public helpline list; a number can be turned on only after it's marked as checked (the starter numbers ship switched off).
+- **Community · Badges:** give, change or remove a professional badge ("Doctor", "Lawyer"…) with a private note on how it was checked.
 - **Community · Topics:** add, rename (Bangla/English), emoji, order, turn on/off (never deleted; old posts and links keep working).
-- **Community · Action log:** every moderation action, automatic hide and topic change, read-only.
+- **Community · Action log:** every moderation action, automatic hide, urgent clear, and topic, announcement, helpline and badge change, read-only.
 - **Quiz · Plays, Questions, Places, Balance:** all plays with filters; answer cards with trait sliders and place bonuses (live balance preview, drag to reorder); text, colour, trait profile and community area per place; how often each place wins across every answer combination (healthy band 6–18%), also for adventurous players, plus a replay of real players' answers.
 - **Account · Password.**
 
@@ -62,16 +66,17 @@ Before going live, `php artisan quiz:purge-plays` removes test plays and analyti
 
 - SSL/TLS mode **Full (strict)**, with a Cloudflare Origin Certificate on the server. Turn on "Always Use HTTPS".
 - Keep `TRUSTED_PROXIES=cloudflare` in `.env`. Without it every visitor shares one rate limit. Check the IP list every few months with `scripts/cloudflare-ips.sh`.
-- Cache Rule: *Eligible for cache*, respect origin headers, for public pages (`/`, `/quiz`, `/r/*`, `/feed*`, `/p/*`, `/u/*`, `/search*`, and the same under `/en`) and `/api/feed`. The app sends `s-maxage` and sets no cookies on them; community writes use a header token, never a cookie.
+- Cache Rule: *Eligible for cache*, respect origin headers, for public pages (`/`, `/quiz`, `/r/*`, `/feed*`, `/p/*`, `/u/*`, `/search*`, `/helplines*`, and the same under `/en`) and `/api/feed`. The app sends `s-maxage` and sets no cookies on them; community writes use a header token, never a cookie.
 - Cache Rule: *Bypass cache* for `/admin*`, `/auth/*` and the other `/api/*` routes.
 - After changing quiz content in the admin, purge `/quiz` in Cloudflare, or wait up to 10 minutes.
 
 **Shared hosting / cPanel (Apache):** point the domain's document root at `public/` (or upload `public/` into `public_html` and fix the paths in `index.php`). Laravel's `public/.htaccess` handles the rewrites. Add the scheduler line as a cPanel cron job. Run `npm run build` locally and upload `public/build/` if there's no Node on the host.
 
-**After going live:** test a result link in Facebook's Sharing Debugger (developers.facebook.com/tools/debug) and point an uptime monitor at `/up`.
+**After going live:** open `/admin/system` (every check should say OK, the scheduler's last run under a minute old), test a result link in Facebook's Sharing Debugger (developers.facebook.com/tools/debug) and point an uptime monitor at `/up`.
 
 ## Content still to provide
 
 - Final place illustrations to replace the placeholder SVGs in `public/images/locations/`, then run `php artisan quiz:og-images`.
 - A native-speaker review of all Bangla copy (`database/seeders/data/quiz.php`, or in the admin), including the card text in `resources/js/cards/` and the colour theme names in `resources/js/cards/themes.js`.
 - Production domain in `APP_URL`.
+- Confirm each helpline number (call it or check an official site) in `/admin/helplines`, then turn it on.
