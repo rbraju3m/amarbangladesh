@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AnnouncementController;
 use App\Http\Controllers\Admin\AuthController;
+use App\Http\Controllers\Admin\BadgeController;
 use App\Http\Controllers\Admin\BalanceController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CommunityController;
@@ -38,6 +39,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/community/log', [CommunityController::class, 'log'])->name('community.log');
         Route::resource('categories', CategoryController::class)->only(['index', 'store', 'update']);
         Route::resource('announcements', AnnouncementController::class)->only(['index', 'store', 'edit', 'update']);
+        Route::get('/badges', [BadgeController::class, 'index'])->name('badges.index');
+        Route::post('/badges', [BadgeController::class, 'store'])->name('badges.store');
+        Route::delete('/badges/{member:id}', [BadgeController::class, 'destroy'])->name('badges.destroy');
         Route::post('/community/{type}/{id}/{action}', [CommunityController::class, 'moderate'])
             ->whereIn('type', ['post', 'answer'])->whereNumber('id')->whereIn('action', ['hide', 'restore', 'remove', 'dismiss'])->name('community.moderate');
         Route::post('/community/posts/{post}/urgent-clear', [CommunityController::class, 'clearUrgent'])->name('community.urgent-clear');

@@ -582,5 +582,11 @@
     "পোস্টটা বন্ধ হয়েছে। ফিডে আর দেখাবে না, লিংকটা থাকবে।": "Post closed. It's off the feed; the link still works.",
     ":n দিন পর পোস্টটা ফিড থেকে সরে যাবে, লিংকটা থাকবে। আগেই কাজ হয়ে গেলে নিজে বন্ধ করে দিতে পারবেন।": "After :n days the post leaves the feed; the link stays. If it's sorted sooner, you can close it yourself.",
     "চাকরির পোস্টে কাজ, বেতন, জায়গা আর কীভাবে আবেদন করতে হবে লিখুন। আবেদনের জন্য টাকা চাওয়া পোস্ট মুছে ফেলা হবে।": "Say what the job is, the pay, where, and how to apply. Posts that ask applicants for money will be removed.",
-    "কী হারিয়েছে বা পাওয়া গেছে, কোথায়, কবে লিখুন। পুরো ঠিকানা বা ফোন নম্বর প্রকাশ্যে দেবেন না।": "Say what was lost or found, where and when. Don't post a full address or phone number."
+    "কী হারিয়েছে বা পাওয়া গেছে, কোথায়, কবে লিখুন। পুরো ঠিকানা বা ফোন নম্বর প্রকাশ্যে দেবেন না।": "Say what was lost or found, where and when. Don't post a full address or phone number.",
+    "পেশা যাচাই করেছে আমার বাংলাদেশ": "Profession checked by Amar Bangladesh",
+    "নম্বর বা ঠিকানাটা যাচাই করা, মানুষটার পরিচয় না": "The number or address was checked, not who the person is",
+    "ফোন নম্বর যাচাই করা": "Phone verified",
+    "ইমেইল যাচাই করা": "Email verified",
+    "পেশার ব্যাজ আমার বাংলাদেশ যাচাই করে দেয়।": "Amar Bangladesh checks a profession before giving its badge.",
+    "ফোন বা ইমেইল “যাচাই করা” মানে নম্বর বা ঠিকানাটা এই মানুষের, পরিচয় যাচাই করা না।": "A “verified” phone or email means the number or address is this person's; it doesn't check who they are."
 }

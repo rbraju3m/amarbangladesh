@@ -132,6 +132,7 @@ final class Accounts
                 'code' => 'x'.Str::lower(Str::random(11)), // the old profile URL stops working
                 'deleted_at' => now(),
             ]);
+            $member->forceFill(['badge_bn' => null, 'badge_en' => null, 'badge_note' => null, 'badge_by' => null, 'badge_at' => null])->save();
         });
     }
 

@@ -2,6 +2,7 @@
 
 namespace App\Community;
 
+use App\Models\Member;
 use App\Models\Post;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Support\Collection;
@@ -40,7 +41,7 @@ final class Feed
         $areaIds = $this->areaIds();
 
         return Post::published()->open() // lost & found and jobs that ran out keep their page, not a place here
-            ->with(['member:id,code,name,deleted_at', 'category:id,slug,name_bn,name_en,emoji', 'area:id,slug,name_bn,name_en', 'photos'])
+            ->with(['member:'.Member::AUTHOR_COLUMNS, 'category:id,slug,name_bn,name_en,emoji', 'area:id,slug,name_bn,name_en', 'photos'])
             ->when($this->tab === 'unanswered', fn ($q) => $q->where('answers_count', 0)->whereIn('type', ['question', 'help']))
             ->when($this->tab === 'solved', fn ($q) => $q->whereNotNull('accepted_answer_id'))
             ->when($this->category, fn ($q) => $q->where('category_id', $this->category['id']))
@@ -59,7 +60,7 @@ final class Feed
         $areaIds = $this->areaIds();
 
         return Post::published()->urgent()
-            ->with(['member:id,code,name,deleted_at', 'area:id,slug,name_bn,name_en'])
+            ->with(['member:'.Member::AUTHOR_COLUMNS, 'area:id,slug,name_bn,name_en'])
             ->when($this->category, fn ($q) => $q->where('category_id', $this->category['id']))
             ->when($areaIds, fn ($q) => $q->whereIn('area_id', $areaIds))
             ->orderByDesc('id')->limit($limit)->get();

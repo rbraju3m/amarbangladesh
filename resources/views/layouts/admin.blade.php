@@ -23,6 +23,7 @@
                 ['admin.community', 'Moderation', 'admin.community', 'M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.4A8 8 0 1 1 21 12Z'],
                 ['admin.categories.index', 'Topics', 'admin.categories.*', 'M4 6h7v7H4V6Zm9 0h7v7h-7V6ZM4 15h7v5H4v-5Zm9 0h7v5h-7v-5Z'],
                 ['admin.announcements.index', 'Announcements', 'admin.announcements.*', 'M4 10v4h3l6 4V6L7 10H4Zm13-1a4 4 0 0 1 0 6'],
+                ['admin.badges.index', 'Badges', 'admin.badges.*', 'M12 3l2.5 2 3.2-.3.9 3.1 2.6 1.9-1.2 3 1.2 3-2.6 1.9-.9 3.1-3.2-.3L12 21l-2.5-2-3.2.3-.9-3.1-2.6-1.9 1.2-3-1.2-3 2.6-1.9.9-3.1 3.2.3L12 3Zm-3 9 2 2 4-4'],
                 ['admin.community.log', 'Action log', 'admin.community.log', 'M8 6h12M8 12h12M8 18h8M4 6h.01M4 12h.01M4 18h.01'],
             ],
             'Quiz' => [

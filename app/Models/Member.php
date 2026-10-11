@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
@@ -16,11 +17,17 @@ class Member extends Model
 {
     protected $fillable = ['code', 'name', 'password', 'email', 'email_notifications', 'notification_prefs', 'locale', 'blocked_at', 'deleted_at'];
 
-    protected $hidden = ['password', 'email'];
+    protected $hidden = ['password', 'email', 'badge_note', 'badge_by'];
+
+    /** The columns `partials/author` needs: eager-load authors as `'member:'.Member::AUTHOR_COLUMNS`. */
+    public const AUTHOR_COLUMNS = 'id,code,name,deleted_at,badge_bn,badge_en';
+
+    /** Contact-verified badges, from how a member signs in: Google accounts have a checked email, Facebook doesn't count. */
+    public const CONTACT_BADGES = ['phone' => ['phone'], 'email' => ['email', 'google']];
 
     protected function casts(): array
     {
-        return ['blocked_at' => 'datetime', 'deleted_at' => 'datetime', 'is_demo' => 'boolean', 'password' => 'hashed', 'email_notifications' => 'boolean', 'notification_prefs' => 'array'];
+        return ['blocked_at' => 'datetime', 'deleted_at' => 'datetime', 'badge_at' => 'datetime', 'is_demo' => 'boolean', 'password' => 'hashed', 'email_notifications' => 'boolean', 'notification_prefs' => 'array'];
     }
 
     /** Notice types a member can turn off on the site, and the ones also emailed (Notifier, SendNotificationEmails). */
@@ -120,12 +127,44 @@ class Member extends Model
         return $this->name ?: __('একজন বাংলাদেশি');
     }
 
+    /**
+     * The professional badge an admin gave (in the page's language; English falls back to Bangla), or null.
+     * Never shown on anonymous items: those have no public author at all.
+     */
+    public function badge(): ?string
+    {
+        if ($this->isDeleted() || ! $this->badge_bn) {
+            return null;
+        }
+
+        return app()->getLocale() === 'en' && $this->badge_en ? $this->badge_en : $this->badge_bn;
+    }
+
+    /**
+     * Which contacts this member proved they own when signing in (`phone`, `email`): it says the number or
+     * address was checked, not who the person is.
+     */
+    public function contactBadges(): array
+    {
+        if ($this->isDeleted()) {
+            return [];
+        }
+        $providers = $this->identities()->whereNotNull('verified_at')->distinct()->pluck('provider')->all();
+
+        return array_keys(array_filter(self::CONTACT_BADGES, fn ($from) => array_intersect($from, $providers)));
+    }
+
     /** A stable avatar colour from the code, from a set that reads in light and dark mode. */
     public function avatarColor(): string
     {
         $colors = ['#2f7d4f', '#c2410c', '#0369a1', '#7c3aed', '#be185d', '#0f766e', '#a16207', '#4d7c0f'];
 
         return $colors[crc32($this->code) % count($colors)];
+    }
+
+    public function badgeGiver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'badge_by');
     }
 
     public function tokens(): HasMany

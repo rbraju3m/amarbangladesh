@@ -1,4 +1,4 @@
-{{-- Who wrote a post or answer, as the public sees it. Anonymous items show no name, link or member code. --}}
+{{-- Who wrote a post or answer, as the public sees it. Anonymous items show no name, link, member code or badge. --}}
 @php($author = $item->publicAuthor())
 @if ($author?->isDeleted())
     <span class="{{ $linkClass ?? '' }} flex min-w-0 items-center gap-2 font-semibold text-ink-2">
@@ -9,6 +9,7 @@
     <a href="{{ lroute('members.show', $author, false) }}" class="{{ $linkClass ?? '' }} flex min-w-0 items-center gap-2 font-semibold hover:text-green-text">
         @include('community.partials.avatar', ['member' => $author, 'class' => $avatarClass ?? 'size-8 text-sm'])
         <span class="truncate">{{ $author->displayName() }}</span>
+        @include('community.partials.pro-badge', ['member' => $author])
     </a>
 @else
     <span class="{{ $linkClass ?? '' }} flex min-w-0 items-center gap-2 font-semibold">

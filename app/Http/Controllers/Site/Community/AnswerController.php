@@ -10,6 +10,7 @@ use App\Community\Text;
 use App\Http\Controllers\Controller;
 use App\Models\AnalyticsEvent;
 use App\Models\Answer;
+use App\Models\Member;
 use App\Models\Post;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -100,7 +101,7 @@ class AnswerController extends Controller
                 $answer->forceFill(['body' => $data['body'], 'body_html' => $html, 'edited_at' => now()])->save();
             }
         });
-        $answer->load(['member:id,code,name,deleted_at', 'parent.member:id,code,name,deleted_at']);
+        $answer->load(['member:'.Member::AUTHOR_COLUMNS, 'parent.member:'.Member::AUTHOR_COLUMNS]);
 
         return response()->json(['html' => view($answer->isReply() ? 'community.partials.reply' : 'community.partials.answer', [
             'answer' => $answer, 'reply' => $answer, 'post' => $answer->post,
@@ -124,7 +125,7 @@ class AnswerController extends Controller
         abort_unless($answer->thread_id === null && $answer->post->isPublished(), 404);
         $replies = Answer::where('thread_id', $answer->id)->published()
             ->where('id', '>', $request->integer('after'))
-            ->with(['member:id,code,name,deleted_at', 'parent.member:id,code,name,deleted_at'])
+            ->with(['member:'.Member::AUTHOR_COLUMNS, 'parent.member:'.Member::AUTHOR_COLUMNS])
             ->orderBy('id')->limit(self::REPLIES_PAGE + 1)->get();
         $more = $replies->count() > self::REPLIES_PAGE;
         $replies = $replies->take(self::REPLIES_PAGE);

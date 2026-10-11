@@ -14,6 +14,22 @@
             <p class="text-sm text-ink-2">{{ __('যোগ দিয়েছেন :date', ['date' => \App\Support\Lang::date($member->created_at)]) }}</p>
         </div>
     </div>
+    {{-- Badges: a professional one an admin checked, and the contacts this member proved they own --}}
+    @php($contacts = $member->contactBadges())
+    @if ($member->badge() || $contacts)
+        <div class="mt-4 flex flex-wrap items-center gap-1.5">
+            @include('community.partials.pro-badge', ['member' => $member])
+            @include('community.partials.contact-badges', ['member' => $member, 'contacts' => $contacts, 'class' => 'contents'])
+        </div>
+        <p class="mt-1.5 text-xs text-ink-2">
+            @if ($member->badge())
+                {{ __('পেশার ব্যাজ আমার বাংলাদেশ যাচাই করে দেয়।') }}
+            @endif
+            @if ($contacts)
+                {{ __('ফোন বা ইমেইল “যাচাই করা” মানে নম্বর বা ঠিকানাটা এই মানুষের, পরিচয় যাচাই করা না।') }}
+            @endif
+        </p>
+    @endif
 
     {{-- Contribution, not popularity --}}
     <dl class="mt-5 grid grid-cols-4 gap-2 text-center">

@@ -33,6 +33,10 @@
                 <span class="ml-auto shrink-0 text-ink-2" title="{{ __('প্রতিটি ব্রাউজার দিনে একবার গোনা হয়') }}"><span aria-hidden="true">👁</span> {{ \App\Support\Lang::choice(':n বার দেখা হয়েছে', $post->views_count) }}</span>
             @endif
         </div>
+        {{-- Where trust matters (help, lost & found, jobs): whether the author's phone or email was checked --}}
+        @if (in_array($post->type, ['help', 'lost', 'job'], true) && $post->publicAuthor())
+            @include('community.partials.contact-badges', ['member' => $post->publicAuthor(), 'class' => 'mt-2'])
+        @endif
         {{-- Urgent help: how long it stays urgent, that we haven't checked it, and (for its author) a way to end it --}}
         @if ($post->isUrgent())
             <div id="post-urgent" class="mt-4 rounded-2xl border border-flag-red/30 bg-flag-red/5 px-4 py-3">

@@ -60,10 +60,11 @@
                 @foreach ($meta['changes'] ?? [] as $field => $change)
                     <p class="mt-0.5 text-xs text-ink-2">{{ str_replace('_', ' ', $field) }}: {{ is_bool($change['from']) ? ($change['from'] ? 'on' : 'off') : ($change['from'] ?? '—') }} → {{ is_bool($change['to']) ? ($change['to'] ? 'on' : 'off') : ($change['to'] ?? '—') }}</p>
                 @endforeach
+                @if (! empty($meta['note']))<p class="mt-0.5 text-xs text-ink-2">how it was checked: {{ $meta['note'] }}</p>@endif
             </div>
         </div>
     @empty
-        <p class="px-4 py-10 text-center text-ink-2">Nothing yet. Every hide, keep, remove, restore, block, topic and announcement change will show up here.</p>
+        <p class="px-4 py-10 text-center text-ink-2">Nothing yet. Every hide, keep, remove, restore, block, topic, announcement and badge change will show up here.</p>
     @endforelse
 </div>
 <div class="mt-4">{{ $rows->links() }}</div>

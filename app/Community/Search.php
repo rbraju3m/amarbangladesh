@@ -2,6 +2,7 @@
 
 namespace App\Community;
 
+use App\Models\Member;
 use App\Models\Post;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator as LengthAwarePaginatorContract;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -19,7 +20,7 @@ final class Search
 {
     public const PER_PAGE = 20;
 
-    private const RELATIONS = ['member:id,code,name,deleted_at', 'category:id,slug,name_bn,name_en,emoji', 'area:id,slug,name_bn,name_en', 'photos'];
+    private const RELATIONS = ['member:'.Member::AUTHOR_COLUMNS, 'category:id,slug,name_bn,name_en,emoji', 'area:id,slug,name_bn,name_en', 'photos'];
 
     /** Search ranks at most this many matches; past it the count is read separately. */
     private const MAX_RANKED = 1000;

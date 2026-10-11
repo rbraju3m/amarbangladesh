@@ -34,7 +34,7 @@ class PageController extends Controller
     private const PROFILE_PAGE = 20;
 
     /** Change when the privacy page's content changes. */
-    public const PRIVACY_UPDATED = '2026-10-10';
+    public const PRIVACY_UPDATED = '2026-10-11';
 
     /** The home page: the community first (ask, the map by division, what's new / unanswered / solved), the quiz as a teaser. */
     public function home(): View
@@ -147,8 +147,8 @@ class PageController extends Controller
     public function show(Request $request, Post $post): View
     {
         abort_unless($post->isPublished(), 404);
-        $post->load(['member:id,code,name,deleted_at', 'category', 'area', 'photos']);
-        $member = 'member:id,code,name,deleted_at';
+        $post->load(['member:'.Member::AUTHOR_COLUMNS, 'category', 'area', 'photos']);
+        $member = 'member:'.Member::AUTHOR_COLUMNS;
 
         $answers = $post->answers()->whereNull('parent_id')
             ->where(fn ($q) => $q->where('status', Post::PUBLISHED)->orWhere('replies_count', '>', 0))
@@ -168,7 +168,7 @@ class PageController extends Controller
 
         $related = Post::published()->whereKeyNot($post->id)
             ->when($post->category_id, fn ($q) => $q->where('category_id', $post->category_id))
-            ->with(['member:id,code,name,deleted_at', 'category', 'area', 'photos'])
+            ->with(['member:'.Member::AUTHOR_COLUMNS, 'category', 'area', 'photos'])
             ->latest('id')->limit(3)->get();
 
         return view('community.post', ['post' => $post, 'answers' => $answers, 'replies' => $replies, 'related' => $related]);
@@ -200,7 +200,7 @@ class PageController extends Controller
         // One list at a time, keyset-paginated like the feed (endless with JavaScript).
         $items = $tab === 'answers'
             ? $answers()->whereHas('post', fn ($q) => $q->published())->with('post:id,title,type,accepted_answer_id')
-            : $posts()->with(['member:id,code,name,deleted_at', 'category', 'area', 'photos']);
+            : $posts()->with(['member:'.Member::AUTHOR_COLUMNS, 'category', 'area', 'photos']);
 
         return view('community.member', [
             'member' => $member,

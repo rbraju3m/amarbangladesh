@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Site\Community;
 
 use App\Http\Controllers\Controller;
+use App\Models\Member;
 use App\Models\Post;
 use App\Models\SavedPost;
 use Illuminate\Http\JsonResponse;
@@ -45,7 +46,7 @@ class SavedController extends Controller
         $rows = $member->savedPosts()
             ->whereHas('post', fn ($q) => $q->where('status', Post::PUBLISHED))
             ->when($data['before'] ?? null, fn ($q, $before) => $q->where('id', '<', $before))
-            ->with(['post' => fn ($q) => $q->with(['member:id,code,name,deleted_at', 'category:id,slug,name_bn,name_en,emoji', 'area:id,slug,name_bn,name_en', 'photos'])])
+            ->with(['post' => fn ($q) => $q->with(['member:'.Member::AUTHOR_COLUMNS, 'category:id,slug,name_bn,name_en,emoji', 'area:id,slug,name_bn,name_en', 'photos'])])
             ->latest('id')->limit(self::PER_PAGE + 1)->get();
         $more = $rows->count() > self::PER_PAGE;
         $rows = $rows->take(self::PER_PAGE);

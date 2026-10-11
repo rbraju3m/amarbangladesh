@@ -331,6 +331,16 @@
         @apply inline-flex items-center gap-1 rounded-full border border-flag-red/30 bg-card px-2 py-0.5 text-xs font-bold text-red-text tabular-nums;
     }
 
+    /* A professional badge an admin gave (partials/pro-badge), next to the author's name. */
+    .pro-badge {
+        @apply inline-flex max-w-[9rem] shrink-0 items-center gap-1 rounded-full bg-flag-green/10 px-2 py-0.5 text-xs font-bold text-green-text;
+    }
+
+    /* Contact-verified marks on a profile or post (Member::contactBadges): checked contact, not a checked person. */
+    .contact-badge {
+        @apply inline-flex items-center gap-1 rounded-full border border-line bg-card px-2 py-0.5 text-xs font-semibold text-ink-2;
+    }
+
     .avatar {
         @apply inline-flex shrink-0 items-center justify-center rounded-full leading-none font-bold text-white;
     }

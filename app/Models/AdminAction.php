@@ -8,7 +8,7 @@ use LogicException;
 
 /**
  * One line of the moderation log (append-only: rows can't be changed or deleted through the model).
- * Written by App\Community\Moderation::log(), Admin\CategoryController and Admin\AnnouncementController; shown on /admin/community/log.
+ * Written by App\Community\Moderation::log(), Admin\CategoryController, Admin\AnnouncementController and Admin\BadgeController; shown on /admin/community/log.
  */
 class AdminAction extends Model
 {
@@ -32,6 +32,9 @@ class AdminAction extends Model
         'announce_edit' => ['Announcement changed', 'bg-paper-2 text-ink'],
         'announce_off' => ['Announcement turned off', 'bg-warn/10 text-warn'],
         'announce_on' => ['Announcement turned on', 'bg-flag-green/10 text-green-text'],
+        'badge_give' => ['Badge given', 'bg-flag-green/10 text-green-text'],
+        'badge_edit' => ['Badge changed', 'bg-paper-2 text-ink'],
+        'badge_remove' => ['Badge removed', 'bg-warn/10 text-warn'],
     ];
 
     protected $fillable = ['user_id', 'action', 'target_type', 'target_id', 'meta'];
