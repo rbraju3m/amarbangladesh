@@ -125,6 +125,21 @@ class FriendMatchTest extends TestCase
         $this->assertGreaterThanOrEqual(97, $this->friends($owner)['friends'][0]['pct']);
     }
 
+    public function test_the_migration_recomputes_friend_matches_stored_before_the_fix(): void
+    {
+        $owner = $this->play(0);
+        $same = $this->play(0, $owner['result']['code']);
+        $other = $this->play(3, $owner['result']['code']);
+        $right = QuizResult::where('code', $other['result']['code'])->value('friend_match_pct');
+        QuizResult::where('code', $same['result']['code'])->update(['friend_match_pct' => 70]); // what the old code stored
+
+        (require database_path('migrations/2026_10_11_000007_recompute_friend_match_pct.php'))->up();
+
+        $this->assertGreaterThanOrEqual(97, QuizResult::where('code', $same['result']['code'])->value('friend_match_pct'));
+        $this->assertSame($right, QuizResult::where('code', $other['result']['code'])->value('friend_match_pct'), 'correct rows stay as they are');
+        $this->assertNull(QuizResult::where('code', $owner['result']['code'])->value('friend_match_pct'));
+    }
+
     public function test_other_links_friends_are_not_mixed_in(): void
     {
         $owner = $this->play();
