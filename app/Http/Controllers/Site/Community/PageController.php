@@ -8,6 +8,7 @@ use App\Community\Search;
 use App\Community\Taxonomy;
 use App\Http\Controllers\Controller;
 use App\Models\Answer;
+use App\Models\Helpline;
 use App\Models\Member;
 use App\Models\Post;
 use App\Support\Lang;
@@ -227,6 +228,19 @@ class PageController extends Controller
         return view('community.privacy', [
             'email' => config('admin.privacy_email'),
             'updated' => Carbon::parse(self::PRIVACY_UPDATED),
+        ]);
+    }
+
+    /** The helpline directory: nationwide numbers, plus a division's or district's own with `?area=`. */
+    public function helplines(Request $request): View
+    {
+        $area = Taxonomy::areas()[(string) $request->query('area')] ?? null;
+
+        return view('community.helplines', [
+            'area' => $area,
+            'helplines' => collect(Helpline::forArea($area))->groupBy('kind'),
+            'divisions' => array_filter(Taxonomy::areas(), fn ($a) => $a['type'] === 'division'),
+            'districts' => Taxonomy::districtsByDivision(),
         ]);
     }
 

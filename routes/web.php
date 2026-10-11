@@ -58,6 +58,7 @@ Route::withoutMiddleware([
             Route::get('/notifications', [PageController::class, 'notifications'])->name('notifications');
             Route::get('/saved', [PageController::class, 'saved'])->name('saved');
             Route::get('/privacy', [PageController::class, 'privacy'])->name('privacy');
+            Route::get('/helplines', [PageController::class, 'helplines'])->name('helplines');
             Route::get('/auth/done', [PageController::class, 'authDone'])->name('auth.done');
             Route::get('/reset-password', [PageController::class, 'resetPassword'])->name('password.reset.page');
         });

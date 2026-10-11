@@ -32,6 +32,7 @@
                 'member' => $target && ! $target->deleted_at ? lroute('members.show', ['member' => $target->code]) : null,
                 'category' => route('admin.categories.index').'#topic-'.$row->target_id,
                 'announcement' => route('admin.announcements.edit', $row->target_id),
+                'helpline' => route('admin.helplines.edit', $row->target_id),
                 default => null,
             };
         @endphp
@@ -64,7 +65,7 @@
             </div>
         </div>
     @empty
-        <p class="px-4 py-10 text-center text-ink-2">Nothing yet. Every hide, keep, remove, restore, block, topic, announcement and badge change will show up here.</p>
+        <p class="px-4 py-10 text-center text-ink-2">Nothing yet. Every hide, keep, remove, restore, block, topic, announcement, helpline and badge change will show up here.</p>
     @endforelse
 </div>
 <div class="mt-4">{{ $rows->links() }}</div>

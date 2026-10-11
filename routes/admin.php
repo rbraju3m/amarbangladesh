@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CommunityController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ExportController;
+use App\Http\Controllers\Admin\HelplineController;
 use App\Http\Controllers\Admin\LocationController;
 use App\Http\Controllers\Admin\PlayController;
 use App\Http\Controllers\Admin\QuestionController;
@@ -39,6 +40,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/community/log', [CommunityController::class, 'log'])->name('community.log');
         Route::resource('categories', CategoryController::class)->only(['index', 'store', 'update']);
         Route::resource('announcements', AnnouncementController::class)->only(['index', 'store', 'edit', 'update']);
+        Route::resource('helplines', HelplineController::class)->only(['index', 'store', 'edit', 'update']);
         Route::get('/badges', [BadgeController::class, 'index'])->name('badges.index');
         Route::post('/badges', [BadgeController::class, 'store'])->name('badges.store');
         Route::delete('/badges/{member:id}', [BadgeController::class, 'destroy'])->name('badges.destroy');

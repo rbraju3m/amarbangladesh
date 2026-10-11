@@ -50,6 +50,10 @@
         @elseif ($post->type === 'help' && $post->blood_group)
             <p class="mt-4 text-sm text-ink-2">{{ __('আমার বাংলাদেশ এসব তথ্য যাচাই করেনি। টাকা পাঠানো বা কোথাও যাওয়ার আগে নিজে যাচাই করুন।') }}</p>
         @endif
+        {{-- Help posts point to the helpline directory (once it has checked numbers), for the post's area --}}
+        @if ($post->type === 'help' && \App\Models\Helpline::live())
+            <p class="mt-3 text-sm"><a href="{{ lroute('helplines', array_filter(['area' => $post->area?->slug]), false) }}" class="font-semibold text-ink underline">📞 {{ __('জরুরি দরকারে হেল্পলাইন নম্বর দেখুন') }}</a></p>
+        @endif
         {{-- Lost & found and jobs: closed once their time is up (or the author closes it); jobs carry a scam warning --}}
         @if ($post->isClosed())
             <p class="mt-4 rounded-2xl border border-line bg-paper-2 px-4 py-3 text-sm font-semibold text-ink-2">{{ $post->type === 'job' ? __('এই চাকরির পোস্টটা বন্ধ হয়ে গেছে। আর নতুন আবেদন নেওয়া হচ্ছে না ধরে নিন।') : __('এই পোস্টটা বন্ধ হয়ে গেছে।') }}</p>

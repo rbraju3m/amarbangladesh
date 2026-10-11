@@ -10,6 +10,7 @@
                 @continue($item['key'] === 'me')
                 <a href="{{ $item['href'] }}" class="hover:text-ink hover:underline">{{ __($item['label']) }}</a>
             @endforeach
+            @if (\App\Models\Helpline::live())<a href="{{ lroute('helplines', [], false) }}" class="hover:text-ink hover:underline">{{ __('হেল্পলাইন') }}</a>@endif
             <a href="{{ lroute('privacy', [], false) }}" class="hover:text-ink hover:underline">{{ __('গোপনীয়তা') }}</a>
             <a href="mailto:{{ config('admin.privacy_email') }}" class="hover:text-ink hover:underline">{{ __('যোগাযোগ') }}</a>
         </nav>

@@ -82,6 +82,9 @@
                     <option value="{{ $g }}">{{ $g }}</option>
                 @endforeach
             </select>
+            @if (\App\Models\Helpline::live())
+                <p class="mt-3 text-sm"><a href="{{ lroute('helplines', [], false) }}" target="_blank" class="font-semibold underline">📞 {{ __('জীবন বা নিরাপত্তার ঝুঁকি থাকলে আগে হেল্পলাইনে ফোন করুন') }}</a></p>
+            @endif
             <p class="mt-3 text-xs text-ink-2">{{ __('ফোন নম্বর প্রকাশ্যে দেবেন না। যাঁরা সাহায্য করতে পারবেন, তাঁরা উত্তরে জানাবেন।') }}</p>
         </div>
 
