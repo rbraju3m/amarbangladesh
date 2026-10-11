@@ -7,6 +7,7 @@ use App\Models\HelpfulMark;
 use App\Models\Member;
 use App\Models\Photo;
 use App\Models\Post;
+use App\Models\Video;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -162,6 +163,7 @@ final class DemoContent
             // Accepted answers and notifications point at answers; clear those links first.
             Post::whereIn('accepted_answer_id', Answer::whereIn('member_id', $ids)->select('id'))->update(['accepted_answer_id' => null]);
             Photos::delete(Photo::whereIn('member_id', $ids)->get()); // files too
+            Videos::delete(Video::whereIn('member_id', $ids)->get());
             Answer::whereIn('member_id', $ids)->delete();
             Post::whereIn('member_id', $ids)->delete(); // answers, notifications, marks cascade
             Member::whereIn('id', $ids)->delete();

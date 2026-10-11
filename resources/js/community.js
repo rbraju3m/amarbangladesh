@@ -108,6 +108,7 @@ function community() {
 
         init() {
             this.watchCardButtons();
+            this.watchVideos();
             this.restoreDraft();
             setTrackingContext({ visitor_id: visitorId() });
             const event = PAGE_EVENTS.find(([re]) => re.test(location.pathname.replace(/^\/en(?=\/|$)/, '')));
@@ -418,6 +419,30 @@ function community() {
         // ---------- saved posts ----------
         // The bookmark buttons are plain HTML (`[data-save]` in post cards and on the post page, also
         // fetched into lists later): one click listener here, and their state painted as a class.
+
+        /**
+         * Videos still being converted show a note (partials/video); ask now and then until the player is
+         * ready and put it in place. Gives up after a few minutes (a reload shows it later).
+         */
+        watchVideos(root = document) {
+            root.querySelectorAll('[data-video-pending]').forEach((note) => {
+                if (note._watching) return;
+                note._watching = true;
+                let tries = 0;
+                const ask = async () => {
+                    if (!note.isConnected || ++tries > 30) return;
+                    try {
+                        const data = await api('GET', withLang(`/api/videos/${note.dataset.videoPending}/player`));
+                        if (data.html) return void (note.outerHTML = data.html);
+                        if (data.status === 'failed') return void note.remove();
+                    } catch (e) {
+                        if (e.status === 404) return;
+                    }
+                    setTimeout(ask, 10000);
+                };
+                setTimeout(ask, 8000);
+            });
+        },
 
         watchCardButtons() {
             document.documentElement.dataset.cardActions = '';

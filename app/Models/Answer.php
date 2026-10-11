@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * A reply to a post: an answer to a question, a comment in a discussion. Same statuses as Post.
@@ -81,5 +82,11 @@ class Answer extends Model
     public function photos(): HasMany
     {
         return $this->hasMany(Photo::class, 'photoable_id')->where('photoable_type', 'answer')->orderBy('position');
+    }
+
+    /** Its video, if any (App\Community\Videos). */
+    public function video(): HasOne
+    {
+        return $this->hasOne(Video::class, 'videoable_id')->where('videoable_type', 'answer');
     }
 }

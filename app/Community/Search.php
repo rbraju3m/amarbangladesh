@@ -20,7 +20,7 @@ final class Search
 {
     public const PER_PAGE = 20;
 
-    private const RELATIONS = ['member:'.Member::AUTHOR_COLUMNS, 'category:id,slug,name_bn,name_en,emoji', 'area:id,slug,name_bn,name_en', 'photos'];
+    private const RELATIONS = ['member:'.Member::AUTHOR_COLUMNS, 'category:id,slug,name_bn,name_en,emoji', 'area:id,slug,name_bn,name_en', 'photos', 'video'];
 
     /** Search ranks at most this many matches; past it the count is read separately. */
     private const MAX_RANKED = 1000;

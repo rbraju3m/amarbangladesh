@@ -38,6 +38,9 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('posts', fn (Request $request) => [Limit::perMinute(3)->by('m'.$request->ip()), Limit::perHour(15)->by('h'.$request->ip())]);
         RateLimiter::for('answers', fn (Request $request) => [Limit::perMinute(6)->by('m'.$request->ip()), Limit::perHour(60)->by('h'.$request->ip())]);
         RateLimiter::for('views', fn (Request $request) => Limit::perMinute(60)->by($request->ip())); // post view counts
+        // Videos: a few uploads an hour, but each is up to ~55 pieces sent back to back.
+        RateLimiter::for('video-starts', fn (Request $request) => [Limit::perMinute(5)->by('m'.$request->ip()), Limit::perHour(20)->by('h'.$request->ip())]);
+        RateLimiter::for('video-chunks', fn (Request $request) => [Limit::perMinute(240)->by('m'.$request->ip()), Limit::perHour(1500)->by('h'.$request->ip())]);
         RateLimiter::for('photos', fn (Request $request) => [Limit::perMinute(20)->by('m'.$request->ip()), Limit::perHour(100)->by('h'.$request->ip())]);
         RateLimiter::for('community', fn (Request $request) => Limit::perMinute(60)->by($request->ip()));
         RateLimiter::for('reports', fn (Request $request) => Limit::perHour(30)->by($request->ip()));

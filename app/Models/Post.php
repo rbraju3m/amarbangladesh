@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * Anything a member puts in the feed. One table for every kind (question, discussion, tip, help):
@@ -154,5 +155,11 @@ class Post extends Model
     public function photos(): HasMany
     {
         return $this->hasMany(Photo::class, 'photoable_id')->where('photoable_type', 'post')->orderBy('position');
+    }
+
+    /** Its video, if any (App\Community\Videos). */
+    public function video(): HasOne
+    {
+        return $this->hasOne(Video::class, 'videoable_id')->where('videoable_type', 'post');
     }
 }

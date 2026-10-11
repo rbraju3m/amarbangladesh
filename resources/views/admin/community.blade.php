@@ -79,6 +79,16 @@
                             <p class="mt-1 text-sm">{{ \Illuminate\Support\Str::limit($item->body, 300) }}</p>
                             <p class="mt-1 text-xs text-ink-2">on <a href="{{ route('posts.show', $item->post_id) }}" target="_blank" class="font-semibold hover:underline">{{ $item->post->title }}</a></p>
                         @endif
+                        @if ($item->video)
+                            {{-- A reported video: watch it before deciding --}}
+                            <div class="mt-2">
+                                @if ($item->video->isReady())
+                                    <video controls preload="none" poster="{{ $item->video->posterUrl() }}" class="max-h-64 rounded-xl border border-line bg-black"><source src="{{ $item->video->url() }}" type="video/mp4"></video>
+                                @else
+                                    <p class="text-xs text-ink-2">Video: {{ $item->video->status }}</p>
+                                @endif
+                            </div>
+                        @endif
                         @if ($item->photos->isNotEmpty())
                             {{-- Photos are part of what's reported: open them full size to check --}}
                             <div class="mt-2 flex gap-2">

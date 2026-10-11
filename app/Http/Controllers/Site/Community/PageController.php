@@ -148,12 +148,12 @@ class PageController extends Controller
     public function show(Request $request, Post $post): View
     {
         abort_unless($post->isPublished(), 404);
-        $post->load(['member:'.Member::AUTHOR_COLUMNS, 'category', 'area', 'photos']);
+        $post->load(['member:'.Member::AUTHOR_COLUMNS, 'category', 'area', 'photos', 'video']);
         $member = 'member:'.Member::AUTHOR_COLUMNS;
 
         $answers = $post->answers()->whereNull('parent_id')
             ->where(fn ($q) => $q->where('status', Post::PUBLISHED)->orWhere('replies_count', '>', 0))
-            ->with([$member, 'photos'])
+            ->with([$member, 'photos', 'video'])
             ->orderByRaw('id = ? desc', [(int) $post->accepted_answer_id])
             ->orderByDesc('helpful_count')->orderBy('id')
             ->paginate(self::ANSWERS_PAGE)->withQueryString();
@@ -169,7 +169,7 @@ class PageController extends Controller
 
         $related = Post::published()->whereKeyNot($post->id)
             ->when($post->category_id, fn ($q) => $q->where('category_id', $post->category_id))
-            ->with(['member:'.Member::AUTHOR_COLUMNS, 'category', 'area', 'photos'])
+            ->with(['member:'.Member::AUTHOR_COLUMNS, 'category', 'area', 'photos', 'video'])
             ->latest('id')->limit(3)->get();
 
         return view('community.post', ['post' => $post, 'answers' => $answers, 'replies' => $replies, 'related' => $related]);
@@ -208,7 +208,7 @@ class PageController extends Controller
         // One list at a time, keyset-paginated like the feed (endless with JavaScript).
         $items = $tab === 'answers'
             ? $answers()->whereHas('post', fn ($q) => $q->published())->with('post:id,title,type,accepted_answer_id')
-            : $posts()->with(['member:'.Member::AUTHOR_COLUMNS, 'category', 'area', 'photos']);
+            : $posts()->with(['member:'.Member::AUTHOR_COLUMNS, 'category', 'area', 'photos', 'video']);
 
         return view('community.member', [
             'member' => $member,

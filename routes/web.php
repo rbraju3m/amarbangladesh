@@ -10,6 +10,7 @@ use App\Http\Controllers\Site\Community\PostController;
 use App\Http\Controllers\Site\Community\SavedController;
 use App\Http\Controllers\Site\Community\SignalController;
 use App\Http\Controllers\Site\Community\SocialAuthController;
+use App\Http\Controllers\Site\Community\VideoController;
 use App\Http\Controllers\Site\EventController;
 use App\Http\Controllers\Site\QuizController;
 use App\Http\Controllers\Site\ResultController;
@@ -75,6 +76,7 @@ Route::withoutMiddleware([
         Route::get('/feed', [PageController::class, 'feedItems'])->middleware('cache.headers:public;max_age=0;s_maxage=20;etag')->name('feed.items');
         Route::post('/posts/{post}/view', [PostController::class, 'view'])->whereNumber('post')->middleware('throttle:views')->name('posts.view');
         Route::get('/map/{division}', [PageController::class, 'mapDivision'])->middleware('cache.headers:public;max_age=60;s_maxage=60;etag')->name('map.division');
+        Route::get('/videos/{video}/player', [VideoController::class, 'player'])->whereNumber('video')->middleware('throttle:community')->name('videos.player');
         Route::get('/answers/{answer}/replies', [AnswerController::class, 'replies'])->whereNumber('answer')->middleware('cache.headers:public;max_age=0;s_maxage=20;etag')->name('answers.replies');
         Route::get('/posts/similar', [PageController::class, 'similar'])->middleware(['cache.headers:public;max_age=0;s_maxage=60;etag', 'throttle:search'])->name('posts.similar');
         Route::prefix('auth')->group(function () {
@@ -101,6 +103,9 @@ Route::withoutMiddleware([
             Route::patch('/members/me', [MemberController::class, 'update'])->middleware('throttle:community')->name('members.update');
             Route::delete('/members/me', [MemberController::class, 'destroy'])->middleware('throttle:community')->name('members.destroy');
             Route::post('/photos', [PhotoController::class, 'store'])->middleware('throttle:photos')->name('photos.store');
+            Route::post('/videos', [VideoController::class, 'store'])->middleware('throttle:video-starts')->name('videos.store');
+            Route::put('/videos/{video}/chunk', [VideoController::class, 'chunk'])->middleware('throttle:video-chunks')->name('videos.chunk');
+            Route::get('/videos/{video}', [VideoController::class, 'show'])->middleware('throttle:community')->name('videos.show');
             Route::post('/posts', [PostController::class, 'store'])->middleware('throttle:posts')->name('posts.store');
             Route::patch('/posts/{post}', [PostController::class, 'update'])->middleware('throttle:community')->name('posts.update');
             Route::delete('/posts/{post}', [PostController::class, 'destroy'])->middleware('throttle:community')->name('posts.destroy');

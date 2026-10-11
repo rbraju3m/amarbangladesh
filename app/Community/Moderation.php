@@ -9,6 +9,7 @@ use App\Models\Member;
 use App\Models\Post;
 use App\Models\Report;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -33,6 +34,23 @@ final class Moderation
     public static function typeOf(Post|Answer $item): string
     {
         return $item instanceof Post ? 'post' : 'answer';
+    }
+
+    /**
+     * Items whose media can go: posts removed or deleted before `$before`, and answers removed or deleted
+     * before then or under such a post (their page is gone). Subqueries of ids, for the media prunes.
+     *
+     * @return array{post: Builder, answer: Builder}
+     */
+    public static function goneBefore(\DateTimeInterface $before): array
+    {
+        $gone = [Post::REMOVED, Post::DELETED];
+        $posts = Post::whereIn('status', $gone)->where('updated_at', '<', $before)->select('id');
+
+        return [
+            'post' => $posts,
+            'answer' => Answer::where(fn ($q) => $q->whereIn('status', $gone)->where('updated_at', '<', $before))->orWhereIn('post_id', $posts)->select('id'),
+        ];
     }
 
     /** @return array{marked: bool, count: int} */
@@ -131,8 +149,8 @@ final class Moderation
     }
 
     /**
-     * Its author deleting an item takes its photos with it at once; after an admin removal they stay
-     * Photos::REMOVED_DAYS (it may be restored) and Photos::prune() deletes them.
+     * Its author deleting an item takes its photos and video with it at once; after an admin removal they
+     * stay Photos::REMOVED_DAYS (it may be restored) and the prunes delete them.
      */
     public static function setStatus(Post|Answer $item, string $status): void
     {
@@ -141,6 +159,7 @@ final class Moderation
         self::forgetNeedsLook();
         if ($status === Post::DELETED) {
             Photos::deleteFor($item);
+            Videos::deleteFor($item);
         }
 
         if ($item instanceof Answer) {

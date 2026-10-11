@@ -759,6 +759,23 @@
         @apply relative mt-2 shrink-0 overflow-hidden rounded-2xl bg-paper-2;
     }
 
+    .card-thumb-play {
+        @apply absolute inset-0 m-auto flex size-8 items-center justify-center rounded-full bg-ink/70 pl-0.5 text-sm text-paper;
+    }
+
+    /* A post's or answer's video (partials/video): keeps its shape, never taller than most of the screen */
+    .video-box {
+        @apply m-0 max-h-[70vh] w-full max-w-full overflow-hidden rounded-2xl bg-black;
+    }
+
+    .video-box video {
+        @apply size-full object-contain;
+    }
+
+    .video-pending {
+        @apply rounded-2xl border border-dashed border-line bg-paper-2 px-4 py-6 text-center text-sm text-ink-2;
+    }
+
     .card-thumb-more {
         @apply absolute right-1 bottom-1 rounded-full bg-ink/80 px-1.5 text-xs font-bold text-paper;
     }

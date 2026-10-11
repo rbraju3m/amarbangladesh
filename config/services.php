@@ -48,6 +48,12 @@ return [
         'redirect' => '/auth/facebook/callback',
     ],
 
+    // Video conversion (App\Community\Videos): the binaries, if they aren't on the PATH.
+    'ffmpeg' => [
+        'ffmpeg' => env('FFMPEG_BINARY', 'ffmpeg'),
+        'ffprobe' => env('FFPROBE_BINARY', 'ffprobe'),
+    ],
+
     // Phone sign-in codes. "log" writes the message to the log (local development);
     // "bulksmsbd" sends through bulksmsbd.net. Empty disables phone sign-in.
     'sms' => [

@@ -8,8 +8,8 @@
     'canonical' => url($post->url()),
     'ogType' => 'article',
     // A post with photos previews with its first one (a JPEG copy, see App\Community\Photos::SHARE).
-    'ogImage' => $post->photos->first()?->shareUrl(),
-    'ogImageSize' => $post->photos->first()?->shareSize(),
+    'ogImage' => $post->photos->first()?->shareUrl() ?? $post->video?->posterUrl('jpg'),
+    'ogImageSize' => $post->photos->first()?->shareSize() ?? ($post->video?->isReady() ? [$post->video->width, $post->video->height] : null),
 ])
 
 @section('main')
@@ -69,6 +69,7 @@
             <p class="mt-3 text-sm text-ink-2">{{ __('জিনিস ফেরত দিতে বা নিতে লোকজনের মধ্যে দেখা করুন। পুরো ঠিকানা বা ফোন নম্বর প্রকাশ্যে দেবেন না।') }}</p>
         @endif
         <div x-show="!editing" id="post-body" class="prose-text mt-4 text-lg empty:hidden">@if ($post->body){{ \App\Community\RichText::render($post) }}@endif</div>
+        <div x-show="!editing" id="post-video" class="mt-4 empty:hidden">@include('community.partials.video', ['video' => $post->video, 'owner' => "post:{$post->id}", 'title' => $post->title])</div>
         <div x-show="!editing" id="post-photos" class="mt-4 empty:hidden">@include('community.partials.photo-grid', ['photos' => $post->photos, 'title' => $post->title, 'big' => true])</div>
 
         {{-- The author edits title and details in place --}}

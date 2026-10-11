@@ -8,6 +8,7 @@ use App\Community\Photos;
 use App\Community\RichText;
 use App\Community\Taxonomy;
 use App\Community\Text;
+use App\Community\Videos;
 use App\Community\Views;
 use App\Http\Controllers\Controller;
 use App\Models\AnalyticsEvent;
@@ -51,13 +52,14 @@ class PostController extends Controller
 
         $area = self::area($data);
         $photos = Photos::input($request, anonymous: (bool) ($data['anonymous'] ?? false));
+        $video = Videos::input($request, anonymous: (bool) ($data['anonymous'] ?? false));
         $member = self::named($request->attributes->get('member'), $data['name'] ?? null)->rememberLocale();
         self::checkLinks($data['title'], $data['body'] ?? null, $html);
         $urgent = self::urgentHours($data, $member);
 
         // A double tap or a retry after a slow network should not post twice. Photos that can't be
         // attached undo the post, so a retry starts clean.
-        $post = DB::transaction(function () use ($member, $data, $html, $photos, $urgent, $area) {
+        $post = DB::transaction(function () use ($member, $data, $html, $photos, $video, $urgent, $area) {
             $post = Post::where('member_id', $member->id)->where('title', $data['title'])->where('created_at', '>=', now()->subMinutes(10))->first()
                 ?? Post::create([
                     'member_id' => $member->id,
@@ -77,12 +79,15 @@ class PostController extends Controller
             if ($photos !== null) {
                 Photos::attach($member, $post, $photos);
             }
+            if ($video) {
+                Videos::attach($member, $post, $video);
+            }
 
             return $post;
         });
 
         if ($post->wasRecentlyCreated) {
-            AnalyticsEvent::server('post_created', $request, ['type' => $post->type, 'anon' => $post->is_anonymous ? 1 : 0, 'rich' => RichText::isFormatted($post->body_html) ? 1 : 0, 'photos' => count($photos ?? []), 'urgent' => $post->urgent_until ? 1 : 0, 'blood' => $post->blood_group ? 1 : 0]);
+            AnalyticsEvent::server('post_created', $request, ['type' => $post->type, 'anon' => $post->is_anonymous ? 1 : 0, 'rich' => RichText::isFormatted($post->body_html) ? 1 : 0, 'photos' => count($photos ?? []), 'video' => $video ? 1 : 0, 'urgent' => $post->urgent_until ? 1 : 0, 'blood' => $post->blood_group ? 1 : 0]);
         }
 
         return response()->json(['post' => ['id' => $post->id, 'url' => $post->url()], 'member' => MemberController::present($member)], 201);
@@ -101,11 +106,16 @@ class PostController extends Controller
         ], self::messages());
         self::checkLinks($data['title'], $data['body'] ?? null, $html);
         $photos = Photos::input($request, anonymous: $post->is_anonymous);
+        $video = Videos::input($request, anonymous: $post->is_anonymous);
 
-        DB::transaction(function () use ($request, $post, $data, $html, $photos) {
+        DB::transaction(function () use ($request, $post, $data, $html, $photos, $video) {
             $changed = $data['title'] !== $post->title || ($data['body'] ?? null) !== $post->body || $html !== $post->body_html;
             if ($photos !== null && array_map('intval', $photos) !== Photos::idsOf($post)) {
                 Photos::attach($request->attributes->get('member'), $post, $photos);
+                $changed = true;
+            }
+            if ($video !== null && $video !== Videos::idOf($post)) {
+                Videos::attach($request->attributes->get('member'), $post, $video);
                 $changed = true;
             }
             if ($changed) {
@@ -120,6 +130,8 @@ class PostController extends Controller
             'raw_html' => $post->body_html,
             'photos' => ($photos = $post->photos()->get())->map->present()->all(),
             'photos_html' => view('community.partials.photo-grid', ['photos' => $photos, 'title' => $post->title, 'big' => true])->render(),
+            'video' => ($clip = $post->video()->first())?->present(),
+            'video_html' => view('community.partials.video', ['video' => $clip, 'owner' => "post:{$post->id}", 'title' => $post->title])->render(),
         ]);
     }
 

@@ -7,6 +7,7 @@ use App\Community\Notifier;
 use App\Community\Photos;
 use App\Community\RichText;
 use App\Community\Text;
+use App\Community\Videos;
 use App\Http\Controllers\Controller;
 use App\Models\AnalyticsEvent;
 use App\Models\Answer;
@@ -40,6 +41,7 @@ class AnswerController extends Controller
         ]);
 
         $photos = Photos::input($request, anonymous: (bool) ($data['anonymous'] ?? false), allowed: ! isset($data['parent']));
+        $video = Videos::input($request, anonymous: (bool) ($data['anonymous'] ?? false), allowed: ! isset($data['parent']));
         $member = PostController::named($request->attributes->get('member'), $data['name'] ?? null)->rememberLocale();
         self::checkLinks($data['body'], $html);
 
@@ -47,11 +49,14 @@ class AnswerController extends Controller
         $parent = isset($data['parent']) ? $post->answers()->published()->findOrFail($data['parent']) : null;
         $thread = $parent ? ($parent->thread_id ?? $parent->id) : null;
 
-        $answer = DB::transaction(function () use ($post, $parent, $thread, $member, $data, $html, $photos) {
+        $answer = DB::transaction(function () use ($post, $parent, $thread, $member, $data, $html, $photos, $video) {
             $answer = Answer::where(['post_id' => $post->id, 'parent_id' => $parent?->id, 'member_id' => $member->id, 'body' => $data['body']])->where('created_at', '>=', now()->subMinutes(10))->first()
                 ?? Answer::create(['post_id' => $post->id, 'parent_id' => $parent?->id, 'thread_id' => $thread, 'member_id' => $member->id, 'is_anonymous' => (bool) ($data['anonymous'] ?? false), 'body' => $data['body'], 'body_html' => $html, 'status' => Post::PUBLISHED]);
             if ($photos !== null) {
                 Photos::attach($member, $answer, $photos);
+            }
+            if ($video) {
+                Videos::attach($member, $answer, $video);
             }
 
             return $answer;
@@ -65,7 +70,7 @@ class AnswerController extends Controller
             } else {
                 $post->refreshAnswerCount();
                 Notifier::answered($answer);
-                AnalyticsEvent::server('answer_created', $request, ['type' => $post->type, 'rich' => RichText::isFormatted($answer->body_html) ? 1 : 0, 'photos' => count($photos ?? [])]);
+                AnalyticsEvent::server('answer_created', $request, ['type' => $post->type, 'rich' => RichText::isFormatted($answer->body_html) ? 1 : 0, 'photos' => count($photos ?? []), 'video' => $video ? 1 : 0]);
             }
         }
         $answer->setRelation('member', $member);
@@ -90,11 +95,16 @@ class AnswerController extends Controller
         $data = $request->validate(['body' => ['required', 'string', 'min:2', 'max:5000']]);
         self::checkLinks($data['body'], $html);
         $photos = Photos::input($request, anonymous: $answer->is_anonymous, allowed: ! $answer->isReply());
+        $video = Videos::input($request, anonymous: $answer->is_anonymous, allowed: ! $answer->isReply());
 
-        DB::transaction(function () use ($request, $answer, $data, $html, $photos) {
+        DB::transaction(function () use ($request, $answer, $data, $html, $photos, $video) {
             $changed = $data['body'] !== $answer->body || $html !== $answer->body_html;
             if ($photos !== null && array_map('intval', $photos) !== Photos::idsOf($answer)) {
                 Photos::attach($request->attributes->get('member'), $answer, $photos);
+                $changed = true;
+            }
+            if ($video !== null && $video !== Videos::idOf($answer)) {
+                Videos::attach($request->attributes->get('member'), $answer, $video);
                 $changed = true;
             }
             if ($changed) {

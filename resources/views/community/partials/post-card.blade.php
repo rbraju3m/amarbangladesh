@@ -1,18 +1,25 @@
 {{-- A post in a list. The title link is stretched over the whole card; tags and the author link sit above it. --}}
 @php($compact = $compact ?? false)
 @php($photo = $post->photos->first())
+@php($clip = $post->relationLoaded('video') && $post->video?->isReady() ? $post->video : null)
 <article class="post-card group" data-item="post:{{ $post->id }}">
     @include('community.partials.tags', ['post' => $post])
     <div class="flex items-start gap-3">
         <div class="min-w-0 flex-1">
             <h3 @class(['mt-2 font-bold leading-snug', 'text-lg' => ! $compact, 'text-base' => $compact])>
-                <a href="{{ $post->url() }}" class="after:absolute after:inset-0 after:rounded-3xl group-hover:text-green-text">{{ $post->title }}@if ($photo)<span class="sr-only"> · {{ \App\Support\Lang::choice(':nটি ছবি', $post->photos->count()) }}</span>@endif</a>
+                <a href="{{ $post->url() }}" class="after:absolute after:inset-0 after:rounded-3xl group-hover:text-green-text">{{ $post->title }}@if ($clip)<span class="sr-only"> · {{ __('ভিডিও :length', ['length' => $clip->length()]) }}</span>@endif @if ($photo)<span class="sr-only"> · {{ \App\Support\Lang::choice(':nটি ছবি', $post->photos->count()) }}</span>@endif</a>
             </h3>
             @if ($post->body && ! $compact)
                 <p class="mt-1 line-clamp-2 text-ink-2">{{ \App\Community\Text::excerpt($post->body) }}</p>
             @endif
         </div>
-        @if ($photo)
+        @if ($clip)
+            <div @class(['card-thumb', 'size-20' => ! $compact, 'size-14' => $compact]) aria-hidden="true">
+                <img src="{{ $clip->posterUrl() }}" alt="" loading="lazy" decoding="async" class="size-full object-cover">
+                <span class="card-thumb-play">▶</span>
+                <span class="card-thumb-more">{{ $clip->length() }}</span>
+            </div>
+        @elseif ($photo)
             <div @class(['card-thumb', 'size-20' => ! $compact, 'size-14' => $compact]) aria-hidden="true">
                 <img src="{{ $photo->url('thumb') }}" alt="" loading="lazy" decoding="async" class="size-full object-cover">
                 @if ($post->photos->count() > 1)<span class="card-thumb-more">+{{ \App\Support\Lang::num($post->photos->count() - 1) }}</span>@endif

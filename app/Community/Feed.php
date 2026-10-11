@@ -41,7 +41,7 @@ final class Feed
         $areaIds = $this->areaIds();
 
         return Post::published()->open() // lost & found and jobs that ran out keep their page, not a place here
-            ->with(['member:'.Member::AUTHOR_COLUMNS, 'category:id,slug,name_bn,name_en,emoji', 'area:id,slug,name_bn,name_en', 'photos'])
+            ->with(['member:'.Member::AUTHOR_COLUMNS, 'category:id,slug,name_bn,name_en,emoji', 'area:id,slug,name_bn,name_en', 'photos', 'video'])
             ->when($this->tab === 'unanswered', fn ($q) => $q->where('answers_count', 0)->whereIn('type', ['question', 'help']))
             ->when($this->tab === 'solved', fn ($q) => $q->whereNotNull('accepted_answer_id'))
             ->when($this->category, fn ($q) => $q->where('category_id', $this->category['id']))

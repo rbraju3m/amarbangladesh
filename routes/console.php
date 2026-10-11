@@ -15,3 +15,5 @@ Schedule::call(fn () => Heartbeat::record('scheduler'))->everyMinute()->name('he
 Schedule::command('model:prune')->daily()->onSuccess(fn () => Heartbeat::record('model:prune'));
 Schedule::command('community:send-notification-emails')->everyFiveMinutes()->withoutOverlapping();
 Schedule::command('community:prune-photos')->hourly()->withoutOverlapping();
+// One conversion at a time; a run that dies leaves its lock for at most 30 minutes.
+Schedule::command('community:process-videos')->everyMinute()->withoutOverlapping(30);

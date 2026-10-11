@@ -194,11 +194,7 @@ final class Photos
      */
     public static function prune(): int
     {
-        $gone = [Post::REMOVED, Post::DELETED];
-        $before = now()->subDays(self::REMOVED_DAYS);
-        $deadPosts = Post::whereIn('status', $gone)->where('updated_at', '<', $before)->select('id');
-        $deadAnswers = Answer::where(fn ($q) => $q->whereIn('status', $gone)->where('updated_at', '<', $before))
-            ->orWhereIn('post_id', $deadPosts)->select('id');
+        ['post' => $deadPosts, 'answer' => $deadAnswers] = Moderation::goneBefore(now()->subDays(self::REMOVED_DAYS));
 
         $count = 0;
         foreach ([

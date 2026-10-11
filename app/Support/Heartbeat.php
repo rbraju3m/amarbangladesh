@@ -16,7 +16,8 @@ final class Heartbeat
     public const JOBS = [
         'scheduler' => ['Scheduler (cron)', 1, 5],
         'community:send-notification-emails' => ['Notification emails', 5, 15],
-        'community:prune-photos' => ['Photo clean-up', 60, 150],
+        'community:prune-photos' => ['Photo and video clean-up', 60, 150],
+        'community:process-videos' => ['Video conversion', 1, 20], // a run can spend minutes on one long video
         'model:prune' => ['Old analytics pruning', 1440, 1560],
     ];
 
