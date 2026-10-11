@@ -567,5 +567,20 @@
     "জরুরি না": "Not urgent",
     "🩸 রক্ত লাগবে?": "🩸 Need blood?",
     "না": "No",
-    "ফোন নম্বর প্রকাশ্যে দেবেন না। যাঁরা সাহায্য করতে পারবেন, তাঁরা উত্তরে জানাবেন।": "Don't post phone numbers publicly. People who can help will say so in the answers."
+    "ফোন নম্বর প্রকাশ্যে দেবেন না। যাঁরা সাহায্য করতে পারবেন, তাঁরা উত্তরে জানাবেন।": "Don't post phone numbers publicly. People who can help will say so in the answers.",
+    "post.type.lost": "Lost & found",
+    "post.type.job": "Job posting",
+    "বন্ধ": "Closed",
+    "প্রতারণা বা টাকা চাওয়া": "A scam or asking for money",
+    "এই চাকরির পোস্টটা বন্ধ হয়ে গেছে। আর নতুন আবেদন নেওয়া হচ্ছে না ধরে নিন।": "This job post is closed. Assume no new applications are being taken.",
+    "এই পোস্টটা বন্ধ হয়ে গেছে।": "This post is closed.",
+    ":date পর্যন্ত চালু থাকবে, তারপর ফিডে আর দেখাবে না।": "Open until :date, then it leaves the feed.",
+    "✓ লোক পাওয়া গেছে, বন্ধ করুন": "✓ Position filled, close it",
+    "✓ পাওয়া গেছে, বন্ধ করুন": "✓ Sorted, close it",
+    "চাকরি পাইয়ে দেওয়ার নামে কেউ টাকা চাইলে দেবেন না, সেটা প্রতারণা। আমার বাংলাদেশ এই পোস্ট যাচাই করেনি। সন্দেহ হলে রিপোর্ট করুন।": "Never pay anyone to get you a job: that's a scam. Amar Bangladesh hasn't checked this post. If it looks wrong, report it.",
+    "জিনিস ফেরত দিতে বা নিতে লোকজনের মধ্যে দেখা করুন। পুরো ঠিকানা বা ফোন নম্বর প্রকাশ্যে দেবেন না।": "Meet somewhere public to hand things over. Don't post a full address or phone number.",
+    "পোস্টটা বন্ধ হয়েছে। ফিডে আর দেখাবে না, লিংকটা থাকবে।": "Post closed. It's off the feed; the link still works.",
+    ":n দিন পর পোস্টটা ফিড থেকে সরে যাবে, লিংকটা থাকবে। আগেই কাজ হয়ে গেলে নিজে বন্ধ করে দিতে পারবেন।": "After :n days the post leaves the feed; the link stays. If it's sorted sooner, you can close it yourself.",
+    "চাকরির পোস্টে কাজ, বেতন, জায়গা আর কীভাবে আবেদন করতে হবে লিখুন। আবেদনের জন্য টাকা চাওয়া পোস্ট মুছে ফেলা হবে।": "Say what the job is, the pay, where, and how to apply. Posts that ask applicants for money will be removed.",
+    "কী হারিয়েছে বা পাওয়া গেছে, কোথায়, কবে লিখুন। পুরো ঠিকানা বা ফোন নম্বর প্রকাশ্যে দেবেন না।": "Say what was lost or found, where and when. Don't post a full address or phone number."
 }

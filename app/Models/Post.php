@@ -19,7 +19,12 @@ class Post extends Model
         'discussion' => ['label' => 'আলোচনা', 'emoji' => '💬'],
         'tip' => ['label' => 'টিপস ও তথ্য', 'emoji' => '💡'],
         'help' => ['label' => 'সাহায্য চাই', 'emoji' => '🤝'],
+        'lost' => ['label' => 'হারানো-পাওয়া', 'emoji' => '🔎'],
+        'job' => ['label' => 'চাকরির খবর', 'emoji' => '📋'],
     ];
+
+    /** Kinds that run out: days until they leave the feed (the page stays, marked closed). */
+    public const EXPIRES_DAYS = ['lost' => 30, 'job' => 30];
 
     /** How long a help post can stay urgent, in hours (picked on the Ask page). */
     public const URGENT_HOURS = [24, 48, 72];
@@ -35,14 +40,14 @@ class Post extends Model
 
     public const DELETED = 'deleted';  // deleted by its author
 
-    protected $fillable = ['member_id', 'is_anonymous', 'type', 'title', 'body', 'body_html', 'category_id', 'area_id', 'status', 'accepted_answer_id', 'urgent_until', 'blood_group'];
+    protected $fillable = ['member_id', 'is_anonymous', 'type', 'title', 'body', 'body_html', 'category_id', 'area_id', 'status', 'accepted_answer_id', 'urgent_until', 'blood_group', 'expires_at'];
 
     /** The columns' defaults, so a just-created model renders its counts without a reload. */
     protected $attributes = ['answers_count' => 0, 'helpful_count' => 0, 'reports_count' => 0];
 
     protected function casts(): array
     {
-        return ['is_anonymous' => 'boolean', 'edited_at' => 'datetime', 'urgent_until' => 'datetime'];
+        return ['is_anonymous' => 'boolean', 'edited_at' => 'datetime', 'urgent_until' => 'datetime', 'expires_at' => 'datetime'];
     }
 
     /** The author as the public sees them: null when posted anonymously. */
@@ -54,6 +59,17 @@ class Post extends Model
     public function scopePublished(Builder $query): void
     {
         $query->where('status', self::PUBLISHED);
+    }
+
+    /** Not run out: everything except lost & found / job posts past their `expires_at` (or closed by the author). */
+    public function scopeOpen(Builder $query): void
+    {
+        $query->where(fn ($q) => $q->whereNull('expires_at')->orWhere('expires_at', '>', now()));
+    }
+
+    public function isClosed(): bool
+    {
+        return (bool) $this->expires_at?->isPast();
     }
 
     /** Urgent help that hasn't run out yet (nothing runs at expiry: it just stops matching). */

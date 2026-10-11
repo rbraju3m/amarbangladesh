@@ -46,6 +46,20 @@
         @elseif ($post->type === 'help' && $post->blood_group)
             <p class="mt-4 text-sm text-ink-2">{{ __('আমার বাংলাদেশ এসব তথ্য যাচাই করেনি। টাকা পাঠানো বা কোথাও যাওয়ার আগে নিজে যাচাই করুন।') }}</p>
         @endif
+        {{-- Lost & found and jobs: closed once their time is up (or the author closes it); jobs carry a scam warning --}}
+        @if ($post->isClosed())
+            <p class="mt-4 rounded-2xl border border-line bg-paper-2 px-4 py-3 text-sm font-semibold text-ink-2">{{ $post->type === 'job' ? __('এই চাকরির পোস্টটা বন্ধ হয়ে গেছে। আর নতুন আবেদন নেওয়া হচ্ছে না ধরে নিন।') : __('এই পোস্টটা বন্ধ হয়ে গেছে।') }}</p>
+        @elseif (isset(\App\Models\Post::EXPIRES_DAYS[$post->type]))
+            <div id="post-open" class="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-ink-2">
+                <span>{{ __(':date পর্যন্ত চালু থাকবে, তারপর ফিডে আর দেখাবে না।', ['date' => \App\Support\Lang::date($post->expires_at)]) }}</span>
+                <button type="button" class="act" x-show="mine('post', {{ $post->id }})" x-cloak @click="closePost({{ $post->id }})" :disabled="busy">{{ $post->type === 'job' ? __('✓ লোক পাওয়া গেছে, বন্ধ করুন') : __('✓ পাওয়া গেছে, বন্ধ করুন') }}</button>
+            </div>
+        @endif
+        @if ($post->type === 'job')
+            <p class="mt-3 rounded-2xl border border-warn/30 bg-warn/5 px-4 py-3 text-sm">⚠️ {{ __('চাকরি পাইয়ে দেওয়ার নামে কেউ টাকা চাইলে দেবেন না, সেটা প্রতারণা। আমার বাংলাদেশ এই পোস্ট যাচাই করেনি। সন্দেহ হলে রিপোর্ট করুন।') }}</p>
+        @elseif ($post->type === 'lost' && ! $post->isClosed())
+            <p class="mt-3 text-sm text-ink-2">{{ __('জিনিস ফেরত দিতে বা নিতে লোকজনের মধ্যে দেখা করুন। পুরো ঠিকানা বা ফোন নম্বর প্রকাশ্যে দেবেন না।') }}</p>
+        @endif
         <div x-show="!editing" id="post-body" class="prose-text mt-4 text-lg empty:hidden">@if ($post->body){{ \App\Community\RichText::render($post) }}@endif</div>
         <div x-show="!editing" id="post-photos" class="mt-4 empty:hidden">@include('community.partials.photo-grid', ['photos' => $post->photos, 'title' => $post->title, 'big' => true])</div>
 

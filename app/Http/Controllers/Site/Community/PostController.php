@@ -69,6 +69,8 @@ class PostController extends Controller
                     // Urgency and blood belong to help posts only.
                     'urgent_until' => $urgent ? now()->addHours($urgent) : null,
                     'blood_group' => ($data['type'] ?? null) === 'help' ? ($data['blood_group'] ?? null) : null,
+                    // Lost & found and jobs run out of the feed (their page stays, marked closed).
+                    'expires_at' => isset(Post::EXPIRES_DAYS[$data['type'] ?? '']) ? now()->addDays(Post::EXPIRES_DAYS[$data['type']]) : null,
                 ]);
             if ($photos !== null) {
                 Photos::attach($member, $post, $photos);
@@ -152,6 +154,18 @@ class PostController extends Controller
         }
 
         return response()->json(['urgent' => false]);
+    }
+
+    /** The author closes a lost & found or job post early (found it, job filled): it leaves the feed, the page stays. */
+    public function close(Request $request, Post $post): JsonResponse
+    {
+        abort_unless($post->member_id === $request->attributes->get('member')->id, 403);
+        abort_unless($post->isPublished() && isset(Post::EXPIRES_DAYS[$post->type]), 404);
+        if (! $post->isClosed()) {
+            $post->forceFill(['expires_at' => now()])->save();
+        }
+
+        return response()->json(['closed' => true]);
     }
 
     /** At most Text::MAX_LINKS links in the title and details together; formatted details count their <a> tags. */

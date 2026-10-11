@@ -48,7 +48,7 @@ class PageController extends Controller
             'lists' => $lists,
             'urgent' => (new Feed)->urgent(),
             // The "happening now" ticker under the hero: the newest posts with where they're from.
-            'ticker' => Post::published()->with('area:id,slug,name_bn,name_en')->latest('id')->limit(self::TICKER)
+            'ticker' => Post::published()->open()->with('area:id,slug,name_bn,name_en')->latest('id')->limit(self::TICKER)
                 ->get(['id', 'title', 'type', 'area_id', 'created_at']),
             'stats' => Cache::remember('community.home_stats', 300, fn () => [
                 'posts' => Post::published()->count(),

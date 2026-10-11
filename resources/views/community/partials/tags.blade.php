@@ -5,6 +5,9 @@
     @if ($post->isUrgent())
         <span class="tag tag-urgent">🆘 {{ __('জরুরি') }}</span>
     @endif
+    @if ($post->isClosed())
+        <span class="tag tag-closed">{{ __('বন্ধ') }}</span>
+    @endif
     @if ($post->type === 'help' && $post->blood_group)
         <span class="blood-pill"><span class="sr-only">{{ __('রক্তের গ্রুপ') }} </span>🩸 {{ $post->blood_group }}</span>
     @endif

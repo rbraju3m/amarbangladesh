@@ -25,10 +25,13 @@
         x-effect="urgentOn && (anon = false)"
         x-init="setInterval(() => title || (ex = (ex + 1) % examples.length), 3500)">
 
-        <div class="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]" role="radiogroup" aria-label="{{ __('পোস্টের ধরন') }}">
+        {{-- A type picked by link (?type=job) is scrolled into view, after the fonts have set the chips' widths --}}
+        <div class="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]" role="radiogroup" aria-label="{{ __('পোস্টের ধরন') }}"
+            x-init="document.fonts.ready.then(() => $nextTick(() => $el.querySelector('[aria-checked=true]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' })))">
             @foreach ($types as $key => $t)
                 <button type="button" role="radio" class="filter-chip" :class="type === '{{ $key }}' && 'is-on'" :aria-checked="type === '{{ $key }}'" @click="type = '{{ $key }}'">{{ $t['emoji'] }} {{ \App\Models\Post::typeLabel($key) }}</button>
             @endforeach
+            <span class="w-2 shrink-0" aria-hidden="true"></span>{{-- the row's right padding doesn't scroll: room after the last chip --}}
             <input type="hidden" name="type" :value="type">
         </div>
 
@@ -54,6 +57,11 @@
         </div>
 
         @include('community.partials.photo-picker', ['class' => 'mt-4'])
+
+        {{-- Lost & found and jobs run out of the feed after a month; jobs warn about "pay to get hired" --}}
+        <p x-show="type === 'lost' || type === 'job'" x-cloak class="mt-4 text-sm text-ink-2">{{ __(':n দিন পর পোস্টটা ফিড থেকে সরে যাবে, লিংকটা থাকবে। আগেই কাজ হয়ে গেলে নিজে বন্ধ করে দিতে পারবেন।', ['n' => \App\Support\Lang::num(\App\Models\Post::EXPIRES_DAYS['job'])]) }}</p>
+        <p x-show="type === 'job'" x-cloak class="mt-3 rounded-2xl border border-warn/30 bg-warn/5 px-4 py-3 text-sm">⚠️ {{ __('চাকরির পোস্টে কাজ, বেতন, জায়গা আর কীভাবে আবেদন করতে হবে লিখুন। আবেদনের জন্য টাকা চাওয়া পোস্ট মুছে ফেলা হবে।') }}</p>
+        <p x-show="type === 'lost'" x-cloak class="mt-3 text-sm text-ink-2">{{ __('কী হারিয়েছে বা পাওয়া গেছে, কোথায়, কবে লিখুন। পুরো ঠিকানা বা ফোন নম্বর প্রকাশ্যে দেবেন না।') }}</p>
 
         {{-- Help posts only: urgent for 24/48/72 hours (one at a time, never anonymous) and the blood group needed --}}
         <div x-show="type === 'help'" x-cloak class="mt-5 rounded-2xl border border-line p-4">

@@ -632,6 +632,20 @@ function community() {
             }
         },
 
+        /** The author closes a lost & found or job post (found it, job filled): it leaves the feed, the page stays. */
+        async closePost(postId) {
+            this.busy = true;
+            try {
+                await this.call('POST', `/api/posts/${postId}/close`);
+                document.getElementById('post-open')?.remove();
+                this.flash(t('পোস্টটা বন্ধ হয়েছে। ফিডে আর দেখাবে না, লিংকটা থাকবে।'));
+            } catch (e) {
+                this.flash(e.message);
+            } finally {
+                this.busy = false;
+            }
+        },
+
         async submitAnswer(postId, form) {
             this.formError = '';
             this.busy = true;

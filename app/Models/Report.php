@@ -10,6 +10,7 @@ class Report extends Model
 
     public const REASONS = [
         'spam' => 'স্প্যাম বা বিজ্ঞাপন',
+        'scam' => 'প্রতারণা বা টাকা চাওয়া', // fake jobs, "send money first" (feature plan chunk 10)
         'abuse' => 'অসম্মানজনক বা ঘৃণামূলক',
         'false' => 'ভুল বা বিভ্রান্তিকর তথ্য',
         'private' => 'কারও ব্যক্তিগত তথ্য',
