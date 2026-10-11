@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AnnouncementController;
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\BalanceController;
 use App\Http\Controllers\Admin\CategoryController;
@@ -36,6 +37,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/community', [CommunityController::class, 'index'])->name('community');
         Route::get('/community/log', [CommunityController::class, 'log'])->name('community.log');
         Route::resource('categories', CategoryController::class)->only(['index', 'store', 'update']);
+        Route::resource('announcements', AnnouncementController::class)->only(['index', 'store', 'edit', 'update']);
         Route::post('/community/{type}/{id}/{action}', [CommunityController::class, 'moderate'])
             ->whereIn('type', ['post', 'answer'])->whereNumber('id')->whereIn('action', ['hide', 'restore', 'remove', 'dismiss'])->name('community.moderate');
         Route::post('/community/members/{member:id}/{action}', [CommunityController::class, 'block'])

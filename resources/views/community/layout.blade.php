@@ -10,6 +10,7 @@
 @section('content')
 <main x-data="community" data-page="{{ $active ?? '' }}" class="flex min-h-dvh flex-col">
     <x-site.header :active="$active ?? null" />
+    <x-site.announcement />
 
     <div id="content" tabindex="-1" class="flex-1 outline-none">@yield('main')</div>
 

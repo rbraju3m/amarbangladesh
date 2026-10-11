@@ -1192,3 +1192,11 @@
         @apply bg-flag-red/10 text-flag-red;
     }
 }
+
+/* Site announcement on the quiz (partials/announcement, `compact`): one line on phones until tapped, and the
+   landing map's cap shrinks while a bar shows, so the play button stays above the fold (checked at 360×560). */
+@media (max-width: 47.99rem) {
+    [data-compact] > div { padding-block: 0.375rem; font-size: 0.8125rem; }
+    [data-compact]:not(.is-open) .announcement-text { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; overflow: hidden; cursor: pointer; }
+    main:has([data-site-announcement] [data-announcement]) .landing-map { width: min(68%, 19dvh); }
+}

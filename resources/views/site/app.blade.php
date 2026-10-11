@@ -13,6 +13,8 @@
 <main x-data="quiz(JSON.parse(document.getElementById('boot').textContent))" :style="`--accent: ${accent}`" class="relative overflow-x-clip">
     {{-- The shared site header; the questions and the reveal are full-screen, so it steps aside there. --}}
     <x-site.header active="quiz" x-show="!['question', 'reveal'].includes(screen)" />
+    {{-- Compact on phones (one line, tap to read it all), and the landing map shrinks while it shows: the play button stays above the fold. --}}
+    <x-site.announcement compact x-show="!['question', 'reveal'].includes(screen)" />
     <div id="content" tabindex="-1" class="outline-none"></div>
 
     {{-- ===================== LANDING ===================== --}}
@@ -20,7 +22,7 @@
         @click="$event.target.closest('[data-place]') || (focusSlug = null)">
         <div class="lg:grid lg:flex-1 lg:grid-cols-2 lg:items-center lg:gap-16 lg:py-6">
             {{-- On phones the map's height is capped (400×552, so 25dvh wide ≈ 34dvh tall) to keep the play button above the fold, Messenger's browser included. --}}
-            <div class="relative mx-auto -mb-2 w-[min(68%,25dvh)] max-w-64 lg:mb-0 lg:w-[78%] lg:max-w-sm">
+            <div class="landing-map relative mx-auto -mb-2 w-[min(68%,25dvh)] max-w-64 lg:mb-0 lg:w-[78%] lg:max-w-sm">
                 @include('partials.bd-map', ['mode' => 'hero', 'class' => 'w-full drop-shadow-[0_18px_30px_rgb(0_106_78/0.25)]', 'locations' => $boot['locations']])
                 <div class="transition-opacity duration-200" :class="focusSlug && 'opacity-0'" aria-hidden="true">
                     <span class="animate-pop absolute top-[18%] -left-6 rounded-full bg-card px-3 py-1 text-sm font-semibold shadow-lg [animation-delay:.2s]">{{ __('🌿 সিলেট?') }}</span>
