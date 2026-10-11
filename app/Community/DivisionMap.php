@@ -102,7 +102,7 @@ final class DivisionMap
     }
 
     /**
-     * Published posts per division or district (a division's include its districts'), all time and in
+     * Published posts per division or district (a division's include its districts', a district's its upazilas' and thanas'), all time and in
      * the last RECENT_DAYS, optionally for one category.
      *
      * @return array{all: array<string, int>, recent: array<string, int>}
@@ -116,7 +116,7 @@ final class DivisionMap
             if (! $area || ($category && $categoryId !== $category)) {
                 continue;
             }
-            $slug = $level === 'division' ? $area['division_slug'] : ($area['type'] === 'district' ? $area['slug'] : null);
+            $slug = $level === 'division' ? $area['division_slug'] : $area['district_slug'];
             if ($slug) {
                 $all[$slug] = ($all[$slug] ?? 0) + $n;
                 $recent[$slug] = ($recent[$slug] ?? 0) + $new;
@@ -164,7 +164,7 @@ final class DivisionMap
             if (! $area || ($category && $categoryId !== $category)) {
                 continue;
             }
-            $slug = $level === 'division' ? $area['division_slug'] : ($area['type'] === 'district' ? $area['slug'] : null);
+            $slug = $level === 'division' ? $area['division_slug'] : $area['district_slug'];
             if ($slug && ! isset($titles[$slug])) {
                 $titles[$slug] = $title;
             }

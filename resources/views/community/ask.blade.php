@@ -99,9 +99,11 @@
             <input type="hidden" name="category" :value="category">
         </fieldset>
 
-        <div class="mt-5">
+        {{-- District, then (with JS) its upazilas and city thanas; without JS the district alone works --}}
+        <div class="mt-5" x-data="{ area: @js($prefill['area']), upazila: @js($prefill['upazila']), all: JSON.parse($el.dataset.upazilas), get list() { return this.all[this.area] || [] } }"
+            data-upazilas="{{ json_encode($upazilas, JSON_UNESCAPED_UNICODE) }}">
             <label for="ask-area" class="text-sm font-semibold">{{ __('📍 কোন এলাকা নিয়ে?') }} <span class="font-medium text-ink-2">{{ __('(ঐচ্ছিক)') }}</span></label>
-            <select id="ask-area" name="area" class="field mt-1">
+            <select id="ask-area" name="area" class="field mt-1" x-model="area" @change="upazila = ''">
                 <option value="">{{ __('সারা বাংলাদেশ / নির্দিষ্ট এলাকা না') }}</option>
                 @foreach ($districts as $division => $list)
                     <optgroup label="{{ __(':name বিভাগ', ['name' => $division]) }}">
@@ -111,6 +113,18 @@
                     </optgroup>
                 @endforeach
             </select>
+            <div x-show="list.length" x-cloak class="mt-3">
+                <label for="ask-upazila" class="text-sm font-semibold">{{ __('🏘️ উপজেলা বা থানা') }} <span class="font-medium text-ink-2">{{ __('(ঐচ্ছিক)') }}</span></label>
+                <select id="ask-upazila" name="upazila" class="field mt-1" x-model="upazila" :disabled="!list.length">
+                    <option value="">{{ __('পুরো জেলা') }}</option>
+                    <template x-for="u in list.filter((u) => u[2] === 'upazila')" :key="u[0]">
+                        <option :value="u[0]" x-text="u[1]" :selected="u[0] === upazila"></option>
+                    </template>
+                    <template x-for="u in list.filter((u) => u[2] === 'thana')" :key="u[0]">
+                        <option :value="u[0]" x-text="t(':name (থানা)', { name: u[1] })" :selected="u[0] === upazila"></option>
+                    </template>
+                </select>
+            </div>
         </div>
 
         <template x-if="signedIn && !myName">

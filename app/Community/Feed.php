@@ -66,16 +66,10 @@ final class Feed
             ->orderByDesc('id')->limit($limit)->get();
     }
 
-    /** The area's ids (a division covers its districts), or null for the whole country. */
+    /** The area's ids (itself and everything under it: districts, upazilas, thanas), or null for the whole country. */
     private function areaIds(): ?array
     {
-        if (! $this->area) {
-            return null;
-        }
-
-        return $this->area['type'] === 'division'
-            ? array_merge([$this->area['id']], array_column(array_filter(Taxonomy::areas(), fn ($a) => $a['division_bn'] === $this->area['name_bn'] && $a['type'] === 'district'), 'id'))
-            : [$this->area['id']];
+        return $this->area['ids'] ?? null;
     }
 
     /** The query string for this view with some keys replaced (null drops one), for tab/filter links. */

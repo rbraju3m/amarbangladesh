@@ -50,18 +50,7 @@
                 <label><span class="field-label">Community area <span class="normal-case">the result page shows questions from here</span></span>
                     <select name="area_slug" class="input">
                         <option value="">None (latest posts)</option>
-                        @foreach (\App\Community\Taxonomy::areas() as $a)
-                            @if ($a['type'] === 'division')
-                                <option value="{{ $a['slug'] }}" @selected(old('area_slug', $location->area_slug) === $a['slug'])>{{ $a['name_en'] }} division (all districts)</option>
-                            @endif
-                        @endforeach
-                        @foreach (\App\Community\Taxonomy::districtsByDivision() as $division => $list)
-                            <optgroup label="{{ $division }}">
-                                @foreach ($list as $a)
-                                    <option value="{{ $a['slug'] }}" @selected(old('area_slug', $location->area_slug) === $a['slug'])>{{ $a['name_en'] }} · {{ $a['name_bn'] }}</option>
-                                @endforeach
-                            </optgroup>
-                        @endforeach
+                        @include('admin.partials.area-options', ['selected' => old('area_slug', $location->area_slug)])
                     </select>
                 </label>
                 <label><span class="field-label">Sort order</span><input type="number" name="sort_order" value="{{ old('sort_order', $location->sort_order) }}" class="input"></label>

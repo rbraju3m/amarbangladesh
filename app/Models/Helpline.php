@@ -57,8 +57,9 @@ class Helpline extends Model
     }
 
     /**
-     * The live list for one place: nationwide numbers plus the area's own. A division also brings its
-     * districts' numbers; a district brings its division's.
+     * The live list for one place: nationwide numbers plus the area's own, the places under it (a
+     * division's districts and upazilas, a district's upazilas) and the places above it (an upazila's
+     * district and division, a district's division).
      *
      * @param  ?array  $area  a row from Taxonomy::areas()
      */
@@ -69,9 +70,10 @@ class Helpline extends Model
             return $rows;
         }
         $areas = Taxonomy::areas();
-        $ids = collect($areas)->filter(fn ($a) => $a['slug'] === $area['slug']
-            || ($area['type'] === 'division' && $a['division_slug'] === $area['slug'])
-            || ($area['type'] === 'district' && $a['slug'] === $area['division_slug']))->pluck('id')->all();
+        $ids = [...$area['ids'], ...array_filter([
+            $areas[$area['division_slug'] ?? '']['id'] ?? null,
+            $areas[$area['district_slug'] ?? '']['id'] ?? null,
+        ])];
 
         return array_values(array_filter($rows, fn ($h) => $h['area_id'] === null || in_array((int) $h['area_id'], $ids, true)));
     }

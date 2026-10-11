@@ -19,7 +19,25 @@
                 {{ __('বাংলাদেশে এখন কী নিয়ে কথা হচ্ছে') }}
             @endif
         </h1>
-        <p class="mt-1 text-ink-2">{{ __('প্রশ্ন, উত্তর আর অভিজ্ঞতা — বাংলাদেশিদের কাছ থেকে, বাংলাদেশিদের জন্য।') }}</p>
+        @if ($feed->area && \App\Community\Taxonomy::LEVELS[$feed->area['type']] > 1)
+            {{-- An upazila or thana: say where it is, with the way up to its whole district --}}
+            <p class="mt-1 text-ink-2">{{ __(':district জেলা', ['district' => $feed->area['district']]) }} · <a href="{{ lroute('feed', $feed->query(['area' => $feed->area['district_slug']]), false) }}" class="font-semibold text-green-text hover:underline">{{ __(':district জেলার সব আলোচনা →', ['district' => $feed->area['district']]) }}</a></p>
+        @else
+            <p class="mt-1 text-ink-2">{{ __('প্রশ্ন, উত্তর আর অভিজ্ঞতা — বাংলাদেশিদের কাছ থেকে, বাংলাদেশিদের জন্য।') }}</p>
+        @endif
+
+        {{-- A district or one of its places: narrow down to an upazila or city thana (plain links) --}}
+        @php($district = $feed->area['district_slug'] ?? null)
+        @php($places = $district ? \App\Community\Taxonomy::upazilasByDistrict()[$district] ?? [] : [])
+        @if ($places)
+            <nav class="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]" aria-label="{{ __('উপজেলা বা থানা') }}"
+                x-init="$el.querySelector('[aria-current]')?.scrollIntoView({ block: 'nearest', inline: 'center' })">
+                <a href="{{ lroute('feed', $feed->query(['area' => $district]), false) }}" @class(['filter-chip shrink-0', 'is-on' => $feed->area['slug'] === $district]) @if ($feed->area['slug'] === $district) aria-current="page" @endif>{{ __('পুরো জেলা') }}</a>
+                @foreach ($places as $p)
+                    <a href="{{ lroute('feed', $feed->query(['area' => $p['slug']]), false) }}" @class(['filter-chip shrink-0', 'is-on' => $feed->area['slug'] === $p['slug']]) @if ($feed->area['slug'] === $p['slug']) aria-current="page" @endif>{{ $p['type'] === 'thana' ? __(':name (থানা)', ['name' => $p['name']]) : $p['name'] }}</a>
+                @endforeach
+            </nav>
+        @endif
 
         {{-- Ask prompt: looks like an input, opens the composer --}}
         <a href="{{ lroute('ask', array_filter(['category' => $feed->category['slug'] ?? null, 'area' => $feed->area['slug'] ?? null]), false) }}" class="ask-prompt mt-4">
@@ -39,6 +57,9 @@
                     <label for="area-filter" class="sr-only">{{ __('এলাকা') }}</label>
                     <select id="area-filter" name="area" class="area-select" onchange="this.form.submit()">
                         <option value="">{{ __('📍 সারা দেশ') }}</option>
+                        @if ($feed->area && \App\Community\Taxonomy::LEVELS[$feed->area['type']] > 1)
+                            <option value="{{ $feed->area['slug'] }}" selected>{{ __(':place, :district', ['place' => $feed->area['name'], 'district' => $feed->area['district']]) }}</option>
+                        @endif
                         <optgroup label="{{ __('বিভাগ') }}">
                             @foreach ($divisions as $d)
                                 <option value="{{ $d['slug'] }}" @selected(($feed->area['slug'] ?? null) === $d['slug'])>{{ __(':name বিভাগ', ['name' => $d['name']]) }}</option>

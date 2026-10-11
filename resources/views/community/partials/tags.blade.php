@@ -15,6 +15,6 @@
         <a href="{{ lroute('feed', ['category' => $post->category->slug], false) }}" class="tag hover:border-ink-2">{{ $post->category->emoji }} {{ $post->category->name() }}</a>
     @endif
     @if ($post->area)
-        <a href="{{ lroute('feed', ['area' => $post->area->slug], false) }}" class="tag hover:border-ink-2">📍 {{ $post->area->name() }}</a>
+        <a href="{{ lroute('feed', ['area' => $post->area->slug], false) }}" class="tag hover:border-ink-2">📍 {{ $post->area->label() }}</a>
     @endif
 </div>

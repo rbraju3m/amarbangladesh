@@ -21,9 +21,7 @@
     <label class="block"><span class="field-label">Area <span class="normal-case">empty = whole country</span></span>
         <select name="area" class="input">
             <option value="">Whole country</option>
-            @foreach (\App\Community\Taxonomy::areas() as $a)
-                <option value="{{ $a['slug'] }}" @selected($areaSlug === $a['slug'])>{{ $a['type'] === 'division' ? $a['name_en'].' division' : '— '.$a['name_en'].' ('.$a['division_en'].')' }}</option>
-            @endforeach
+            @include('admin.partials.area-options', ['selected' => $areaSlug])
         </select>
     </label>
     <label class="block"><span class="field-label">Order</span><input type="number" name="sort_order" value="{{ old('sort_order', $h?->sort_order) }}" min="0" max="65000" class="input" placeholder="last"></label>

@@ -280,13 +280,21 @@ function community() {
                 const draft = JSON.parse(sessionStorage.getItem(DRAFT));
                 if (!draft || draft.path !== location.pathname) return;
                 sessionStorage.removeItem(DRAFT);
-                this.$nextTick(() => {
-                    for (const [name, value] of Object.entries(draft.fields)) {
+                const fill = (fields) => {
+                    const missed = {};
+                    for (const [name, value] of Object.entries(fields)) {
                         const el = document.querySelector(`form[data-draft] [name="${name}"]`);
                         if (!el) continue;
                         el.value = value;
-                        el.dispatchEvent(new Event('input'));
+                        // A select can't take a value whose option isn't drawn yet (the upazilas follow the district).
+                        if (el.value !== value) missed[name] = value;
+                        el.dispatchEvent(new Event(el.tagName === 'SELECT' ? 'change' : 'input'));
                     }
+                    return missed;
+                };
+                this.$nextTick(() => {
+                    const missed = fill(draft.fields);
+                    if (Object.keys(missed).length) this.$nextTick(() => fill(missed));
                 });
             } catch {}
         },

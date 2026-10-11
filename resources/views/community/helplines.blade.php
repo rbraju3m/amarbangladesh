@@ -17,6 +17,9 @@
         <div class="mt-1 flex items-center gap-2">
             <select id="helpline-area" name="area" class="area-select" onchange="this.form.submit()">
                 <option value="">{{ __('📍 সারা দেশ') }}</option>
+                @if ($area && \App\Community\Taxonomy::LEVELS[$area['type']] > 1)
+                    <option value="{{ $area['slug'] }}" selected>{{ __(':place, :district', ['place' => $area['name'], 'district' => $area['district']]) }}</option>
+                @endif
                 <optgroup label="{{ __('বিভাগ') }}">
                     @foreach ($divisions as $d)
                         <option value="{{ $d['slug'] }}" @selected(($area['slug'] ?? null) === $d['slug'])>{{ __(':name বিভাগ', ['name' => $d['name']]) }}</option>

@@ -60,7 +60,7 @@
                                 x-transition:enter="transition duration-500 ease-out" x-transition:enter-start="translate-y-full opacity-0" x-transition:enter-end="translate-y-0 opacity-100"
                                 x-transition:leave="transition duration-300 ease-in" x-transition:leave-start="translate-y-0 opacity-100" x-transition:leave-end="-translate-y-full opacity-0">
                                 <a href="{{ lroute('posts.show', ['post' => $p->id], false) }}" class="block truncate text-sm hover:underline">
-                                    <span class="text-ink-2">{{ \App\Support\Lang::ago($p->created_at) }}@if ($p->area) · {{ $p->area->name() }}@endif ·</span>
+                                    <span class="text-ink-2">{{ \App\Support\Lang::ago($p->created_at) }}@if ($p->area) · {{ $p->area->label() }}@endif ·</span>
                                     <span aria-hidden="true">{{ \App\Models\Post::TYPES[$p->type]['emoji'] ?? '' }}</span> <span class="font-semibold">{{ $p->title }}</span>
                                 </a>
                             </li>

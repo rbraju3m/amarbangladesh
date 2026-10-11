@@ -13,7 +13,7 @@
                     @if ($p->blood_group)<span class="blood-pill shrink-0" title="{{ __('রক্তের গ্রুপ') }}"><span class="sr-only">{{ __('রক্তের গ্রুপ') }} </span>🩸 {{ $p->blood_group }}</span>@endif
                     <span class="min-w-0 flex-1">
                         <span class="line-clamp-2 font-semibold leading-snug">{{ $p->title }}</span>
-                        <span class="mt-0.5 block text-xs text-ink-2">@if ($p->area)📍 {{ $p->area->name() }} · @endif{{ \App\Support\Lang::choice('আর :n ঘণ্টা', $p->urgentHoursLeft()) }}@if ($p->answers_count) · {{ \App\Support\Lang::choice(':nটি উত্তর', $p->answers_count) }}@endif</span>
+                        <span class="mt-0.5 block text-xs text-ink-2">@if ($p->area)📍 {{ $p->area->label() }} · @endif{{ \App\Support\Lang::choice('আর :n ঘণ্টা', $p->urgentHoursLeft()) }}@if ($p->answers_count) · {{ \App\Support\Lang::choice(':nটি উত্তর', $p->answers_count) }}@endif</span>
                     </span>
                 </a>
             </li>

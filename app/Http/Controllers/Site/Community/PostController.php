@@ -42,12 +42,14 @@ class PostController extends Controller
             'body' => ['nullable', 'string', 'max:5000'],
             'category' => ['nullable', Rule::in(array_keys(Taxonomy::categories()))],
             'area' => ['nullable', Rule::in(array_keys(Taxonomy::areas()))],
+            'upazila' => ['nullable', Rule::in(array_keys(array_filter(Taxonomy::areas(), fn ($a) => Taxonomy::LEVELS[$a['type']] === 2)))],
             'name' => ['nullable', 'string', 'max:40'],
             'anonymous' => ['nullable', 'boolean'],
             'urgent' => ['nullable', Rule::in(array_merge([0], Post::URGENT_HOURS))],
             'blood_group' => ['nullable', Rule::in(Post::BLOOD_GROUPS)],
         ], self::messages());
 
+        $area = self::area($data);
         $photos = Photos::input($request, anonymous: (bool) ($data['anonymous'] ?? false));
         $member = self::named($request->attributes->get('member'), $data['name'] ?? null)->rememberLocale();
         self::checkLinks($data['title'], $data['body'] ?? null, $html);
@@ -55,7 +57,7 @@ class PostController extends Controller
 
         // A double tap or a retry after a slow network should not post twice. Photos that can't be
         // attached undo the post, so a retry starts clean.
-        $post = DB::transaction(function () use ($member, $data, $html, $photos, $urgent) {
+        $post = DB::transaction(function () use ($member, $data, $html, $photos, $urgent, $area) {
             $post = Post::where('member_id', $member->id)->where('title', $data['title'])->where('created_at', '>=', now()->subMinutes(10))->first()
                 ?? Post::create([
                     'member_id' => $member->id,
@@ -65,7 +67,7 @@ class PostController extends Controller
                     'body' => $data['body'] ?? null,
                     'body_html' => $html,
                     'category_id' => Taxonomy::categories()[$data['category'] ?? '']['id'] ?? null,
-                    'area_id' => Taxonomy::areas()[$data['area'] ?? '']['id'] ?? null,
+                    'area_id' => $area['id'] ?? null,
                     // Urgency and blood belong to help posts only.
                     'urgent_until' => $urgent ? now()->addHours($urgent) : null,
                     'blood_group' => ($data['type'] ?? null) === 'help' ? ($data['blood_group'] ?? null) : null,
@@ -178,6 +180,22 @@ class PostController extends Controller
         if ($html !== null && mb_strlen($html) > RichText::MAX_HTML) {
             throw ValidationException::withMessages(['body' => __('বিস্তারিত অংশটা একটু ছোট করুন।')]);
         }
+    }
+
+    /** The most precise place given: the upazila (or city thana) if one was picked, else the district/division. */
+    private static function area(array $data): ?array
+    {
+        $areas = Taxonomy::areas();
+        if (empty($data['upazila'])) {
+            return $areas[$data['area'] ?? ''] ?? null;
+        }
+        $upazila = $areas[$data['upazila']];
+        // The picker only offers the chosen district's upazilas; an API call must match too.
+        if (! empty($data['area']) && $data['area'] !== $upazila['district_slug']) {
+            throw ValidationException::withMessages(['upazila' => __('এই উপজেলা বেছে নেওয়া জেলার মধ্যে নেই।')]);
+        }
+
+        return $upazila;
     }
 
     private static function messages(): array

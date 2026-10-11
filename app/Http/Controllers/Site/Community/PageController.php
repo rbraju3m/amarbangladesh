@@ -177,14 +177,21 @@ class PageController extends Controller
 
     public function ask(Request $request): View
     {
+        // An upazila or thana in the link fills both pickers: its district, then itself.
+        $area = Taxonomy::areas()[(string) $request->query('area')] ?? null;
+        $upazila = $area && Taxonomy::LEVELS[$area['type']] === 2 ? $area : null;
+
         return view('community.ask', [
             'categories' => Taxonomy::categories(),
             'districts' => Taxonomy::districtsByDivision(),
+            // district slug => [[slug, name, type]]: the upazila picker's options, in the page language
+            'upazilas' => array_map(fn ($list) => array_map(fn ($a) => [$a['slug'], $a['name'], $a['type']], $list), Taxonomy::upazilasByDistrict()),
             'types' => Post::TYPES,
             'prefill' => [
                 'type' => array_key_exists($request->query('type'), Post::TYPES) ? $request->query('type') : 'question',
                 'category' => array_key_exists($request->query('category'), Taxonomy::categories()) ? $request->query('category') : '',
-                'area' => array_key_exists($request->query('area'), Taxonomy::areas()) ? $request->query('area') : '',
+                'area' => $upazila ? $upazila['district_slug'] : ($area['slug'] ?? ''),
+                'upazila' => $upazila['slug'] ?? '',
                 'title' => mb_substr(trim((string) $request->query('title')), 0, 200), // from search: "ask this"
             ],
         ]);

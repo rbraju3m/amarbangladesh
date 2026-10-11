@@ -623,5 +623,12 @@
     "একজন বন্ধু": "A friend",
     "ওর বাংলাদেশ :place": "Theirs is :place",
     "সবাইকে দেখো (:n)": "See everyone (:n)",
-    "সবচেয়ে বেশি মিলের :n জন দেখানো হলো": "Showing the :n best matches"
+    "সবচেয়ে বেশি মিলের :n জন দেখানো হলো": "Showing the :n best matches",
+    ":district জেলা": ":district district",
+    ":district জেলার সব আলোচনা →": "Everything in :district district →",
+    "🏘️ উপজেলা বা থানা": "🏘️ Upazila or thana",
+    "উপজেলা বা থানা": "Upazila or thana",
+    "পুরো জেলা": "Whole district",
+    ":name (থানা)": ":name (thana)",
+    "এই উপজেলা বেছে নেওয়া জেলার মধ্যে নেই।": "That upazila isn't in the district you picked."
 }
