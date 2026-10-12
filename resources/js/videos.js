@@ -51,10 +51,13 @@ function refused({ status, data }) {
  */
 export async function upload(file, send, { onProgress, onStart, signal }) {
     const json = { 'Content-Type': 'application/json' };
-    let res = await send('POST', '/api/videos', { headers: json, body: JSON.stringify({ size: file.size }), signal });
+    // Not cancelled half way: the server may already have made the upload, and only its answer says
+    // which one, so a cancel waits for it (onStart gets the id to drop it) and then stops.
+    let res = await send('POST', '/api/videos', { headers: json, body: JSON.stringify({ size: file.size }) });
     if (res.status !== 201) throw new Error(refused(res));
     let video = res.data;
     onStart(video);
+    if (signal?.aborted) throw Object.assign(new Error(''), { cancelled: true });
     let failures = 0;
     while (video.status === 'uploading') {
         const offset = video.received;
@@ -177,6 +180,9 @@ export function videoPicker(initial = null, available = true) {
             this.$root.addEventListener('video-wait', () => this.video && (this.video.waiting = true));
             // The answer box is reset after posting: the video went with the answer.
             this.$root.closest('form')?.addEventListener('reset', () => this.clear());
+            // An unposted upload this picker lets go of is dropped on the server, so it doesn't count
+            // against the member's few unposted videos for a day. Bound now: it may run after destroy().
+            this._drop = (id) => this.uploadVideo('DELETE', `/api/videos/${id}`).catch(() => {});
             // Leaving the page mid-upload loses it: ask first.
             this._leave = (e) => {
                 if (!this.uploading) return;
@@ -185,9 +191,12 @@ export function videoPicker(initial = null, available = true) {
             };
             addEventListener('beforeunload', this._leave);
         },
+        // An edit form closed mid-upload: stop it and drop what the server has (a late id is dropped by onStart).
         destroy() {
             removeEventListener('beforeunload', this._leave);
             this._abort?.abort();
+            this._abort = null;
+            if (this.video?.id && !this.video.attached) this._drop(this.video.id);
         },
         // The form's own state follows, so "anonymous" can lock and formPayload can find the id.
         sync() {
@@ -220,7 +229,8 @@ export function videoPicker(initial = null, available = true) {
             const current = () => (this._abort === controller ? this.video : null); // still this upload?
             this._done = upload(file, (...args) => this.uploadVideo(...args), {
                 signal: controller.signal,
-                onStart: (v) => current() && (current().id = v.id),
+                // Cancelled before the server answered: drop the upload it made all the same.
+                onStart: (v) => (current() ? (current().id = v.id) : this._drop(v.id)),
                 onProgress: (sent) => current() && (current().sent = sent),
             })
                 .then((v) => {
@@ -246,11 +256,7 @@ export function videoPicker(initial = null, available = true) {
             this._abort = null;
             this._done = null;
             this.clear();
-            if (video.id && !video.attached) {
-                try {
-                    await this.uploadVideo('DELETE', `/api/videos/${video.id}`);
-                } catch {}
-            }
+            if (video.id && !video.attached) await this._drop(video.id);
         },
 
         clear() {

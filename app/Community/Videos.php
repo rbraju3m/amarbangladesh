@@ -186,6 +186,9 @@ final class Videos
     /**
      * Converts waiting videos, oldest first, until none are left or RUN_SECONDS have passed. A video left
      * "processing" by a run that died (the scheduler never lets two runs overlap) goes back in the queue.
+     * A failed attempt ends the run, so a video's attempts fall in separate minute-apart runs: a passing
+     * fault (a full disk, ffmpeg being replaced) costs one attempt of one video, not every video's last.
+     * Nothing is tried while ffmpeg/ffprobe can't be run at all.
      *
      * @return array{converted: int, failed: int}
      */
@@ -193,9 +196,25 @@ final class Videos
     {
         Video::where('status', Video::PROCESSING)->update(['status' => Video::WAITING]);
         $done = ['converted' => 0, 'failed' => 0];
+        if (! self::canRun()) {
+            Cache::put('videos.available', false, 600); // and stop taking uploads meanwhile
+
+            return $done;
+        }
         $until = microtime(true) + $seconds;
         while (microtime(true) < $until && $video = Video::where('status', Video::WAITING)->orderBy('id')->first()) {
-            self::convert($video) ? $done['converted']++ : ($video->status === Video::FAILED ? $done['failed']++ : null);
+            if (self::convert($video)) {
+                $done['converted']++;
+
+                continue;
+            }
+            if ($video->status === Video::FAILED) {
+                $done['failed']++;
+            }
+            // Deleted while it was being converted: nothing went wrong, carry on.
+            if (Video::whereKey($video->id)->exists()) {
+                break;
+            }
         }
 
         return $done;
@@ -241,11 +260,17 @@ final class Videos
                 @chmod($disk->path($file), 0664); // group-writable like the rest of the public disk
             }
 
-            $video->update([
+            // Only if the video is still there: one deleted meanwhile (its post, an edit, a cancel) never
+            // had a path, so its delete couldn't reach these files.
+            if (! self::finish($video, [
                 'status' => Video::READY, 'path' => $path, 'error' => null, 'processed_at' => now(),
                 'duration_ms' => (int) round($out['duration'] * 1000), 'width' => $out['width'], 'height' => $out['height'],
                 'bytes' => filesize($mp4),
-            ]);
+            ])) {
+                $disk->delete($files);
+
+                return false;
+            }
             Storage::disk(self::PRIVATE_DISK)->delete($video->partPath());
 
             return true;
@@ -256,10 +281,21 @@ final class Videos
             if ($failed) {
                 Storage::disk(self::PRIVATE_DISK)->delete($video->partPath());
             }
-            $video->update(['status' => $failed ? Video::FAILED : Video::WAITING, 'error' => $failed ? 'convert' : null]);
+            self::finish($video, ['status' => $failed ? Video::FAILED : Video::WAITING, 'error' => $failed ? 'convert' : null]);
 
             return false;
         }
+    }
+
+    /** Ends a conversion if the row is still being converted (not deleted meanwhile); the model follows. */
+    private static function finish(Video $video, array $values): bool
+    {
+        if (Video::whereKey($video->id)->where('status', Video::PROCESSING)->update($values) !== 1) {
+            return false;
+        }
+        $video->forceFill($values)->syncOriginal();
+
+        return true;
     }
 
     /**
@@ -372,8 +408,14 @@ final class Videos
     /** Whether ffmpeg and ffprobe can be run here (checked every 10 minutes). */
     public static function available(): bool
     {
-        return Cache::remember('videos.available', 600, fn () => Process::timeout(10)->run([self::binary('ffmpeg'), '-version'])->successful()
-            && Process::timeout(10)->run([self::binary('ffprobe'), '-version'])->successful());
+        return Cache::remember('videos.available', 600, fn () => self::canRun());
+    }
+
+    /** The same, asked now (the converter must not trust a 10-minute-old answer). */
+    public static function canRun(): bool
+    {
+        return Process::timeout(10)->run([self::binary('ffmpeg'), '-version'])->successful()
+            && Process::timeout(10)->run([self::binary('ffprobe'), '-version'])->successful();
     }
 
     /** "ffmpeg version 4.2.7-0ubuntu0.1 …" → "4.2.7-0ubuntu0.1"; null when it can't run (for /admin/system). */

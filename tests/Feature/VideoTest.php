@@ -189,17 +189,60 @@ class VideoTest extends TestCase
         $this->start($token, 100)->assertUnprocessable()->assertJsonValidationErrors('video');
     }
 
-    public function test_a_video_that_cannot_be_converted_is_retried_then_marked_failed(): void
+    public function test_a_video_that_cannot_be_converted_is_retried_in_later_runs_then_marked_failed(): void
     {
         $token = $this->token();
         $id = $this->upload($token, file_get_contents($this->clip('phone')))->json('id');
         Storage::disk('local')->put(Video::find($id)->partPath(), 'broken after the check');
 
+        // One attempt per run, so a passing fault can't use up all of them at once.
+        for ($run = 1; $run < Videos::MAX_ATTEMPTS; $run++) {
+            $this->artisan('community:process-videos')->expectsOutputToContain('failed 0');
+            $this->assertSame(['waiting', $run], [Video::find($id)->status, Video::find($id)->attempts]);
+        }
         $this->artisan('community:process-videos')->expectsOutputToContain('failed 1');
 
         $video = Video::find($id);
         $this->assertSame(['failed', 'convert', Videos::MAX_ATTEMPTS], [$video->status, $video->error, $video->attempts]);
         $this->assertSame([], Storage::disk('public')->allFiles('videos'), 'no half-written files left');
+    }
+
+    public function test_a_failed_attempt_ends_the_run_and_leaves_the_other_videos_waiting(): void
+    {
+        $token = $this->token();
+        $bytes = file_get_contents($this->clip('phone'));
+        $broken = $this->upload($token, $bytes)->json('id');
+        $fine = $this->upload($token, $bytes)->json('id');
+        Storage::disk('local')->put(Video::find($broken)->partPath(), 'broken after the check');
+
+        $this->artisan('community:process-videos')->expectsOutputToContain('Converted 0, failed 0');
+
+        $this->assertSame(['waiting', 1], [Video::find($broken)->status, Video::find($broken)->attempts]);
+        $this->assertSame(['waiting', 0], [Video::find($fine)->status, Video::find($fine)->attempts]);
+    }
+
+    public function test_nothing_is_tried_while_ffmpeg_is_missing(): void
+    {
+        $id = $this->upload($this->token(), file_get_contents($this->clip('phone')))->json('id');
+        config(['services.ffmpeg.ffmpeg' => '/nonexistent/ffmpeg']);
+
+        $this->artisan('community:process-videos')->expectsOutputToContain('Converted 0, failed 0');
+
+        $this->assertSame(['waiting', 0], [Video::find($id)->status, Video::find($id)->attempts]);
+        $this->assertFalse(Videos::available(), 'uploads stop too');
+    }
+
+    public function test_a_video_deleted_while_it_was_converted_leaves_no_files(): void
+    {
+        $id = $this->upload($this->token(), file_get_contents($this->clip('phone')))->json('id');
+        $video = Video::find($id);
+        // Its post was deleted (or the upload cancelled) while ffmpeg worked: the row went, the copy didn't know.
+        Video::whereKey($id)->delete();
+
+        $this->assertFalse(Videos::convert($video));
+
+        $this->assertNull(Video::find($id));
+        $this->assertSame([], Storage::disk('public')->allFiles('videos'), 'the converted copy and posters are deleted');
     }
 
     public function test_a_conversion_left_unfinished_by_a_crash_is_picked_up_again(): void
