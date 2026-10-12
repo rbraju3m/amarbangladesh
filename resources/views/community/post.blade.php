@@ -22,7 +22,7 @@
 
     <article class="mt-3" data-own="post:{{ $post->id }}" data-post-view="{{ $post->id }}" x-data="{ editing: false }">
         @include('community.partials.tags', ['post' => $post])
-        <template data-raw-title>{{ $post->title }}</template><template data-raw>{{ $post->body }}</template><template data-raw-html>{{ $post->body_html }}</template><template data-raw-photos>@json($post->photos->map->present())</template>
+        <template data-raw-title>{{ $post->title }}</template><template data-raw>{{ $post->body }}</template><template data-raw-html>{{ $post->body_html }}</template><template data-raw-photos>@json($post->photos->map->present())</template><template data-raw-video>@json($post->video?->present())</template>
         <h1 x-show="!editing" id="post-title" class="mt-3 text-[1.7rem] leading-snug font-bold md:text-3xl">{{ $post->title }}</h1>
         <div class="mt-3 flex items-center gap-2 text-sm">
             @include('community.partials.author', ['item' => $post])
@@ -133,7 +133,7 @@
         </div>
 
         {{-- Answer composer --}}
-        <form class="composer mt-5" data-draft @submit.prevent="submitAnswer({{ $post->id }}, $el)" x-data="{ body: '', anon: false, photoCount: 0 }">
+        <form class="composer mt-5" data-draft @submit.prevent="submitAnswer({{ $post->id }}, $el)" x-data="{ body: '', anon: false, photoCount: 0, hasVideo: false }">
             <label for="answer-body" class="font-bold">{{ $post->isQuestion() ? __('✍️ আপনার উত্তর') : __('✍️ আপনার মত') }}</label>
             <input type="hidden" name="format" value="">
             <textarea id="answer-body" name="body" x-model="body" x-rich rows="4" maxlength="20000" required class="field mt-2"

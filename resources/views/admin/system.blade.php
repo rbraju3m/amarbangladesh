@@ -73,6 +73,19 @@
         @endif
     </section>
 
+    <section class="panel" aria-labelledby="videos-title">
+        <h2 id="videos-title" class="font-bold">Videos</h2>
+        <dl class="mt-3 grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
+            <div><dt class="text-xs text-ink-2">ffmpeg</dt><dd @class(['font-semibold', 'text-danger' => ! $videos['ffmpeg']])>{{ $videos['ffmpeg'] ?? 'not found' }}</dd></div>
+            <div><dt class="text-xs text-ink-2">Waiting to convert</dt><dd @class(['text-2xl font-bold tabular-nums', 'text-danger' => $videos['late']])>{{ number_format($videos['status']['waiting'] + $videos['status']['processing']) }}</dd>@if ($videos['oldest'])<dd class="text-xs text-ink-2">oldest {{ $ago($videos['oldest']) }}</dd>@endif</div>
+            <div><dt class="text-xs text-ink-2">Ready</dt><dd class="text-2xl font-bold tabular-nums">{{ number_format($videos['status']['ready']) }}</dd><dd class="text-xs text-ink-2">{{ number_format($videos['posted']) }} on posts/answers</dd></div>
+            <div><dt class="text-xs text-ink-2">Uploading now</dt><dd class="text-2xl font-bold tabular-nums">{{ number_format($videos['status']['uploading']) }}</dd></div>
+            <div><dt class="text-xs text-ink-2">Failed</dt><dd @class(['text-2xl font-bold tabular-nums', 'text-danger' => $videos['failures']])>{{ number_format($videos['status']['failed']) }}</dd>@if ($videos['failures'])<dd class="text-xs text-ink-2">7 days: @foreach ($videos['failures'] as $code => $n){{ $loop->first ? '' : ', ' }}{{ $code ?: 'unknown' }} {{ $n }}@endforeach</dd>@endif</div>
+            <div><dt class="text-xs text-ink-2">Space used</dt><dd class="text-2xl font-bold tabular-nums">{{ $size($videos['bytes']) }}</dd><dd class="text-xs text-ink-2">+ {{ $size($videos['parts']) }} unfinished uploads</dd></div>
+        </dl>
+        <p class="mt-3 text-xs text-ink-2">Failure codes: <code>not_video</code> / <code>too_long</code> = refused at upload, <code>convert</code> = ffmpeg failed 3 times. Unposted and unfinished uploads are deleted after a day by the clean-up job.</p>
+    </section>
+
     <section class="panel" aria-labelledby="versions-title">
         <h2 id="versions-title" class="font-bold">Versions and settings</h2>
         <dl class="mt-3 divide-y divide-line text-sm">

@@ -829,6 +829,27 @@
         @apply cursor-not-allowed opacity-50 hover:border-line;
     }
 
+    /* The composer's video (partials/video-picker): a full-width row above the add buttons */
+    .video-tile {
+        @apply flex basis-full items-center gap-3 rounded-2xl border border-line bg-paper-2 p-2;
+    }
+
+    .video-tile.is-error {
+        @apply border-danger/40;
+    }
+
+    .video-tile-media {
+        @apply size-16 shrink-0 rounded-xl bg-black object-cover;
+    }
+
+    .video-bar {
+        @apply h-2 overflow-hidden rounded-full bg-line;
+    }
+
+    .video-bar span {
+        @apply block h-full rounded-full bg-accent motion-safe:transition-[width] motion-safe:duration-300;
+    }
+
     .filter-chip {
         @apply inline-flex shrink-0 items-center gap-1 rounded-full border border-line bg-card px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-ink-2 transition active:scale-95;
     }

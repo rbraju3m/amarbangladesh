@@ -11,8 +11,8 @@ Dev site: https://amarbangladesh-dev.on-forge.com (behind Cloudflare).
   Node 20, so npm silently skips its native binary ("Cannot find native binding"), and Vite 7+ crashes
   with `'node:util' does not provide an export named 'styleText'`.
 - MySQL 8.
-- **ffmpeg** (with ffprobe) for video in posts: `sudo apt install ffmpeg`. Without it, video uploads are
-  refused with a message ("videos can't be taken right now") and everything else works.
+- **ffmpeg** (with ffprobe) for video in posts: `sudo apt install ffmpeg`. Without it, the video button
+  is hidden and everything else works; `/admin/system` shows "Video converter (ffmpeg) found" as Check.
 
 ### Moving to a newer Node later
 
@@ -79,14 +79,20 @@ After the first deploy with photos, post one, deploy again, and check it still s
 - **Disk and backups:** about 350 kB per photo (two sizes, plus a JPEG copy of each post's first
   photo for link previews); 10,000 photos ≈ 3.5 GB. Include `storage/app/public/photos` in backups.
 
-## Videos (in progress since 2026-10-12)
+## Videos (since 2026-10-12)
 
-Members will be able to add one short video (≤ 60 s, ≤ 50 MB) to a post or answer. The browser uploads
+Members can add one short video (≤ 60 s, ≤ 50 MB) to a post or answer. The browser uploads
 it in 960 KB pieces (so nginx's default 1 MB body limit is enough), and `community:process-videos`
 (every minute, from the scheduler) converts it with ffmpeg to a small MP4 (≈ 11 MB per minute, at most
 720p) with location and device data removed, under `storage/app/public/videos`.
 
-- **Install ffmpeg** (see Server requirements) and check `/admin/system` once it's there (chunk 4).
+- **Install ffmpeg** (see Server requirements), then open `/admin/system`: the Videos panel shows the
+  ffmpeg version, and the checks "Video converter (ffmpeg) found" and "Videos converted in time" (no
+  video waiting more than 20 minutes) should both be OK. Post a short test video and watch it go from
+  waiting to ready within a minute or two.
+- **Users:** the web server writes upload pieces to `storage/app/private/video-uploads` and the scheduler
+  converts and deletes them. On Forge both run as `forge`; elsewhere keep them in one group (both disks
+  are group-writable, see `config/filesystems.php`).
 - **CPU:** one video at a time, at low priority; a 30-second clip takes roughly 15–40 s on a small server.
 - **Cloudflare:** don't cache `/storage/videos/*` at the edge (Cloudflare's plan terms don't allow its
   CDN cache to be used mainly for video); add a Cache Rule "bypass cache" for that path.

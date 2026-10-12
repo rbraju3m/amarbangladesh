@@ -6,6 +6,7 @@ import { photoPicker, send as sendPhoto } from './photos';
 import { copyText, isInAppBrowser, isMobile, shareLinks } from './share';
 import { store, visitorId } from './store';
 import { setTrackingContext, track } from './track';
+import { request as videoRequest, videoPicker } from './videos';
 
 /**
  * Community pages. The pages are server-rendered and cacheable; this component adds what depends on
@@ -65,14 +66,26 @@ async function api(method, url, body = null, token = null) {
 /**
  * A composer's fields as JSON. Forms with a photo picker also send `photos` (the uploaded ids, in
  * order, possibly none, so an edit can remove them all); posting waits until uploads have finished.
+ * Forms with a video picker send `video` (the id, or null for none, which takes it off an edited
+ * item); a video still uploading is waited for (it can take a while on mobile data).
  */
-function formPayload(form) {
+async function formPayload(form) {
     const data = new FormData(form);
-    const payload = Object.fromEntries([...data].filter(([name]) => name !== 'photos[]'));
+    const payload = Object.fromEntries([...data].filter(([name]) => name !== 'photos[]' && name !== 'video'));
     const picker = form.querySelector('[data-photos]');
     if (picker) {
         if (picker.dataset.busy) throw new Error(t('ছবি আপলোড হচ্ছে, একটু অপেক্ষা করুন।'));
         payload.photos = data.getAll('photos[]').map(Number);
+    }
+    const video = form.querySelector('[data-video]');
+    if (video) {
+        if (video.dataset.busy) {
+            video.dispatchEvent(new CustomEvent('video-wait'));
+            await video._videoWait?.();
+            return formPayload(form); // the id is in the form now
+        }
+        if (video.dataset.error) throw new Error(t('ভিডিওটা আপলোড হয়নি। সরিয়ে দিন বা আবার দিন।'));
+        payload.video = Number(data.get('video')) || null;
     }
     return payload;
 }
@@ -388,6 +401,22 @@ function community() {
             }
         },
 
+        /** A request for a video upload (resources/js/videos.js), signed in like any other write. Resolves with { status, data }. */
+        async uploadVideo(method, url, options = {}) {
+            if (!this.signedIn) await this.openLogin();
+            const send = () =>
+                videoRequest(method, url, {
+                    ...options,
+                    headers: { Accept: 'application/json', ...localeHeaders(), 'X-Member-Token': this.member.token, 'X-Visitor': visitorId(), ...(options.headers ?? {}) },
+                });
+            const res = await send();
+            if (res.status !== 401) return res;
+            this.member = this.member?.account ? null : this.member;
+            store.set(MEMBER, this.member);
+            await this.openLogin();
+            return send();
+        },
+
         // Interface text: Bangla is the key; English pages translate it (resources/js/i18n.js).
         t,
 
@@ -433,7 +462,11 @@ function community() {
                     if (!note.isConnected || ++tries > 30) return;
                     try {
                         const data = await api('GET', withLang(`/api/videos/${note.dataset.videoPending}/player`));
-                        if (data.html) return void (note.outerHTML = data.html);
+                        if (data.html) {
+                            const raw = note.closest('article')?.querySelector('template[data-raw-video]');
+                            if (raw && data.video) raw.content.replaceChildren(JSON.stringify(data.video));
+                            return void (note.outerHTML = data.html);
+                        }
                         if (data.status === 'failed') return void note.remove();
                     } catch (e) {
                         if (e.status === 404) return;
@@ -646,8 +679,10 @@ function community() {
         async saveAnswer(id, form) {
             this.busy = true;
             try {
-                const data = await this.call('PATCH', `/api/answers/${id}`, formPayload(form));
-                document.getElementById(`answer-${id}`)?.replaceWith(Object.assign(document.createElement('template'), { innerHTML: data.html.trim() }).content.firstChild);
+                const data = await this.call('PATCH', `/api/answers/${id}`, await formPayload(form));
+                const answer = Object.assign(document.createElement('template'), { innerHTML: data.html.trim() }).content.firstChild;
+                document.getElementById(`answer-${id}`)?.replaceWith(answer);
+                this.watchVideos(answer);
                 this.flash(t('সম্পাদনা সেভ হয়েছে'));
             } catch (e) {
                 if (!e.cancelled) this.flash(e.message);
@@ -659,11 +694,13 @@ function community() {
         async savePost(id, form) {
             this.busy = true;
             try {
-                const data = await this.call('PATCH', `/api/posts/${id}`, formPayload(form));
+                const data = await this.call('PATCH', `/api/posts/${id}`, await formPayload(form));
                 const article = form.closest('article');
                 document.getElementById('post-title').textContent = data.title;
                 document.getElementById('post-body').innerHTML = data.body_html;
                 document.getElementById('post-photos').innerHTML = data.photos_html ?? '';
+                document.getElementById('post-video').innerHTML = data.video_html ?? '';
+                this.watchVideos(document.getElementById('post-video'));
                 article.querySelector('template[data-raw-title]').innerHTML = '';
                 article.querySelector('template[data-raw-title]').content.append(data.title);
                 article.querySelector('template[data-raw]').innerHTML = '';
@@ -672,6 +709,8 @@ function community() {
                 article.querySelector('template[data-raw-html]').content.append(data.raw_html ?? '');
                 article.querySelector('template[data-raw-photos]').innerHTML = '';
                 article.querySelector('template[data-raw-photos]').content.append(JSON.stringify(data.photos ?? []));
+                article.querySelector('template[data-raw-video]').innerHTML = '';
+                article.querySelector('template[data-raw-video]').content.append(JSON.stringify(data.video ?? null));
                 document.getElementById('post-edited')?.classList.remove('hidden');
                 document.title = `${data.title} — ${document.title.split(' — ').pop()}`;
                 Alpine.$data(article).editing = false;
@@ -687,7 +726,7 @@ function community() {
             this.formError = '';
             this.busy = true;
             try {
-                const data = await this.call('POST', '/api/posts', formPayload(form));
+                const data = await this.call('POST', '/api/posts', await formPayload(form));
                 this.saveMember(data.member);
                 location.href = data.post.url;
             } catch (e) {
@@ -729,11 +768,12 @@ function community() {
             this.formError = '';
             this.busy = true;
             try {
-                const data = await this.call('POST', `/api/posts/${postId}/answers`, formPayload(form));
+                const data = await this.call('POST', `/api/posts/${postId}/answers`, await formPayload(form));
                 this.saveMember(data.member);
                 this.owned[`answer:${data.answer.id}`] = true;
                 if (!document.getElementById(`answer-${data.answer.id}`)) {
                     document.getElementById('answers').insertAdjacentHTML('beforeend', data.html);
+                    this.watchVideos(document.getElementById(`answer-${data.answer.id}`));
                 }
                 this.answersCount = data.answers_count;
                 form.reset();
@@ -1240,6 +1280,7 @@ Alpine.data('ticker', ticker);
 Alpine.data('countUp', countUp);
 Alpine.data('infinite', infinite);
 Alpine.data('photoPicker', photoPicker);
+Alpine.data('videoPicker', videoPicker);
 Alpine.data('similarQuestions', similarQuestions);
 window.Alpine = Alpine;
 loadDictionary().then(() => Alpine.start());

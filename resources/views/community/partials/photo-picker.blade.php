@@ -2,7 +2,9 @@
     Photos for a post or a top-level answer (resources/js/photos.js): up to 4, shrunk in the browser
     and uploaded as soon as they're picked; the form sends their ids. Edit forms (`fromItem`) start
     with the item's photos from its <template data-raw-photos>. Not offered with "anonymous" on.
+    The video button sits beside it (partials/video-picker, one video, while the server can convert).
 --}}
+@php($videoOn = \App\Community\Videos::available())
 <div data-photos @class([$class ?? ''])
     x-data="photoPicker({{ ($fromItem ?? false) ? "JSON.parse(\$el.closest('article')?.querySelector('template[data-raw-photos]')?.content.textContent || '[]')" : '[]' }})">
     <div x-show="photos.length" x-cloak class="photo-tiles">
@@ -17,11 +19,14 @@
             </div>
         </template>
     </div>
-    <label class="photo-add" :class="($data.anon || photos.length >= max) && 'is-off'">
-        <input type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/*" multiple class="sr-only"
-            :disabled="$data.anon || photos.length >= max" @change="pick($event)">
-        <span aria-hidden="true">📷</span> {{ __('ছবি যোগ করুন') }}
-        <span class="font-medium text-ink-2 tabular-nums" x-text="`${bn(photos.length)}/${bn(max)}`">০/৪</span>
-    </label>
-    <p x-show="$data.anon" x-cloak class="mt-1 text-xs text-ink-2">{{ __('বেনামী পোস্টে ছবি দেওয়া যায় না।') }}</p>
+    <div class="flex flex-wrap items-center gap-2">
+        <label class="photo-add" :class="($data.anon || photos.length >= max) && 'is-off'">
+            <input type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/*" multiple class="sr-only"
+                :disabled="$data.anon || photos.length >= max" @change="pick($event)">
+            <span aria-hidden="true">📷</span> {{ __('ছবি যোগ করুন') }}
+            <span class="font-medium text-ink-2 tabular-nums" x-text="`${bn(photos.length)}/${bn(max)}`">০/৪</span>
+        </label>
+        @include('community.partials.video-picker', ['available' => $videoOn, 'fromItem' => $fromItem ?? false])
+    </div>
+    <p x-show="$data.anon" x-cloak class="mt-1 text-xs text-ink-2">{{ $videoOn ? __('বেনামী পোস্টে ছবি বা ভিডিও দেওয়া যায় না।') : __('বেনামী পোস্টে ছবি দেওয়া যায় না।') }}</p>
 </div>

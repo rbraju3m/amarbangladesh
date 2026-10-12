@@ -45,6 +45,19 @@ class VideoController extends Controller
     }
 
     /**
+     * The uploader drops a video before posting it (cancelled, or removed from the form), so it doesn't
+     * count against their unposted uploads. A video already on a post or answer goes with an edit instead.
+     */
+    public function destroy(Request $request, Video $video): JsonResponse
+    {
+        $this->mine($request, $video);
+        abort_if($video->videoable_id !== null, 409);
+        Videos::delete(collect([$video]));
+
+        return response()->json([], 204);
+    }
+
+    /**
      * The player for a video on a published post or answer, once it's converted (pages show "being made"
      * until then and ask here). Public: it only says what the page itself will show.
      */
@@ -55,6 +68,8 @@ class VideoController extends Controller
 
         return response()->json([
             'status' => $video->status,
+            // What an edit form starts from (the page's <template data-raw-video> was written before it was ready).
+            'video' => $video->isReady() ? ['id' => $video->id, 'status' => $video->status, 'poster' => $video->posterUrl(), 'duration' => $video->present()['duration']] : null,
             'html' => $video->isReady() ? view('community.partials.video', [
                 'video' => $video, 'owner' => "{$video->videoable_type}:{$item->id}", 'title' => $item instanceof Post ? $item->title : __('উত্তরের ভিডিও'),
             ])->render() : null,

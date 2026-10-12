@@ -34,6 +34,12 @@ return [
             'driver' => 'local',
             'root' => storage_path('app/private'),
             'serve' => true,
+            // Private, but shared with the group: video pieces are written by the web server and
+            // converted (then deleted) by the scheduler (community:process-videos), which may be another user.
+            'permissions' => [
+                'file' => ['public' => 0664, 'private' => 0660],
+                'dir' => ['public' => 0775, 'private' => 0770],
+            ],
             'throw' => false,
             'report' => false,
         ],

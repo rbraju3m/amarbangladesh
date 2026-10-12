@@ -106,6 +106,7 @@ Route::withoutMiddleware([
             Route::post('/videos', [VideoController::class, 'store'])->middleware('throttle:video-starts')->name('videos.store');
             Route::put('/videos/{video}/chunk', [VideoController::class, 'chunk'])->middleware('throttle:video-chunks')->name('videos.chunk');
             Route::get('/videos/{video}', [VideoController::class, 'show'])->middleware('throttle:community')->name('videos.show');
+            Route::delete('/videos/{video}', [VideoController::class, 'destroy'])->middleware('throttle:community')->name('videos.destroy');
             Route::post('/posts', [PostController::class, 'store'])->middleware('throttle:posts')->name('posts.store');
             Route::patch('/posts/{post}', [PostController::class, 'update'])->middleware('throttle:community')->name('posts.update');
             Route::delete('/posts/{post}', [PostController::class, 'destroy'])->middleware('throttle:community')->name('posts.destroy');

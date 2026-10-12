@@ -88,7 +88,9 @@ class VideoTest extends TestCase
     /** Uploads a file in `$pieces` pieces; returns the last response. */
     private function upload(string $token, string $bytes, int $pieces = 3)
     {
-        $id = $this->start($token, strlen($bytes))->assertCreated()->json('id');
+        // The browser starts sending from what this says, so it must carry the state, not just the id.
+        $id = $this->start($token, strlen($bytes))->assertCreated()
+            ->assertJson(['status' => 'uploading', 'received' => 0, 'size' => strlen($bytes), 'chunk' => Videos::CHUNK_BYTES])->json('id');
         $size = (int) ceil(strlen($bytes) / $pieces);
         for ($offset = 0; $offset < strlen($bytes); $offset += $size) {
             $response = $this->piece($token, $id, $offset, substr($bytes, $offset, $size));

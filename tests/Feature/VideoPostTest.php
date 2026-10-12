@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Analytics\Funnel;
 use App\Community\Accounts;
 use App\Community\Moderation;
 use App\Community\Photos;
@@ -12,6 +13,7 @@ use App\Models\User;
 use App\Models\Video;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Routing\Middleware\ThrottleRequests;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -92,14 +94,14 @@ class VideoPostTest extends TestCase
         $video = $this->video($member, Video::WAITING);
         $post = Post::find($this->as($token)->postJson('/api/posts', ['title' => self::TITLE, 'video' => $video->id])->assertCreated()->json('post.id'));
 
-        $this->get($post->url())->assertSee('data-video-pending="'.$video->id.'"', false)->assertDontSee('<video', false);
+        $this->get($post->url())->assertSee('data-video-pending="'.$video->id.'"', false)->assertDontSee('<video controls', false);
         $this->get('/feed')->assertDontSee('card-thumb-play', false);
-        $this->getJson("/api/videos/{$video->id}/player")->assertOk()->assertJson(['status' => 'waiting', 'html' => null]);
+        $this->getJson("/api/videos/{$video->id}/player")->assertOk()->assertJson(['status' => 'waiting', 'html' => null, 'video' => null]);
 
         $ready = $this->video($member);
         $video->update(['status' => Video::READY, 'path' => $ready->path]);
         $ready->delete();
-        $html = $this->getJson("/api/videos/{$video->id}/player")->assertOk()->assertJson(['status' => 'ready'])->json('html');
+        $html = $this->getJson("/api/videos/{$video->id}/player")->assertOk()->assertJson(['status' => 'ready', 'video' => ['id' => $video->id, 'status' => 'ready']])->assertJsonMissingPath('video.size')->json('html');
         $this->assertStringContainsString('<video', $html);
     }
 
@@ -169,7 +171,7 @@ class VideoPostTest extends TestCase
         $post = Post::find($this->as($token)->postJson('/api/posts', ['title' => self::TITLE, 'video' => $video->id])->json('post.id'));
         $video->update(['status' => Video::FAILED, 'error' => 'convert']);
 
-        $this->get($post->url())->assertDontSee('<video', false)
+        $this->get($post->url())->assertDontSee('<video controls', false)
             ->assertSee("x-show=\"owned['post:{$post->id}']\"", false)->assertSee('ভিডিওটা চালানো গেলো না');
     }
 
@@ -216,5 +218,51 @@ class VideoPostTest extends TestCase
         $post->forceFill(['reports_count' => 1])->save();
 
         $this->actingAs(User::factory()->create())->get('/admin/community')->assertOk()->assertSee($video->url(), false);
+    }
+
+    public function test_an_unposted_upload_can_be_dropped_by_its_uploader_only(): void
+    {
+        [$member, $token] = $this->member();
+        [, $other] = $this->member('মিতু');
+        $video = $this->video($member, Video::UPLOADING);
+        Storage::disk('local')->put($video->partPath(), 'part');
+
+        $this->as($other)->deleteJson("/api/videos/{$video->id}")->assertNotFound();
+        $this->as($token)->deleteJson("/api/videos/{$video->id}")->assertNoContent();
+        $this->assertModelMissing($video);
+        Storage::disk('local')->assertMissing($video->partPath());
+
+        // One already on a post goes with an edit of that post instead.
+        $posted = $this->video($member);
+        $this->as($token)->postJson('/api/posts', ['title' => self::TITLE, 'video' => $posted->id])->assertCreated();
+        $this->as($token)->deleteJson("/api/videos/{$posted->id}")->assertStatus(409);
+        $this->assertModelExists($posted);
+    }
+
+    public function test_composers_offer_a_video_while_the_server_can_convert_and_edit_forms_start_from_the_item(): void
+    {
+        [$member, $token] = $this->member();
+        $video = $this->video($member);
+        $id = $this->as($token)->postJson('/api/posts', ['title' => self::TITLE, 'video' => $video->id])->assertCreated()->json('post.id');
+
+        Cache::put('videos.available', true);
+        $this->get('/ask')->assertOk()->assertSee('data-video', false)->assertSee('videoPicker(null, true)', false);
+        $this->get(Post::find($id)->url())->assertOk()
+            ->assertSee('<template data-raw-video>{"id":'.$video->id.',', false)
+            ->assertSee('template[data-raw-video]', false);
+
+        // Without ffmpeg the button hides (the picker still shows an item's existing video so it can be removed).
+        Cache::put('videos.available', false);
+        $this->get('/ask')->assertOk()->assertSee('videoPicker(null, false)', false);
+    }
+
+    public function test_the_dashboard_counts_posts_and_answers_with_a_video(): void
+    {
+        [$member, $token] = $this->member();
+        $post = $this->as($token)->postJson('/api/posts', ['title' => self::TITLE, 'video' => $this->video($member)->id])->assertCreated()->json('post.id');
+        $this->as($token)->postJson("/api/posts/{$post}/answers", ['body' => 'ভিডিও ছাড়া একটা উত্তর'])->assertCreated();
+
+        $community = (new Funnel(now()->subDay()))->community();
+        $this->assertSame([2, 1], [$community['writes'], $community['writes_video']]);
     }
 }

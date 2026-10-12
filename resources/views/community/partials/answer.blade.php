@@ -8,6 +8,7 @@
         @if ($answer->edited_at)<span class="shrink-0 text-xs text-ink-2">{{ __('(সম্পাদিত)') }}</span>@endif
     </div>
     <template data-raw>{{ $answer->body }}</template>@if ($answer->body_html)<template data-raw-html>{{ $answer->body_html }}</template>@endif
+    @if ($answer->video)<template data-raw-video>@json($answer->video->present())</template>@endif
     @if ($answer->photos->isNotEmpty())<template data-raw-photos>@json($answer->photos->map->present())</template>@endif
     <div x-show="!editing" class="prose-text mt-2">{{ \App\Community\RichText::render($answer) }}</div>
     <div x-show="!editing" class="mt-3 empty:hidden">@include('community.partials.video', ['video' => $answer->video, 'owner' => "answer:{$answer->id}", 'title' => __('উত্তরের ভিডিও')])</div>

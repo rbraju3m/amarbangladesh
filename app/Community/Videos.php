@@ -72,7 +72,8 @@ final class Videos
             $fail(__('অনেক ভিডিও আপলোড হয়ে আছে, আগে পোস্টটা করুন।'));
         }
 
-        $video = Video::create(['member_id' => $member->id, 'size' => $size]);
+        // Status and offset spelled out: the browser starts sending from what this returns.
+        $video = Video::create(['member_id' => $member->id, 'size' => $size, 'status' => Video::UPLOADING, 'received' => 0]);
         if (! Storage::disk(self::PRIVATE_DISK)->put($video->partPath(), '')) {
             $video->delete();
             throw new \RuntimeException('Could not create a video part file on the local disk (permissions or space?)');
@@ -373,6 +374,14 @@ final class Videos
     {
         return Cache::remember('videos.available', 600, fn () => Process::timeout(10)->run([self::binary('ffmpeg'), '-version'])->successful()
             && Process::timeout(10)->run([self::binary('ffprobe'), '-version'])->successful());
+    }
+
+    /** "ffmpeg version 4.2.7-0ubuntu0.1 …" → "4.2.7-0ubuntu0.1"; null when it can't run (for /admin/system). */
+    public static function version(): ?string
+    {
+        $run = Process::timeout(10)->run([self::binary('ffmpeg'), '-version']);
+
+        return $run->successful() && preg_match('/version (\S+)/', $run->output(), $m) ? $m[1] : null;
     }
 
     /** ffmpeg (or ffprobe) from config, so a server with them elsewhere can point at them. */

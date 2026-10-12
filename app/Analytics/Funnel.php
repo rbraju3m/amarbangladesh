@@ -106,6 +106,8 @@ final class Funnel
             'writes' => $this->events()->whereIn('name', self::COMMUNITY_WRITES)->count(),
             'writes_rich' => $this->events()->whereIn('name', self::COMMUNITY_WRITES)
                 ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(meta, '$.rich')) = '1'")->count(),
+            'writes_video' => $this->events()->whereIn('name', self::COMMUNITY_WRITES)
+                ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(meta, '$.video')) = '1'")->count(),
             'returning' => $this->returningVisitors(),
             'visitors' => $this->events()->whereNotNull('visitor_id')->distinct()->count('visitor_id'),
             'by_place' => $this->communityClicksByPlace(),

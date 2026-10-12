@@ -21,7 +21,7 @@
     <p x-show="!signedIn" x-cloak class="mt-3 rounded-2xl bg-flag-green/10 px-4 py-2.5 text-sm text-green-text">🔐 {{ __('পোস্ট করার সময় লগইন করতে বলা হবে। আগে লিখে ফেলুন, লেখা হারাবে না।') }}</p>
 
     <form class="mt-5" data-draft @submit.prevent="submitPost($el)"
-        x-data="{ type: @js($prefill['type']), title: @js($prefill['title']), details: false, anon: false, photoCount: 0, urgent: 0, category: @js($prefill['category']), ex: 0, examples: @js($examples), get urgentOn() { return this.type === 'help' && this.urgent > 0 } }"
+        x-data="{ type: @js($prefill['type']), title: @js($prefill['title']), details: false, anon: false, photoCount: 0, hasVideo: false, urgent: 0, category: @js($prefill['category']), ex: 0, examples: @js($examples), get urgentOn() { return this.type === 'help' && this.urgent > 0 } }"
         x-effect="urgentOn && (anon = false)"
         x-init="setInterval(() => title || (ex = (ex + 1) % examples.length), 3500)">
 
