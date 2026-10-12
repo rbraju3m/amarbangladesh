@@ -9,6 +9,7 @@ use App\Models\Video;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -362,15 +363,20 @@ final class Videos
         $video->update(['videoable_type' => $type, 'videoable_id' => $item->id]);
     }
 
-    /** Files (converted video, posters, a part file still waiting) and rows of these videos. */
+    /**
+     * Files (converted video, posters, a part file still waiting) and rows of these videos. Inside a
+     * transaction the files go only once it commits, so a refused edit that rolls back keeps them.
+     */
     public static function delete(Collection $videos): int
     {
         foreach ($videos as $video) {
-            if ($video->path) {
-                Storage::disk(self::DISK)->delete(["{$video->path}.mp4", "{$video->path}-poster.jpg", "{$video->path}-poster.webp"]);
-            }
-            Storage::disk(self::PRIVATE_DISK)->delete($video->partPath());
+            $files = $video->path ? ["{$video->path}.mp4", "{$video->path}-poster.jpg", "{$video->path}-poster.webp"] : [];
+            $part = $video->partPath();
             $video->delete();
+            DB::afterCommit(function () use ($files, $part) {
+                Storage::disk(self::DISK)->delete($files);
+                Storage::disk(self::PRIVATE_DISK)->delete($part);
+            });
         }
 
         return $videos->count();

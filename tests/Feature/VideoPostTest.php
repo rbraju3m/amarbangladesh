@@ -8,10 +8,12 @@ use App\Community\Moderation;
 use App\Community\Photos;
 use App\Community\Videos;
 use App\Models\Member;
+use App\Models\Photo;
 use App\Models\Post;
 use App\Models\User;
 use App\Models\Video;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
@@ -162,6 +164,27 @@ class VideoPostTest extends TestCase
         $this->as($token)->patchJson("/api/posts/{$post->id}", ['title' => self::TITLE, 'video' => null])->assertOk()->assertJson(['video' => null]);
         $this->assertSame(0, Video::count());
         Storage::disk('public')->assertMissing($this->files($second));
+    }
+
+    public function test_an_edit_refused_for_its_video_keeps_the_photos_it_would_have_removed(): void
+    {
+        [$member, $token] = $this->member();
+        [$other] = $this->member('মিতু');
+        $photo = $this->as($token)->post('/api/photos', ['photo' => UploadedFile::fake()->image('a.jpg', 800, 600)], ['Accept' => 'application/json'])->assertCreated()->json('id');
+        $post = Post::find($this->as($token)->postJson('/api/posts', ['title' => self::TITLE, 'photos' => [$photo]])->json('post.id'));
+        $files = Storage::disk('public')->allFiles('photos');
+        $this->assertNotEmpty($files);
+
+        // Take the photo off and add someone else's video: the video is refused, so nothing may change.
+        $this->as($token)->patchJson("/api/posts/{$post->id}", ['title' => self::TITLE, 'photos' => [], 'video' => $this->video($other)->id])
+            ->assertUnprocessable()->assertJsonValidationErrors('video');
+
+        $this->assertSame($post->id, Photo::find($photo)?->photoable_id);
+        Storage::disk('public')->assertExists($files);
+
+        // A save that goes through still deletes the files.
+        $this->as($token)->patchJson("/api/posts/{$post->id}", ['title' => self::TITLE, 'photos' => []])->assertOk();
+        Storage::disk('public')->assertMissing($files);
     }
 
     public function test_a_failed_video_tells_only_its_author(): void

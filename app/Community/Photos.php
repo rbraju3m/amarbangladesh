@@ -171,12 +171,16 @@ final class Photos
         $disk->put($file, (string) ob_get_clean());
     }
 
-    /** Files and rows of these photos. */
+    /**
+     * Files and rows of these photos. Inside a transaction the files go only once it commits: an edit
+     * refused half way (say, for its video) rolls the rows back, and their files must still be there.
+     */
     public static function delete(Collection $photos): int
     {
         foreach ($photos as $photo) {
-            Storage::disk(self::DISK)->delete([...array_map(fn ($size) => "{$photo->path}-{$size}.webp", array_keys(self::SIZES)), "{$photo->path}-".self::SHARE['suffix']]);
+            $files = [...array_map(fn ($size) => "{$photo->path}-{$size}.webp", array_keys(self::SIZES)), "{$photo->path}-".self::SHARE['suffix']];
             $photo->delete();
+            DB::afterCommit(fn () => Storage::disk(self::DISK)->delete($files));
         }
 
         return $photos->count();
