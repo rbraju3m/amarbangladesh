@@ -8,6 +8,9 @@
         Each place should win between {{ $min }}% and {{ $max }}% of them — otherwise some results almost never appear, or appear too often.
         Real players lean toward flattering answers, so the thin bar repeats the check with the most {{ $favouredTrait }} answer in each question picked {{ $favouredP }}% of the time.
     </p>
+    @if ($simulatedAt)
+        <p class="mt-1 text-xs text-ink-2">Simulated {{ \Illuminate\Support\Carbon::parse($simulatedAt)->timezone(config('app.timezone'))->format('j M, H:i') }} (kept until the quiz content changes) · <a href="?fresh=1" class="font-semibold underline hover:text-ink">run again</a></p>
+    @endif
 </header>
 
 @if ($tooMany)

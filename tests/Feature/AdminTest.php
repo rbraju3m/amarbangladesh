@@ -236,4 +236,25 @@ class AdminTest extends TestCase
         $this->assertSame(1, $plays($this->get('/admin?days=7&fresh=1')));
         $this->assertSame(1, $plays($this->get('/admin?days=30'))); // each range on its own
     }
+
+    public function test_balance_simulations_are_kept_until_the_content_changes(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $at = fn ($response) => $response->assertOk()->viewData('simulatedAt');
+
+        $this->travelTo(now()->setTime(10, 0));
+        $first = $this->get('/admin/balance')->assertSee('run again');
+        $this->travel(5)->minutes();
+        $this->assertSame($at($first), $at($this->get('/admin/balance'))); // kept, not run again
+
+        // A content change gives a new key, even when written without QuizConfig::forget().
+        $location = Location::first();
+        $location->forceFill(['profile' => array_map(fn ($v) => 10 - $v, $location->profile)])->saveQuietly();
+        $changed = $this->get('/admin/balance');
+        $this->assertNotSame($at($first), $at($changed));
+        $this->assertNotEquals($first->viewData('report')['share'], $changed->viewData('report')['share']);
+
+        $this->travel(5)->minutes();
+        $this->assertNotSame($at($changed), $at($this->get('/admin/balance?fresh=1')));
+    }
 }
