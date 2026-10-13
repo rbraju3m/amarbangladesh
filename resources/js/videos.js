@@ -15,11 +15,14 @@ export const MAX_SECONDS = 60; // Videos::MAX_SECONDS
 const RETRIES = 8; // network failures in a row before giving up
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const cancelled = () => Object.assign(new Error(''), { cancelled: true });
 const mb = (bytes) => (bytes / 1024 / 1024).toFixed(bytes < 10 * 1024 * 1024 ? 1 : 0);
 
 /** One request with upload progress (fetch has none). Resolves with { status, data }; rejects only when no answer came. */
 export function request(method, url, { headers = {}, body = null, onProgress = null, signal = null } = {}) {
     return new Promise((resolve, reject) => {
+        // Cancelled before this request began (say, while the sign-in sheet was open): don't send it.
+        if (signal?.aborted) return reject(cancelled());
         const xhr = new XMLHttpRequest();
         xhr.open(method, url);
         for (const [name, value] of Object.entries(headers)) xhr.setRequestHeader(name, value);
@@ -32,8 +35,8 @@ export function request(method, url, { headers = {}, body = null, onProgress = n
             resolve({ status: xhr.status, data });
         };
         xhr.onerror = xhr.ontimeout = () => reject(Object.assign(new Error('network'), { network: true }));
-        xhr.onabort = () => reject(Object.assign(new Error(''), { cancelled: true }));
-        signal?.addEventListener('abort', () => xhr.abort());
+        xhr.onabort = () => reject(cancelled());
+        signal?.addEventListener('abort', () => xhr.abort(), { once: true });
         xhr.send(body);
     });
 }
@@ -57,7 +60,7 @@ export async function upload(file, send, { onProgress, onStart, signal }) {
     if (res.status !== 201) throw new Error(refused(res));
     let video = res.data;
     onStart(video);
-    if (signal?.aborted) throw Object.assign(new Error(''), { cancelled: true });
+    if (signal?.aborted) throw cancelled();
     let failures = 0;
     while (video.status === 'uploading') {
         const offset = video.received;
@@ -102,6 +105,7 @@ export async function upload(file, send, { onProgress, onStart, signal }) {
 /** Waits a little longer after each failure, or until the phone says it's back online. */
 function waitForNetwork(failures, signal) {
     return new Promise((resolve, reject) => {
+        if (signal?.aborted) return reject(cancelled());
         const done = () => {
             clearTimeout(timer);
             removeEventListener('online', done);
@@ -111,8 +115,9 @@ function waitForNetwork(failures, signal) {
         addEventListener('online', done);
         signal?.addEventListener('abort', () => {
             clearTimeout(timer);
-            reject(Object.assign(new Error(''), { cancelled: true }));
-        });
+            removeEventListener('online', done);
+            reject(cancelled());
+        }, { once: true });
     });
 }
 
@@ -153,6 +158,7 @@ export function videoPicker(initial = null, available = true) {
         video: initial ? { ...initial, attached: true, src: null, sent: initial.size ?? 0, error: initial.status === 'failed' ? t('ভিডিওটা চালানো গেলো না। সরিয়ে দিন বা নতুন একটা দিন।') : '' } : null,
         _abort: null,
         _done: null, // the running upload, for the form to wait on
+        _pick: 0, // the latest pick: an earlier one still checking its file gives way
 
         get uploading() {
             return this.video?.status === 'uploading' && !this.video.error;
@@ -194,6 +200,7 @@ export function videoPicker(initial = null, available = true) {
         // An edit form closed mid-upload: stop it and drop what the server has (a late id is dropped by onStart).
         destroy() {
             removeEventListener('beforeunload', this._leave);
+            this._pick++;
             this._abort?.abort();
             this._abort = null;
             if (this.video?.id && !this.video.attached) this._drop(this.video.id);
@@ -209,6 +216,10 @@ export function videoPicker(initial = null, available = true) {
             const file = event.target.files[0];
             event.target.value = ''; // the same file can be picked again after removing it
             if (!file) return;
+            // Two quick picks: the first may still be waiting (sign-in, its length) when the second
+            // comes. Only the latest goes on, so there's never more than one upload.
+            const turn = ++this._pick;
+            const stale = () => turn !== this._pick;
             if (!this.signedIn) {
                 try {
                     await this.openLogin();
@@ -216,14 +227,18 @@ export function videoPicker(initial = null, available = true) {
                     return;
                 }
             }
-            if (this.video) await this.remove();
+            if (stale()) return;
+            if (this.video) await this._stop();
+            if (stale()) return;
             const src = URL.createObjectURL(file);
             const fail = (error) => (this.video = { id: null, status: 'uploading', src, size: file.size, sent: 0, error });
             if (file.type && !file.type.startsWith('video/')) return fail(t('এটা ভিডিও ফাইল না। একটা ভিডিও বেছে নিন।'));
             if (file.size > MAX_BYTES) return fail(t('ভিডিওটা অনেক বড় (:size MB)। :max MB-এর ছোট ভিডিও দিন।', { size: num(mb(file.size)), max: num(this.maxMb) }));
             const seconds = await duration(src);
+            if (stale()) return URL.revokeObjectURL(src);
             if (seconds && seconds > MAX_SECONDS + 0.5) return fail(t('ভিডিও ১ মিনিটের মধ্যে হতে হবে। ছোট করে আবার দিন।'));
 
+            this._abort?.abort();
             this.video = { id: null, status: 'uploading', src, size: file.size, sent: 0, error: '', waiting: false };
             const controller = (this._abort = new AbortController());
             const current = () => (this._abort === controller ? this.video : null); // still this upload?
@@ -249,7 +264,13 @@ export function videoPicker(initial = null, available = true) {
         },
 
         /** Cancel an upload or take the video off. An unposted upload is dropped on the server too. */
-        async remove() {
+        remove() {
+            this._pick++; // a pick still checking its file doesn't start after this
+            return this._stop();
+        },
+
+        /** What remove() does, without ending a pick in progress (pick() uses it to replace the video). */
+        async _stop() {
             const video = this.video;
             if (!video) return;
             this._abort?.abort();

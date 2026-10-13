@@ -490,7 +490,12 @@ function community() {
                 e.preventDefault();
                 this.toggleSave(+button.dataset.save);
             });
-            new MutationObserver((changes) => changes.some((c) => [...c.addedNodes].some((n) => n.querySelector?.('[data-save]'))) && this.paintSaved()).observe(document.body, { childList: true, subtree: true });
+            new MutationObserver((changes) => {
+                const added = changes.flatMap((c) => [...c.addedNodes]).filter((n) => n.querySelector);
+                if (added.some((n) => n.querySelector('[data-save]'))) this.paintSaved();
+                // Items added later (endless scroll, "show more", a restored list) may hold a video still being made.
+                added.filter((n) => n.matches('[data-video-pending]') || n.querySelector('[data-video-pending]')).forEach((n) => this.watchVideos(n.parentNode ?? n));
+            }).observe(document.body, { childList: true, subtree: true });
             this.paintSaved();
         },
 
