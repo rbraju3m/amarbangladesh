@@ -20,7 +20,7 @@ class AccountDeletionTest extends TestCase
     /** @return array{0: string, 1: Member} */
     private function account(string $email, string $name = 'মিতু'): array
     {
-        $token = $this->postJson('/api/auth/email/register', ['name' => $name, 'email' => $email, 'password' => 'secret-pass'])->assertCreated()->json('token');
+        $token = $this->signUpByEmail($name, $email)->assertCreated()->json('token');
 
         return [$token, Member::where('email', $email)->firstOrFail()];
     }
@@ -68,7 +68,7 @@ class AccountDeletionTest extends TestCase
         $this->as($other)->postJson("/api/posts/{$post->id}/answers", ['body' => 'আরেকটা উত্তর দিলাম।'])->assertCreated();
         $this->assertFalse(MemberNotification::where('member_id', $me->id)->exists());
         $this->postJson('/api/auth/email/login', ['email' => 'mitu@example.com', 'password' => 'secret-pass'])->assertJsonValidationErrors('email');
-        $this->postJson('/api/auth/email/register', ['name' => 'মিতু', 'email' => 'mitu@example.com', 'password' => 'secret-pass'])->assertCreated();
+        $this->signUpByEmail('মিতু', 'mitu@example.com')->assertCreated();
         $this->assertNotSame($me->id, Member::where('email', 'mitu@example.com')->value('id'));
     }
 

@@ -80,7 +80,8 @@ Route::withoutMiddleware([
         Route::get('/answers/{answer}/replies', [AnswerController::class, 'replies'])->whereNumber('answer')->middleware('cache.headers:public;max_age=0;s_maxage=20;etag')->name('answers.replies');
         Route::get('/posts/similar', [PageController::class, 'similar'])->middleware(['cache.headers:public;max_age=0;s_maxage=60;etag', 'throttle:search'])->name('posts.similar');
         Route::prefix('auth')->group(function () {
-            Route::post('/email/register', [AuthController::class, 'emailRegister'])->middleware('throttle:auth')->name('auth.email.register');
+            Route::post('/email/register', [AuthController::class, 'emailRegister'])->middleware('throttle:auth-signup')->name('auth.email.register');
+            Route::post('/email/verify', [AuthController::class, 'emailVerify'])->middleware('throttle:auth')->name('auth.email.verify');
             Route::post('/email/login', [AuthController::class, 'emailLogin'])->middleware('throttle:auth')->name('auth.email.login');
             Route::post('/email/forgot', [AuthController::class, 'emailForgot'])->middleware('throttle:auth-mail')->name('auth.email.forgot');
             Route::post('/email/reset', [AuthController::class, 'emailReset'])->middleware('throttle:auth')->name('auth.email.reset');

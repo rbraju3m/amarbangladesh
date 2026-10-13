@@ -101,7 +101,8 @@ function community() {
         answersCount: 0,
         sheet: null, // { kind: 'report' | 'delete', type, id }
         loginOpen: false,
-        loginStep: 'choose', // choose | phone | code | email-login | email-register | email-forgot | forgot-sent
+        loginStep: 'choose', // choose | phone | code | email-login | email-register | email-code | email-forgot | forgot-sent
+        _signUp: null, // the email sign-up waiting for its code
         loginPhone: '',
         loginEmail: '',
         authError: '',
@@ -261,11 +262,36 @@ function community() {
         },
 
         emailAuth(form) {
-            const register = this.loginStep === 'email-register';
             const payload = Object.fromEntries(new FormData(form));
+            if (this.loginStep === 'email-register') {
+                // Sign-up confirms the address first: the server emails a code (emailCode below makes the account).
+                return this.authStep(async () => {
+                    await api('POST', '/api/auth/email/register', payload);
+                    this._signUp = payload; // for "send it again"
+                    form.password.value = '';
+                    this.loginStep = 'email-code';
+                    this.$nextTick(() => document.getElementById('login-email-code')?.focus());
+                });
+            }
             return this.authStep(async () => {
-                await this.signedInWith(await api('POST', register ? '/api/auth/email/register' : '/api/auth/email/login', payload));
+                await this.signedInWith(await api('POST', '/api/auth/email/login', payload));
                 form.password.value = '';
+            });
+        },
+
+        emailCode(form) {
+            return this.authStep(async () => {
+                await this.signedInWith(await api('POST', '/api/auth/email/verify', { email: this.loginEmail, code: form.code.value }));
+                this._signUp = null;
+                form.reset();
+            });
+        },
+
+        resendEmailCode() {
+            if (!this._signUp) return (this.loginStep = 'email-register');
+            return this.authStep(async () => {
+                await api('POST', '/api/auth/email/register', this._signUp);
+                this.flash(t('কোডটা আবার পাঠানো হয়েছে।'));
             });
         },
 

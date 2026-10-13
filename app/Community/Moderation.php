@@ -149,15 +149,19 @@ final class Moderation
     }
 
     /**
-     * Its author deleting an item takes its photos and video with it at once; after an admin removal they
-     * stay Photos::REMOVED_DAYS (it may be restored) and the prunes delete them.
+     * Its author deleting a public item takes its photos and video with it at once; after an admin removal
+     * (or an author deleting an item that was hidden or removed) they stay Photos::REMOVED_DAYS and the
+     * prunes delete them.
      */
     public static function setStatus(Post|Answer $item, string $status): void
     {
+        $was = $item->status;
         $item->status = $status;
         $item->save();
         self::forgetNeedsLook();
-        if ($status === Post::DELETED) {
+        // The author deleting a public item takes its media at once. One an admin hid or removed keeps it
+        // for the removal period (the prunes delete it), so a reported item's evidence can't be wiped.
+        if ($status === Post::DELETED && $was === Post::PUBLISHED) {
             Photos::deleteFor($item);
             Videos::deleteFor($item);
         }

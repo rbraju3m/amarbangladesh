@@ -228,6 +228,23 @@ class PhotoTest extends TestCase
         $this->assertSame(0, Photo::count());
     }
 
+    public function test_deleting_a_hidden_post_keeps_its_photos_for_the_removal_period(): void
+    {
+        $token = $this->token();
+        $post = Post::find($this->as($token)->postJson('/api/posts', ['title' => 'রিপোর্টে লুকানো পোস্ট এটা', 'photos' => [$this->upload($token)]])->json('post.id'));
+        $photo = $post->photos->first();
+        Moderation::setStatus($post, Post::HIDDEN); // as after three reports
+
+        $this->as($token)->deleteJson("/api/posts/{$post->id}")->assertNoContent();
+        $this->assertSame(Post::DELETED, $post->fresh()->status);
+        Photos::prune();
+        Storage::disk('public')->assertExists($this->files($photo)[0]); // the author can't wipe the evidence
+
+        $this->travel(Photos::REMOVED_DAYS + 1)->days();
+        Photos::prune();
+        Storage::disk('public')->assertMissing($this->files($photo)[0]);
+    }
+
     public function test_unattached_uploads_are_pruned_after_a_day(): void
     {
         $token = $this->token();

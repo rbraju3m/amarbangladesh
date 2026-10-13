@@ -21,7 +21,13 @@ use Illuminate\Validation\ValidationException;
 /** Phone, email and session endpoints. Every sign-in answers with the member and a new browser token. */
 class AuthController extends Controller
 {
-    public function emailRegister(Request $request): JsonResponse
+    /**
+     * Sign-up step 1: sends a 6-digit code to the address; the account is made only when it comes back
+     * (emailVerify), so nobody can sign up, get the "email verified" badge or receive our emails with an
+     * address they don't own. Always 204, so the form can't tell which emails have accounts: an address
+     * that already has one gets an email saying so instead of a code.
+     */
+    public function emailRegister(Request $request): Response
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:40'],
@@ -30,12 +36,35 @@ class AuthController extends Controller
         ], self::messages());
 
         $email = Str::lower($data['email']);
-        if (Accounts::find('email', $email)) {
-            throw ValidationException::withMessages(['email' => __('এই ইমেইলে আগেই অ্যাকাউন্ট আছে। লগইন করুন।')]);
-        }
         $name = Bangla::cleanName($data['name']) ?? throw ValidationException::withMessages(['name' => __('নামটা ঠিকমতো লিখুন।')]);
 
-        return $this->signedIn($request, Accounts::signIn('email', $email, $name, ['password' => $data['password']]), 'email', 201);
+        if (Accounts::find('email', $email)) {
+            $body = __('এই ইমেইলে আমার বাংলাদেশে আগে থেকেই একটা অ্যাকাউন্ট আছে। লগইন করুন, অথবা পাসওয়ার্ড মনে না থাকলে “পাসওয়ার্ড ভুলে গেছেন?” চাপুন।')."\n\n".url(Lang::path('/'))."\n\n".__('আপনি না চাইলে এই ইমেইলটা উপেক্ষা করুন।');
+            Mail::raw($body, fn ($m) => $m->to($email)->subject(__('আমার বাংলাদেশ: আপনার অ্যাকাউন্ট আগে থেকেই আছে')));
+
+            return response()->noContent();
+        }
+        $code = Accounts::startEmailSignUp($email, $name, $data['password'])
+            ?? abort(429, __('কোড পাঠানো হয়েছে। এক মিনিট পরে আবার চাইতে পারবেন।'));
+        $body = __('আমার বাংলাদেশে অ্যাকাউন্ট খুলতে এই কোডটা দিন (১০ মিনিট কাজ করবে):')."\n\n".$code."\n\n".__('আপনি না চাইলে এই ইমেইলটা উপেক্ষা করুন।');
+        Mail::raw($body, fn ($m) => $m->to($email)->subject(__('আমার বাংলাদেশ কোড: :code', ['code' => $code])));
+
+        return response()->noContent();
+    }
+
+    /** Sign-up step 2: the code from the email makes the account and signs this browser in. */
+    public function emailVerify(Request $request): JsonResponse
+    {
+        $data = $request->validate(['email' => ['required', 'email:rfc'], 'code' => ['required', 'string', 'max:12']], self::messages());
+        $email = Str::lower($data['email']);
+        $signUp = Accounts::finishEmailSignUp($email, $data['code'])
+            ?? throw ValidationException::withMessages(['code' => __('কোডটা মেলেনি বা মেয়াদ শেষ।')]);
+        // Someone finished the same sign-up first: never sign in to an existing account without its password.
+        if (Accounts::find('email', $email)) {
+            throw ValidationException::withMessages(['code' => __('এই ইমেইলে আগেই অ্যাকাউন্ট আছে। লগইন করুন।')]);
+        }
+
+        return $this->signedIn($request, Accounts::signIn('email', $email, $signUp['name'], ['password' => $signUp['password']]), 'email', 201);
     }
 
     public function emailLogin(Request $request): JsonResponse
@@ -77,6 +106,12 @@ class AuthController extends Controller
         }
         $member->update(['password' => $data['password']]);
         $member->tokens()->delete(); // sign out every other device
+        // The link reached the inbox, so the address is now checked (the badge; emails go there).
+        $identity = $member->identities()->where('provider', 'email')->first();
+        $identity?->update(['verified_at' => now()]);
+        if ($identity && ! $member->email) {
+            $member->update(['email' => $identity->identifier]);
+        }
 
         return $this->signedIn($request, $member, 'email');
     }

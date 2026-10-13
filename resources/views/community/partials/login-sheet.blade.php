@@ -81,6 +81,18 @@
             <button type="button" x-show="loginStep === 'email-login'" class="text-sm font-semibold text-ink-2" @click="loginStep = 'email-forgot'; formError = ''">{{ __('পাসওয়ার্ড ভুলে গেছেন?') }}</button>
         </form>
 
+        {{-- Step: the code emailed for a new account --}}
+        <form x-show="loginStep === 'email-code'" x-cloak class="mt-5" @submit.prevent="emailCode($el)">
+            <p class="text-sm">{{ __('৬ সংখ্যার একটা কোড পাঠানো হয়েছে এই ইমেইলে:') }} <b x-text="loginEmail" class="break-all"></b></p>
+            <p class="mt-1 text-xs text-ink-2">{{ __('না পেলে স্প্যাম বা প্রমোশন ফোল্ডারও দেখুন।') }}</p>
+            <label for="login-email-code" class="sr-only">{{ __('কোড') }}</label>
+            <input id="login-email-code" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required class="field mt-2 text-center !text-2xl font-bold tracking-[0.5em]" placeholder="••••••">
+            <p role="alert" x-show="formError" class="mt-2 text-sm font-semibold text-danger" x-text="formError"></p>
+            <button class="btn-primary mt-4" :disabled="authBusy" x-text="authBusy ? '…' : @js(__('অ্যাকাউন্ট খুলুন'))"></button>
+            <button type="button" class="mt-3 w-full text-sm font-semibold text-ink-2" :disabled="authBusy" @click="resendEmailCode()">{{ __('কোড আসেনি? আবার পাঠান') }}</button>
+            <button type="button" class="mt-1 w-full text-sm font-semibold text-ink-2" @click="loginStep = 'email-register'; formError = ''">{{ __('ইমেইল বদলান') }}</button>
+        </form>
+
         {{-- Step: forgot password --}}
         <form x-show="loginStep === 'email-forgot'" x-cloak class="mt-5" @submit.prevent="forgotPassword($el)">
             <label for="login-forgot" class="text-sm font-semibold">{{ __('অ্যাকাউন্টের ইমেইল') }}</label>

@@ -40,10 +40,8 @@ class AuthTest extends TestCase
 
     public function test_email_register_login_and_logout(): void
     {
-        $token = $this->postJson('/api/auth/email/register', ['name' => 'মিতু', 'email' => 'Mitu@Example.com', 'password' => 'secret-pass'])
+        $token = $this->signUpByEmail('মিতু', 'Mitu@Example.com')
             ->assertCreated()->assertJson(['member' => ['name' => 'মিতু', 'account' => true]])->json('token');
-
-        $this->postJson('/api/auth/email/register', ['name' => 'আরেকজন', 'email' => 'mitu@example.com', 'password' => 'secret-pass'])->assertJsonValidationErrors('email');
         $this->postJson('/api/auth/email/login', ['email' => 'mitu@example.com', 'password' => 'wrong-pass'])->assertJsonValidationErrors('email');
         $second = $this->postJson('/api/auth/email/login', ['email' => 'MITU@example.com', 'password' => 'secret-pass'])->assertOk()->json('token');
 
@@ -53,16 +51,70 @@ class AuthTest extends TestCase
         $this->withHeader('X-Member-Token', $second)->getJson('/api/members/me')->assertOk(); // other device stays signed in
     }
 
+    public function test_email_sign_up_needs_the_code_sent_to_the_address(): void
+    {
+        $this->postJson('/api/auth/email/register', ['name' => 'মিতু', 'email' => 'mitu@example.com', 'password' => 'secret-pass'])->assertNoContent();
+        $this->assertNull(Accounts::find('email', 'mitu@example.com'), 'no account before the code comes back');
+        $this->assertSame(0, Member::count());
+        $code = $this->lastEmailCode();
+        $this->assertStringNotContainsString('secret-pass', json_encode(cache()->get('email-signup:'.hash('sha256', 'mitu@example.com'))));
+
+        $this->postJson('/api/auth/email/register', ['name' => 'মিতু', 'email' => 'mitu@example.com', 'password' => 'secret-pass'])->assertStatus(429); // resend wait
+        $this->postJson('/api/auth/email/verify', ['email' => 'other@example.com', 'code' => $code])->assertJsonValidationErrors('code');
+        $this->postJson('/api/auth/email/verify', ['email' => 'mitu@example.com', 'code' => '000000'])->assertJsonValidationErrors('code');
+        $token = $this->postJson('/api/auth/email/verify', ['email' => 'mitu@example.com', 'code' => $code])
+            ->assertCreated()->assertJson(['member' => ['name' => 'মিতু', 'account' => true]])->json('token');
+        $this->postJson('/api/auth/email/verify', ['email' => 'mitu@example.com', 'code' => $code])->assertJsonValidationErrors('code'); // used up
+
+        $member = Accounts::find('email', 'mitu@example.com');
+        $this->assertSame(['email'], $member->contactBadges());
+        $this->assertSame('mitu@example.com', $member->email);
+        $this->postJson('/api/auth/email/login', ['email' => 'mitu@example.com', 'password' => 'secret-pass'])->assertOk(); // the password was kept hashed, once
+        $this->withHeader('X-Member-Token', $token)->getJson('/api/members/me')->assertOk();
+    }
+
+    public function test_signing_up_with_a_taken_email_sends_a_notice_not_a_code(): void
+    {
+        $this->signUpByEmail('মিতু', 'mitu@example.com')->assertCreated();
+        $this->travel(2)->minutes();
+
+        // The same answer as for a new address, so the form doesn't reveal who has an account.
+        $this->postJson('/api/auth/email/register', ['name' => 'অন্য কেউ', 'email' => 'Mitu@example.com', 'password' => 'other-pass'])->assertNoContent();
+        $messages = app('mailer')->getSymfonyTransport()->messages();
+        $this->assertCount(2, $messages);
+        $this->assertDoesNotMatchRegularExpression('/\b\d{6}\b/', $messages[1]->getOriginalMessage()->getTextBody());
+        $this->assertSame(1, Member::count());
+        $this->postJson('/api/auth/email/login', ['email' => 'mitu@example.com', 'password' => 'other-pass'])->assertJsonValidationErrors('email');
+    }
+
+    public function test_old_unchecked_email_sign_ups_lose_the_badge_until_a_reset_proves_the_inbox(): void
+    {
+        $old = Accounts::signIn('email', 'old@example.com', 'পুরনো', ['password' => 'secret-pass']); // as before codes
+        $google = Accounts::signIn('google', 'g-1', 'গুগল', [], 'g@example.com');
+        $google->identities()->create(['provider' => 'email', 'identifier' => 'g@example.com', 'verified_at' => now()]);
+
+        (require database_path('migrations/2026_10_13_000001_unverify_unchecked_email_sign_ups.php'))->up();
+        $this->assertSame([], $old->fresh()->contactBadges());
+        $this->assertNull($old->fresh()->email, 'no emails to an address nobody checked');
+        $this->assertSame('g@example.com', $google->fresh()->email, 'Google gave this one');
+
+        $this->postJson('/api/auth/email/forgot', ['email' => 'old@example.com'])->assertNoContent();
+        preg_match('~#t=([A-Za-z0-9]+)~', app('mailer')->getSymfonyTransport()->messages()[0]->getOriginalMessage()->getTextBody(), $m);
+        $this->postJson('/api/auth/email/reset', ['token' => $m[1], 'password' => 'new-secret-1'])->assertOk();
+        $this->assertSame(['email'], $old->fresh()->contactBadges());
+        $this->assertSame('old@example.com', $old->fresh()->email);
+    }
+
     public function test_password_reset_by_email_signs_out_other_devices(): void
     {
-        $old = $this->postJson('/api/auth/email/register', ['name' => 'মিতু', 'email' => 'mitu@example.com', 'password' => 'secret-pass'])->json('token');
+        $old = $this->signUpByEmail('মিতু', 'mitu@example.com')->json('token');
 
         $this->postJson('/api/auth/email/forgot', ['email' => 'nobody@example.com'])->assertNoContent();
         $this->postJson('/api/auth/email/forgot', ['email' => 'mitu@example.com'])->assertNoContent();
 
         $messages = app('mailer')->getSymfonyTransport()->messages();
-        $this->assertCount(1, $messages);
-        preg_match('~/reset-password#t=([A-Za-z0-9]+)~', $messages[0]->getOriginalMessage()->getTextBody(), $m);
+        $this->assertCount(2, $messages); // the sign-up code, then one reset link (none for the unknown address)
+        preg_match('~/reset-password#t=([A-Za-z0-9]+)~', $messages[1]->getOriginalMessage()->getTextBody(), $m);
 
         $this->postJson('/api/auth/email/reset', ['token' => 'wrong', 'password' => 'new-secret-1'])->assertJsonValidationErrors('token');
         $this->postJson('/api/auth/email/reset', ['token' => $m[1], 'password' => 'new-secret-1'])->assertOk()->assertJsonStructure(['token']);
@@ -128,7 +180,7 @@ class AuthTest extends TestCase
         $own = Post::create(['member_id' => $legacy->id, 'title' => 'লগইনের আগের যুগের একটা প্রশ্ন']);
         $other = Post::create(['member_id' => Accounts::signIn('email', 'other@example.com', 'অন্য')->id, 'title' => 'অন্য কারও একটা প্রশ্ন এখানে']);
 
-        $token = $this->postJson('/api/auth/email/register', ['name' => 'মিতু', 'email' => 'mitu@example.com', 'password' => 'secret-pass'])->json('token');
+        $token = $this->signUpByEmail('মিতু', 'mitu@example.com')->json('token');
         $account = Accounts::find('email', 'mitu@example.com');
         // Both identities marked the same post helpful: after merging it counts once.
         Moderation::toggleHelpful($legacy, $other);

@@ -669,5 +669,13 @@
     "ভিডিও যোগ করুন": "Add a video",
     "১ মিনিট পর্যন্ত": "up to 1 minute",
     "বেনামী পোস্টে ছবি বা ভিডিও দেওয়া যায় না।": "Anonymous posts can't have photos or a video.",
-    "ভিডিও থাকলে বেনামী করা যায় না।": "A post with a video can't be anonymous."
+    "ভিডিও থাকলে বেনামী করা যায় না।": "A post with a video can't be anonymous.",
+    "এই ইমেইলে আমার বাংলাদেশে আগে থেকেই একটা অ্যাকাউন্ট আছে। লগইন করুন, অথবা পাসওয়ার্ড মনে না থাকলে “পাসওয়ার্ড ভুলে গেছেন?” চাপুন।": "There's already an Amar Bangladesh account with this email. Log in, or if you don't remember the password, tap “Forgot password?”.",
+    "আমার বাংলাদেশ: আপনার অ্যাকাউন্ট আগে থেকেই আছে": "Amar Bangladesh: you already have an account",
+    "আমার বাংলাদেশে অ্যাকাউন্ট খুলতে এই কোডটা দিন (১০ মিনিট কাজ করবে):": "Enter this code to create your Amar Bangladesh account (it works for 10 minutes):",
+    "আমার বাংলাদেশ কোড: :code": "Amar Bangladesh code: :code",
+    "৬ সংখ্যার একটা কোড পাঠানো হয়েছে এই ইমেইলে:": "We sent a 6-digit code to:",
+    "না পেলে স্প্যাম বা প্রমোশন ফোল্ডারও দেখুন।": "Not there? Check your spam or promotions folder too.",
+    "ইমেইল বদলান": "Change email",
+    "কোডটা আবার পাঠানো হয়েছে।": "We sent the code again."
 }

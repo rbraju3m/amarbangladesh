@@ -12,6 +12,7 @@ use App\Models\Report;
 use App\Support\Sms\SmsSender;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 /**
@@ -148,11 +149,10 @@ final class Accounts
     /** Sends a 6-digit code. Returns false while the resend wait is still running. */
     public static function sendPhoneCode(string $phone, string $message): bool
     {
-        if (! Cache::add("phone-code-wait:{$phone}", true, self::CODE_RESEND)) {
+        $code = self::issueCode("phone-code:{$phone}");
+        if ($code === null) {
             return false;
         }
-        $code = (string) random_int(100000, 999999);
-        Cache::put("phone-code:{$phone}", ['hash' => hash('sha256', $code), 'tries' => 0], self::CODE_TTL);
         app(SmsSender::class)->send($phone, str_replace(':code', $code, $message));
 
         return true;
@@ -160,19 +160,58 @@ final class Accounts
 
     public static function checkPhoneCode(string $phone, string $code): bool
     {
-        $key = "phone-code:{$phone}";
+        return self::checkCode("phone-code:{$phone}", $code) !== null;
+    }
+
+    /**
+     * Email sign-up, step 1: a 6-digit code to the address, with the name and the password's hash kept
+     * beside it (never the password itself) until the code comes back. Returns the code, or null while the
+     * resend wait is still running.
+     */
+    public static function startEmailSignUp(string $email, string $name, string $password): ?string
+    {
+        return self::issueCode(self::signUpKey($email), ['name' => $name, 'password' => Hash::make($password)]);
+    }
+
+    /** Email sign-up, step 2: the name and password hash if the code is right (once), else null. */
+    public static function finishEmailSignUp(string $email, string $code): ?array
+    {
+        return self::checkCode(self::signUpKey($email), $code);
+    }
+
+    private static function signUpKey(string $email): string
+    {
+        return 'email-signup:'.hash('sha256', $email);
+    }
+
+    /** A new 6-digit code under $key (CODE_TTL, CODE_TRIES), or null during the CODE_RESEND wait. */
+    private static function issueCode(string $key, array $data = []): ?string
+    {
+        if (! Cache::add("{$key}:wait", true, self::CODE_RESEND)) {
+            return null;
+        }
+        $code = (string) random_int(100000, 999999);
+        Cache::put($key, ['hash' => hash('sha256', $code), 'tries' => 0, 'data' => $data], self::CODE_TTL);
+
+        return $code;
+    }
+
+    /** The data kept with the code when $code is right (the code is then used up); wrong tries count. */
+    private static function checkCode(string $key, string $code): ?array
+    {
         $entry = Cache::get($key);
         if (! $entry) {
-            return false;
+            return null;
         }
         if (hash_equals($entry['hash'], hash('sha256', preg_replace('/\D/', '', $code)))) {
             Cache::forget($key);
+            Cache::forget("{$key}:wait"); // used: the next sign-in may ask for a code straight away
 
-            return true;
+            return $entry['data'] ?? [];
         }
         ++$entry['tries'] >= self::CODE_TRIES ? Cache::forget($key) : Cache::put($key, $entry, self::CODE_TTL);
 
-        return false;
+        return null;
     }
 
     private static function newCode(): string

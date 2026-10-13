@@ -73,7 +73,7 @@ class DemoContentTest extends TestCase
 
     public function test_purging_keeps_real_content_and_fixes_its_counts(): void
     {
-        $token = $this->postJson('/api/auth/email/register', ['name' => 'Real', 'email' => 'real@example.com', 'password' => 'secret-pass'])->json('token');
+        $token = $this->signUpByEmail('Real', 'real@example.com')->json('token');
         $real = Post::findOrFail($this->withHeader('X-Member-Token', $token)->postJson('/api/posts', ['title' => 'A real question from a real person'])->json('post.id'));
 
         DemoContent::seed();

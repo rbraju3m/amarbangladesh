@@ -32,11 +32,11 @@
 <ul>
     <li><strong>Google or Facebook:</strong> that account's ID, name and email address.</li>
     <li><strong>Phone:</strong> your mobile number.</li>
-    <li><strong>Email:</strong> your email address and password (stored so that even we can't read it).</li>
+    <li><strong>Email:</strong> your email address and password (stored so that even we can't read it). When you open an account we email you a code first, to check the address is yours.</li>
 </ul>
 <p>Also the name you choose, your posts and answers (and their photos and videos), your “Helpful” marks, reports, saved posts and, if you pick one, your district (only you can see these two), and whether you use the site in Bangla or English. Everyone can see your name, posts and answers; nobody can see your phone number or email.</p>
 
-<p>Your profile can show “Phone verified” or “Email verified”: that only says you logged in with that number or address, which stay hidden. If we give you a professional badge (such as “Doctor”), we keep a short note of how we checked it, seen only by admins, and delete it with your account.</p>
+<p>Your profile can show “Phone verified” or “Email verified”: that only says you proved that number or address is yours (with a code or, for email, a Google login or a password-reset link), which stay hidden. If we give you a professional badge (such as “Doctor”), we keep a short note of how we checked it, seen only by admins, and delete it with your account.</p>
 
 <h2>Anonymous posts</h2>
 <p>If you post anonymously, readers never learn who wrote it: your name and profile link aren't on the page. Only the site's admins can see the author's account, and only to deal with harmful posts.</p>
@@ -62,7 +62,7 @@
     <li>Usage statistics and notifications: 180 days.</li>
     <li>Phone login codes: 10 minutes. Password reset links: 1 hour.</li>
     <li>Posts, answers and quiz results: until they're deleted.</li>
-    <li>Photos and videos: deleted at once when you delete their post or answer; if an admin removes a post, they are deleted 30 days later. Photos and videos uploaded but never posted, or only partly uploaded: after a day.</li>
+    <li>Photos and videos: deleted at once when you delete their post or answer; if an admin removes a post, or you delete one that was hidden or removed after reports, they are deleted 30 days later. Photos and videos uploaded but never posted, or only partly uploaded: after a day.</li>
     <li>Accounts: until you delete them.</li>
 </ul>
 

@@ -46,9 +46,7 @@ class GrowthTest extends TestCase
     /** Signs up by email from this visitor's browser; returns the token. */
     private function signUp(string $visitor): string
     {
-        return $this->withHeader('X-Visitor', $visitor)->postJson('/api/auth/email/register', [
-            'name' => 'রাশেদ', 'email' => Str::random(8).'@example.test', 'password' => 'secret-pass-1',
-        ])->assertCreated()->json('token');
+        return $this->signUpByEmail('রাশেদ', Str::random(8).'@example.test', 'secret-pass-1', ['X-Visitor' => $visitor])->assertCreated()->json('token');
     }
 
     public function test_sign_ups_posts_and_answers_carry_the_visitor_id(): void
