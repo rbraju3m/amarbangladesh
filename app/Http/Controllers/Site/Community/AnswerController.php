@@ -50,7 +50,9 @@ class AnswerController extends Controller
         $thread = $parent ? ($parent->thread_id ?? $parent->id) : null;
 
         $answer = DB::transaction(function () use ($post, $parent, $thread, $member, $data, $html, $photos, $video) {
-            $answer = Answer::where(['post_id' => $post->id, 'parent_id' => $parent?->id, 'member_id' => $member->id, 'body' => $data['body']])->where('created_at', '>=', now()->subMinutes(10))->first()
+            // A retry returns the answer it already made; one with other anonymity is a different answer
+            // (photos and a video must never land on an anonymous one), and one they deleted is gone.
+            $answer = Answer::where(['post_id' => $post->id, 'parent_id' => $parent?->id, 'member_id' => $member->id, 'body' => $data['body'], 'is_anonymous' => (bool) ($data['anonymous'] ?? false)])->where('status', '!=', Post::DELETED)->where('created_at', '>=', now()->subMinutes(10))->first()
                 ?? Answer::create(['post_id' => $post->id, 'parent_id' => $parent?->id, 'thread_id' => $thread, 'member_id' => $member->id, 'is_anonymous' => (bool) ($data['anonymous'] ?? false), 'body' => $data['body'], 'body_html' => $html, 'status' => Post::PUBLISHED]);
             if ($photos !== null) {
                 Photos::attach($member, $answer, $photos);

@@ -58,9 +58,11 @@ class PostController extends Controller
         $urgent = self::urgentHours($data, $member);
 
         // A double tap or a retry after a slow network should not post twice. Photos that can't be
-        // attached undo the post, so a retry starts clean.
+        // attached undo the post, so a retry starts clean. Only a post with the same anonymity counts as
+        // the same one: photos and a video must never land on the member's anonymous post. A post they
+        // deleted isn't one either (its link is gone); a hidden or removed one is, so a repost can't dodge moderation.
         $post = DB::transaction(function () use ($member, $data, $html, $photos, $video, $urgent, $area) {
-            $post = Post::where('member_id', $member->id)->where('title', $data['title'])->where('created_at', '>=', now()->subMinutes(10))->first()
+            $post = Post::where('member_id', $member->id)->where('title', $data['title'])->where('is_anonymous', (bool) ($data['anonymous'] ?? false))->where('status', '!=', Post::DELETED)->where('created_at', '>=', now()->subMinutes(10))->first()
                 ?? Post::create([
                     'member_id' => $member->id,
                     'is_anonymous' => (bool) ($data['anonymous'] ?? false),

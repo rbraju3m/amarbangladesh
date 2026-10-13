@@ -7,6 +7,7 @@ use App\Community\Accounts;
 use App\Community\Moderation;
 use App\Community\Photos;
 use App\Community\Videos;
+use App\Models\Answer;
 use App\Models\Member;
 use App\Models\Photo;
 use App\Models\Post;
@@ -129,6 +130,50 @@ class VideoPostTest extends TestCase
         }
         $this->as($token)->postJson('/api/posts', ['title' => self::TITLE, 'video' => $this->video($member)->id, 'anonymous' => true])->assertUnprocessable()->assertJsonValidationErrors('video');
         $this->assertSame(0, Post::count(), 'nothing posted half way');
+    }
+
+    public function test_a_retry_never_puts_photos_or_a_video_on_the_members_anonymous_post_or_answer(): void
+    {
+        [$member, $token] = $this->member();
+        $anonymous = $this->as($token)->postJson('/api/posts', ['title' => self::TITLE, 'anonymous' => true])->assertCreated()->json('post.id');
+        $photo = $this->as($token)->post('/api/photos', ['photo' => UploadedFile::fake()->image('road.jpg', 800, 600)], ['Accept' => 'application/json'])->assertCreated()->json('id');
+
+        // Same title within the guard's 10 minutes, but not anonymous: a new post, which takes the media.
+        $named = $this->as($token)->postJson('/api/posts', ['title' => self::TITLE, 'video' => $this->video($member)->id, 'photos' => [$photo]])->assertCreated()->json('post.id');
+        $this->assertNotSame($anonymous, $named);
+        $this->assertNull(Post::find($anonymous)->video);
+        $this->assertSame(0, Post::find($anonymous)->photos()->count());
+        $this->assertSame([1, 1], [Post::find($named)->photos()->count(), Video::where('videoable_id', $named)->count()]);
+        // A true retry (same anonymity) still returns the post it made.
+        $this->assertSame($named, $this->as($token)->postJson('/api/posts', ['title' => self::TITLE])->json('post.id'));
+
+        $body = 'রাস্তাটা গত মাসে এমনই ছিল';
+        $answer = $this->as($token)->postJson("/api/posts/{$named}/answers", ['body' => $body, 'anonymous' => true])->assertCreated()->json('answer.id');
+        $withVideo = $this->as($token)->postJson("/api/posts/{$named}/answers", ['body' => $body, 'video' => $this->video($member)->id])->assertCreated()->json('answer.id');
+        $this->assertNotSame($answer, $withVideo);
+        $this->assertSame(0, Video::where('videoable_type', 'answer')->where('videoable_id', $answer)->count());
+        $this->assertSame($withVideo, $this->as($token)->postJson("/api/posts/{$named}/answers", ['body' => $body])->json('answer.id'));
+    }
+
+    public function test_reposting_right_after_deleting_makes_a_new_post_but_not_after_a_removal(): void
+    {
+        [, $token] = $this->member();
+        $first = $this->as($token)->postJson('/api/posts', ['title' => self::TITLE])->json('post.id');
+        Moderation::setStatus(Post::find($first), Post::DELETED);
+
+        $second = $this->as($token)->postJson('/api/posts', ['title' => self::TITLE])->assertCreated()->json('post.id');
+        $this->assertNotSame($first, $second, 'not the deleted post, whose link is gone');
+        $this->get(Post::find($second)->url())->assertOk();
+
+        $body = 'রাস্তাটা গত মাসে এমনই ছিল';
+        $answer = $this->as($token)->postJson("/api/posts/{$second}/answers", ['body' => $body])->json('answer.id');
+        Moderation::setStatus(Answer::find($answer), Post::DELETED);
+        $this->assertNotSame($answer, $this->as($token)->postJson("/api/posts/{$second}/answers", ['body' => $body])->assertCreated()->json('answer.id'));
+
+        // Removed by an admin: posting it again straight away returns that post, it doesn't put it back up.
+        Moderation::setStatus(Post::find($second), Post::REMOVED);
+        $this->assertSame($second, $this->as($token)->postJson('/api/posts', ['title' => self::TITLE])->json('post.id'));
+        $this->assertSame(2, Post::count());
     }
 
     public function test_answers_can_have_a_video_but_replies_cannot(): void
