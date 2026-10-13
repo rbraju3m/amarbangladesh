@@ -265,8 +265,7 @@ final class Videos
      */
     public static function processWaiting(int $seconds = self::RUN_SECONDS): array
     {
-        Video::where('status', Video::PROCESSING)->update(['status' => Video::WAITING]);
-        $done = ['converted' => 0, 'failed' => 0, 'checked' => 0];
+        $done = ['converted' => 0, 'failed' => self::recoverInterrupted(), 'checked' => 0];
         if (! self::canRun()) {
             Cache::put('videos.available', false, 600); // and stop taking uploads meanwhile
 
@@ -292,15 +291,41 @@ final class Videos
         return $done;
     }
 
+    /**
+     * Conversions a crashed run left "processing" (PHP killed, out of memory, the server restarted): the
+     * crash already counted as an attempt, so their half-written files are deleted and they wait again,
+     * or fail once they've had MAX_ATTEMPTS, so a video that kills the converter every time can't hold up
+     * every newer one. Runs never overlap, so nothing else is converting. Returns how many failed.
+     */
+    private static function recoverInterrupted(): int
+    {
+        $failed = 0;
+        Video::where('status', Video::PROCESSING)->orderBy('id')->each(function (Video $video) use (&$failed) {
+            report(new \RuntimeException("Video {$video->id}: a conversion was interrupted (attempt {$video->attempts})"));
+            if ($video->path) {
+                Storage::disk(self::DISK)->delete(self::files($video->path));
+            }
+            $failing = $video->attempts >= self::MAX_ATTEMPTS;
+            if (self::finish($video, ['status' => $failing ? Video::FAILED : Video::WAITING, 'error' => $failing ? 'convert' : null, 'path' => null]) && $failing) {
+                Storage::disk(self::PRIVATE_DISK)->delete($video->partPath());
+                $failed++;
+            }
+        });
+
+        return $failed;
+    }
+
     /** One conversion: MP4 + posters on the public disk, original deleted. False if it didn't work this time. */
     public static function convert(Video $video): bool
     {
-        $video->update(['status' => Video::PROCESSING, 'attempts' => $video->attempts + 1]);
-        $source = Storage::disk(self::PRIVATE_DISK)->path($video->partPath());
         $path = 'videos/'.now()->format('Y/m').'/'.Str::random(32);
+        // The path is kept from the start (pages only use it once ready), so a run that crashes half way
+        // leaves a record of its files for the next run to delete.
+        $video->update(['status' => Video::PROCESSING, 'attempts' => $video->attempts + 1, 'path' => $path]);
+        $source = Storage::disk(self::PRIVATE_DISK)->path($video->partPath());
         $disk = Storage::disk(self::DISK);
         $disk->makeDirectory(dirname($path));
-        $files = ["{$path}.mp4", "{$path}-poster.jpg", "{$path}-poster.webp"];
+        $files = self::files($path);
 
         try {
             $mp4 = $disk->path($files[0]);
@@ -353,10 +378,16 @@ final class Videos
             if ($failed) {
                 Storage::disk(self::PRIVATE_DISK)->delete($video->partPath());
             }
-            self::finish($video, ['status' => $failed ? Video::FAILED : Video::WAITING, 'error' => $failed ? 'convert' : null]);
+            self::finish($video, ['status' => $failed ? Video::FAILED : Video::WAITING, 'error' => $failed ? 'convert' : null, 'path' => null]);
 
             return false;
         }
+    }
+
+    /** A converted video's files on the public disk: the MP4 and its two posters. */
+    public static function files(string $path): array
+    {
+        return ["{$path}.mp4", "{$path}-poster.jpg", "{$path}-poster.webp"];
     }
 
     /** Ends a conversion if the row is still being converted (not deleted meanwhile); the model follows. */
@@ -441,7 +472,7 @@ final class Videos
     public static function delete(Collection $videos): int
     {
         foreach ($videos as $video) {
-            $files = $video->path ? ["{$video->path}.mp4", "{$video->path}-poster.jpg", "{$video->path}-poster.webp"] : [];
+            $files = $video->path ? self::files($video->path) : [];
             $part = $video->partPath();
             $video->delete();
             DB::afterCommit(function () use ($files, $part) {

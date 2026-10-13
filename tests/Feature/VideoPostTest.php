@@ -67,7 +67,7 @@ class VideoPostTest extends TestCase
 
     private function files(Video $video): array
     {
-        return ["{$video->path}.mp4", "{$video->path}-poster.jpg", "{$video->path}-poster.webp"];
+        return Videos::files($video->path);
     }
 
     public function test_a_post_with_a_video_plays_on_its_page_and_shows_a_poster_in_lists(): void

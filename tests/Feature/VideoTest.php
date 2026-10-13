@@ -120,7 +120,7 @@ class VideoTest extends TestCase
         $this->assertSame([240, 320], [$video->width, $video->height], 'turned upright, not just tagged');
         $this->assertEqualsWithDelta(2000, $video->duration_ms, 150);
         Storage::disk('local')->assertMissing($video->partPath());
-        Storage::disk('public')->assertExists(["{$video->path}.mp4", "{$video->path}-poster.jpg", "{$video->path}-poster.webp"]);
+        Storage::disk('public')->assertExists(Videos::files($video->path));
 
         $out = $this->probe(Storage::disk('public')->path("{$video->path}.mp4"));
         $streams = collect($out['streams'])->keyBy('codec_type');
@@ -324,6 +324,46 @@ class VideoTest extends TestCase
             Storage::disk('local')->assertMissing(Video::find($id)->partPath());
         }
         $this->start($token, 100)->assertCreated();
+    }
+
+    public function test_a_crashed_conversions_half_written_files_are_deleted_before_it_is_tried_again(): void
+    {
+        $id = $this->upload($this->token(), file_get_contents($this->clip('phone')))->json('id');
+        // What a run killed half way through leaves: the row "processing", its output started.
+        Video::whereKey($id)->update(['status' => 'processing', 'attempts' => 1, 'path' => 'videos/2026/10/crashed']);
+        Storage::disk('public')->put('videos/2026/10/crashed.mp4', 'half an mp4');
+
+        $this->artisan('community:process-videos')->expectsOutputToContain('Converted 1');
+
+        Storage::disk('public')->assertMissing('videos/2026/10/crashed.mp4');
+        $video = Video::find($id);
+        $this->assertSame(['ready', 2], [$video->status, $video->attempts]);
+        $this->assertNotSame('videos/2026/10/crashed', $video->path);
+    }
+
+    public function test_a_video_that_crashes_the_converter_every_time_fails_instead_of_holding_up_the_others(): void
+    {
+        $token = $this->token();
+        $bytes = file_get_contents($this->clip('phone'));
+        $poison = $this->upload($token, $bytes)->json('id');
+        $next = $this->upload($token, $bytes)->json('id');
+        // Its last attempt was the one that crashed (the attempt is counted when it starts).
+        Video::whereKey($poison)->update(['status' => 'processing', 'attempts' => Videos::MAX_ATTEMPTS, 'path' => 'videos/2026/10/crashed']);
+
+        $this->artisan('community:process-videos')->expectsOutputToContain('Converted 1, failed 1');
+
+        $video = Video::find($poison);
+        $this->assertSame(['failed', 'convert', null], [$video->status, $video->error, $video->path]);
+        Storage::disk('local')->assertMissing($video->partPath());
+        $this->assertSame('ready', Video::find($next)->status);
+    }
+
+    public function test_a_video_has_no_address_until_it_is_ready(): void
+    {
+        $id = $this->upload($this->token(), file_get_contents($this->clip('phone')))->json('id');
+        Video::whereKey($id)->update(['status' => 'processing', 'path' => 'videos/2026/10/started']);
+
+        $this->assertSame([null, null], [Video::find($id)->url(), Video::find($id)->posterUrl()]);
     }
 
     public function test_uploads_are_refused_while_ffmpeg_is_missing(): void
