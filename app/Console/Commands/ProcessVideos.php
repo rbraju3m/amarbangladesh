@@ -16,7 +16,7 @@ class ProcessVideos extends Command
     {
         $done = Videos::processWaiting((int) $this->option('seconds'));
         Heartbeat::record($this->getName(), $done);
-        $this->info("Converted {$done['converted']}, failed {$done['failed']}.");
+        $this->info("Converted {$done['converted']}, failed {$done['failed']}, checked {$done['checked']} unchecked uploads.");
 
         return self::SUCCESS;
     }

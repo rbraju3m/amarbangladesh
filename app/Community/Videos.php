@@ -45,6 +45,9 @@ final class Videos
     /** How long one `community:process-videos` run keeps taking new videos. */
     public const RUN_SECONDS = 240;
 
+    /** An upload whose last piece came this long ago but was never checked is checked by the converter. */
+    public const UNCHECKED_MINUTES = 5;
+
     /** Uploaded but never posted (or never finished uploading): kept this long. */
     public const UNATTACHED_HOURS = 24;
 
@@ -91,6 +94,13 @@ final class Videos
     public static function append(Video $video, int $offset, string $data): bool
     {
         $length = strlen($data);
+        // Every piece is here but the check never finished (it timed out, or the request died): the
+        // browser sends an empty piece at the end, which checks it again.
+        if ($video->status === Video::UPLOADING && $length === 0 && $offset === $video->size && $video->received === $video->size) {
+            self::finishUpload($video, Storage::disk(self::PRIVATE_DISK)->path($video->partPath()));
+
+            return true;
+        }
         if ($video->status !== Video::UPLOADING || $offset !== $video->received) {
             return false;
         }
@@ -116,7 +126,11 @@ final class Videos
         return true;
     }
 
-    /** The whole file is here: keep it for conversion only if ffprobe sees a short enough video. */
+    /**
+     * The whole file is here: keep it for conversion only if ffprobe sees a short enough video. A check
+     * that couldn't run (ffprobe timed out or is missing) throws and leaves the upload as it was, so it
+     * can be checked again (the browser's empty last piece, or checkUnchecked()).
+     */
     private static function finishUpload(Video $video, string $file): void
     {
         $info = self::probe($file);
@@ -126,19 +140,71 @@ final class Videos
             default => null,
         };
         if ($error) {
-            Storage::disk(self::PRIVATE_DISK)->delete($video->partPath());
-            $video->update(['status' => Video::FAILED, 'error' => $error]);
+            self::fail($video, $error);
             throw ValidationException::withMessages(['video' => $error === 'too_long'
                 ? __('ভিডিও ১ মিনিটের মধ্যে হতে হবে। ছোট করে আবার দিন।')
                 : __('এটা ভিডিও হিসেবে খোলা গেলো না। অন্য একটা ভিডিও দিন।')]);
         }
 
-        $video->update([
+        self::settle($video, [
             'status' => Video::WAITING,
             'duration_ms' => (int) round($info['duration'] * 1000),
             'width' => $info['width'],
             'height' => $info['height'],
         ]);
+    }
+
+    /** An upload refused at the check: marked failed (no longer counts against the cap) and its file deleted. */
+    private static function fail(Video $video, string $error): void
+    {
+        if (self::settle($video, ['status' => Video::FAILED, 'error' => $error])) {
+            Storage::disk(self::PRIVATE_DISK)->delete($video->partPath());
+        }
+    }
+
+    /**
+     * Ends an upload's check, only if it's still uploading: two checks of one upload can run at once (the
+     * browser's retry and the converter's), and only the first to finish decides.
+     */
+    private static function settle(Video $video, array $values): bool
+    {
+        if (Video::whereKey($video->id)->where('status', Video::UPLOADING)->update($values) !== 1) {
+            $video->refresh();
+
+            return false;
+        }
+        $video->forceFill($values)->syncOriginal();
+
+        return true;
+    }
+
+    /**
+     * Uploads whose last piece came over UNCHECKED_MINUTES ago and were never checked (the browser went
+     * away after the check failed to run): checked now, and one that still can't be checked is marked
+     * failed (`check`), so it doesn't hold one of the member's unposted uploads for a day. Returns how many.
+     */
+    public static function checkUnchecked(): int
+    {
+        $count = 0;
+        Video::where('status', Video::UPLOADING)->whereColumn('received', 'size')->orderBy('id')
+            ->each(function (Video $video) use (&$count) {
+                $file = Storage::disk(self::PRIVATE_DISK)->path($video->partPath());
+                // The part file's time is when its last piece came; a check may still be running in that request.
+                if (is_file($file) && filemtime($file) > time() - self::UNCHECKED_MINUTES * 60) {
+                    return;
+                }
+                $count++;
+                try {
+                    self::finishUpload($video, $file);
+                } catch (ValidationException) {
+                    // refused: finishUpload marked it failed
+                } catch (Throwable $e) {
+                    report($e);
+                    self::fail($video, 'check');
+                }
+            });
+
+        return $count;
     }
 
     /**
@@ -150,6 +216,10 @@ final class Videos
     public static function probe(string $file): ?array
     {
         $result = Process::timeout(30)->run([self::binary('ffprobe'), '-v', 'error', '-print_format', 'json', '-show_format', '-show_streams', $file]);
+        // 126/127: ffprobe itself couldn't be run, which says nothing about the file.
+        if (in_array($result->exitCode(), [126, 127], true)) {
+            throw new \RuntimeException('ffprobe could not be run: '.self::binary('ffprobe'));
+        }
         $data = $result->successful() ? json_decode($result->output(), true) : null;
         if (! is_array($data)) {
             return null;
@@ -191,17 +261,18 @@ final class Videos
      * fault (a full disk, ffmpeg being replaced) costs one attempt of one video, not every video's last.
      * Nothing is tried while ffmpeg/ffprobe can't be run at all.
      *
-     * @return array{converted: int, failed: int}
+     * @return array{converted: int, failed: int, checked: int}
      */
     public static function processWaiting(int $seconds = self::RUN_SECONDS): array
     {
         Video::where('status', Video::PROCESSING)->update(['status' => Video::WAITING]);
-        $done = ['converted' => 0, 'failed' => 0];
+        $done = ['converted' => 0, 'failed' => 0, 'checked' => 0];
         if (! self::canRun()) {
             Cache::put('videos.available', false, 600); // and stop taking uploads meanwhile
 
             return $done;
         }
+        $done['checked'] = self::checkUnchecked();
         $until = microtime(true) + $seconds;
         while (microtime(true) < $until && $video = Video::where('status', Video::WAITING)->orderBy('id')->first()) {
             if (self::convert($video)) {

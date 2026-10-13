@@ -83,7 +83,7 @@
             <div><dt class="text-xs text-ink-2">Failed</dt><dd @class(['text-2xl font-bold tabular-nums', 'text-danger' => $videos['failures']])>{{ number_format($videos['status']['failed']) }}</dd>@if ($videos['failures'])<dd class="text-xs text-ink-2">7 days: @foreach ($videos['failures'] as $code => $n){{ $loop->first ? '' : ', ' }}{{ $code ?: 'unknown' }} {{ $n }}@endforeach</dd>@endif</div>
             <div><dt class="text-xs text-ink-2">Space used</dt><dd class="text-2xl font-bold tabular-nums">{{ $size($videos['bytes']) }}</dd><dd class="text-xs text-ink-2">+ {{ $size($videos['parts']) }} unfinished uploads</dd></div>
         </dl>
-        <p class="mt-3 text-xs text-ink-2">Failure codes: <code>not_video</code> / <code>too_long</code> = refused at upload, <code>convert</code> = ffmpeg failed 3 times. Unposted and unfinished uploads are deleted after a day by the clean-up job.</p>
+        <p class="mt-3 text-xs text-ink-2">Failure codes: <code>not_video</code> / <code>too_long</code> = refused at upload, <code>check</code> = the upload check couldn't run (ffprobe timed out or missing), <code>convert</code> = ffmpeg failed 3 times. Unposted and unfinished uploads are deleted after a day by the clean-up job.</p>
     </section>
 
     <section class="panel" aria-labelledby="versions-title">

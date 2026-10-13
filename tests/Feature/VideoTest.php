@@ -255,6 +255,77 @@ class VideoTest extends TestCase
         $this->assertSame('ready', Video::find($id)->status);
     }
 
+    /** Sends all but the last piece, then the last one while ffprobe can't run: every byte is in, never checked. */
+    private function unchecked(string $token, string $bytes): int
+    {
+        $id = $this->start($token, strlen($bytes))->json('id');
+        $half = intdiv(strlen($bytes), 2);
+        $this->piece($token, $id, 0, substr($bytes, 0, $half))->assertOk();
+        $probe = config('services.ffmpeg.ffprobe');
+        config(['services.ffmpeg.ffprobe' => '/nonexistent/ffprobe']);
+        $this->piece($token, $id, $half, substr($bytes, $half))->assertServerError();
+        config(['services.ffmpeg.ffprobe' => $probe]);
+        $this->assertSame(['uploading', strlen($bytes)], [Video::find($id)->status, Video::find($id)->received]);
+
+        return $id;
+    }
+
+    public function test_an_upload_whose_check_could_not_run_is_checked_again_by_an_empty_last_piece(): void
+    {
+        $token = $this->token();
+        $bytes = file_get_contents($this->clip('phone'));
+        $id = $this->unchecked($token, $bytes);
+
+        // ffprobe missing is not "this isn't a video": the file stays.
+        Storage::disk('local')->assertExists(Video::find($id)->partPath());
+        // The browser's retry of the last piece is told everything arrived, then sends the empty piece at the end.
+        $this->piece($token, $id, intdiv(strlen($bytes), 2), substr($bytes, intdiv(strlen($bytes), 2)))->assertStatus(409)->assertJson(['received' => strlen($bytes)]);
+        $this->piece($token, $id, strlen($bytes), '')->assertOk()->assertJson(['status' => 'waiting']);
+        $this->piece($token, $id, strlen($bytes), '')->assertStatus(409)->assertJson(['status' => 'waiting']);
+    }
+
+    public function test_the_converter_checks_uploads_the_browser_left_unchecked(): void
+    {
+        $token = $this->token();
+        $bytes = file_get_contents($this->clip('phone'));
+        $old = $this->unchecked($token, $bytes);
+        $recent = $this->unchecked($token, $bytes);
+        touch(Storage::disk('local')->path(Video::find($old)->partPath()), time() - Videos::UNCHECKED_MINUTES * 60 - 1);
+
+        $this->artisan('community:process-videos')->expectsOutputToContain('checked 1');
+
+        $this->assertSame('ready', Video::find($old)->status, 'checked, then converted in the same run');
+        $this->assertSame('uploading', Video::find($recent)->status, 'its own request may still be checking it');
+    }
+
+    public function test_an_unchecked_upload_that_still_cannot_be_checked_stops_counting_against_the_cap(): void
+    {
+        $token = $this->token();
+        $bytes = file_get_contents($this->clip('phone'));
+        $ids = array_map(fn () => $this->unchecked($token, $bytes), range(1, Videos::MAX_UNATTACHED));
+        $this->start($token, 100)->assertUnprocessable();
+        foreach ($ids as $id) {
+            touch(Storage::disk('local')->path(Video::find($id)->partPath()), time() - Videos::UNCHECKED_MINUTES * 60 - 1);
+        }
+        // ffprobe runs (`-version`), but can't check these files.
+        $wrapper = sys_get_temp_dir().'/bd-ffprobe-'.getmypid();
+        file_put_contents($wrapper, "#!/bin/sh\ncase \"\$*\" in *.part*) exit 127;; esac\nexec ffprobe \"\$@\"\n");
+        chmod($wrapper, 0755);
+        config(['services.ffmpeg.ffprobe' => $wrapper]);
+
+        try {
+            $this->artisan('community:process-videos')->expectsOutputToContain('checked '.Videos::MAX_UNATTACHED);
+        } finally {
+            @unlink($wrapper);
+        }
+
+        foreach ($ids as $id) {
+            $this->assertSame(['failed', 'check'], [Video::find($id)->status, Video::find($id)->error]);
+            Storage::disk('local')->assertMissing(Video::find($id)->partPath());
+        }
+        $this->start($token, 100)->assertCreated();
+    }
+
     public function test_uploads_are_refused_while_ffmpeg_is_missing(): void
     {
         config(['services.ffmpeg.ffprobe' => '/nonexistent/ffprobe']);
