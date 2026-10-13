@@ -313,14 +313,14 @@ class VideoPostTest extends TestCase
         $video = $this->video($member);
         $id = $this->as($token)->postJson('/api/posts', ['title' => self::TITLE, 'video' => $video->id])->assertCreated()->json('post.id');
 
-        Cache::put('videos.available', true);
+        Cache::memo()->put('videos.available', true);
         $this->get('/ask')->assertOk()->assertSee('data-video', false)->assertSee('videoPicker(null, true)', false);
         $this->get(Post::find($id)->url())->assertOk()
             ->assertSee('<template data-raw-video>{"id":'.$video->id.',', false)
             ->assertSee('template[data-raw-video]', false);
 
         // Without ffmpeg the button hides (the picker still shows an item's existing video so it can be removed).
-        Cache::put('videos.available', false);
+        Cache::memo()->put('videos.available', false);
         $this->get('/ask')->assertOk()->assertSee('videoPicker(null, false)', false);
     }
 

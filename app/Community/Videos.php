@@ -279,7 +279,7 @@ final class Videos
     {
         $done = ['converted' => 0, 'failed' => self::recoverInterrupted(), 'checked' => 0];
         if (! self::canRun()) {
-            Cache::put('videos.available', false, 600); // and stop taking uploads meanwhile
+            Cache::memo()->put('videos.available', false, 600); // and stop taking uploads meanwhile
 
             return $done;
         }
@@ -530,7 +530,7 @@ final class Videos
     /** Whether ffmpeg and ffprobe can be run here (checked every 10 minutes). */
     public static function available(): bool
     {
-        return Cache::remember('videos.available', 600, fn () => self::canRun());
+        return Cache::memo()->remember('videos.available', 600, fn () => self::canRun());
     }
 
     /** The same, asked now (the converter must not trust a 10-minute-old answer). */

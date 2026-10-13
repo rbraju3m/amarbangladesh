@@ -176,7 +176,7 @@ final class DivisionMap
     /** [area id, category id, title] of the newest published posts with a place, newest first. */
     private static function latestRows(): array
     {
-        return Cache::remember(self::LATEST_KEY, 300, fn () => Post::published()->whereNotNull('area_id')
+        return Cache::memo()->remember(self::LATEST_KEY, 300, fn () => Post::published()->whereNotNull('area_id')
             ->latest('id')->limit(self::LATEST_POOL)->get(['area_id', 'category_id', 'title'])
             ->map(fn ($p) => [(int) $p->area_id, (int) $p->category_id, $p->title])->all());
     }
@@ -184,7 +184,7 @@ final class DivisionMap
     /** Published posts grouped by area and category: [area id, category id, all, recent]; a few minutes stale is fine. */
     private static function rows(): array
     {
-        return Cache::remember(self::COUNTS_KEY, 300, fn () => Post::published()->whereNotNull('area_id')
+        return Cache::memo()->remember(self::COUNTS_KEY, 300, fn () => Post::published()->whereNotNull('area_id')
             ->groupBy('area_id', 'category_id')
             ->selectRaw('area_id, category_id, COUNT(*) AS n, SUM(created_at >= ?) AS recent', [now()->subDays(self::RECENT_DAYS)])
             ->get()->map(fn ($r) => [(int) $r->area_id, (int) $r->category_id, (int) $r->n, (int) $r->recent])->all());

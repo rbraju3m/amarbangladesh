@@ -29,7 +29,7 @@ final class Taxonomy
      */
     public static function allCategories(): array
     {
-        return self::localize(Cache::rememberForever('community.categories.v3', fn () => Category::orderBy('sort_order')->orderBy('id')->get()
+        return self::localize(Cache::memo()->rememberForever('community.categories.v3', fn () => Category::orderBy('sort_order')->orderBy('id')->get()
             ->mapWithKeys(fn (Category $c) => [$c->slug => ['id' => $c->id, 'slug' => $c->slug, 'name_bn' => $c->name_bn, 'name_en' => $c->name_en ?: $c->name_bn, 'emoji' => $c->emoji, 'active' => $c->is_active]])
             ->all()));
     }
@@ -46,7 +46,7 @@ final class Taxonomy
      */
     public static function areas(): array
     {
-        return self::localize(Cache::rememberForever('community.areas.v4', function () {
+        return self::localize(Cache::memo()->rememberForever('community.areas.v4', function () {
             $all = Area::orderBy('sort_order')->orderBy('name_bn')->get()->keyBy('id');
             // The area itself or its nearest ancestor of this type.
             $up = function (?Area $a, string $type) use ($all): ?Area {
@@ -138,7 +138,7 @@ final class Taxonomy
 
     public static function forget(): void
     {
-        Cache::forget('community.categories.v3');
-        Cache::forget('community.areas.v4');
+        Cache::memo()->forget('community.categories.v3');
+        Cache::memo()->forget('community.areas.v4');
     }
 }

@@ -29,7 +29,7 @@ class VideoTest extends TestCase
         $this->withoutMiddleware(ThrottleRequests::class);
         Storage::fake('public');
         Storage::fake('local');
-        Cache::forget('videos.available');
+        Cache::memo()->forget('videos.available');
     }
 
     public static function tearDownAfterClass(): void
