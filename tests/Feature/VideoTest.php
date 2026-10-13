@@ -48,12 +48,15 @@ class VideoTest extends TestCase
         if (isset(self::$clips[$kind])) {
             return self::$clips[$kind];
         }
-        $file = sys_get_temp_dir().'/bd-video-test-'.$kind.'-'.getmypid().($kind === 'phone' ? '.mov' : '.mp4');
+        $file = sys_get_temp_dir().'/bd-video-test-'.$kind.'-'.getmypid().match ($kind) {
+            'phone' => '.mov', 'avi' => '.avi', default => '.mp4'
+        };
         $args = match ($kind) {
             'phone' => ['-f', 'lavfi', '-i', 'testsrc=duration=2:size=320x240:rate=15', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=2',
                 '-c:v', 'libx264', '-c:a', 'aac', '-shortest', '-metadata', 'location=+23.8103+090.4125/', '-metadata', 'creation_time=2024-05-01T10:00:00Z',
                 '-metadata', 'make=TestPhone'],
             'long' => ['-f', 'lavfi', '-i', 'testsrc=duration=62:size=64x48:rate=1', '-c:v', 'libx264'],
+            'avi' => ['-f', 'lavfi', '-i', 'testsrc=duration=1:size=64x48:rate=5', '-c:v', 'mjpeg'],
         };
         $result = Process::run(['ffmpeg', '-y', '-loglevel', 'error', ...$args, $file]);
         $this->assertTrue($result->successful(), $result->errorOutput());
@@ -166,6 +169,21 @@ class VideoTest extends TestCase
         $this->start($token, Videos::MAX_BYTES + 1)->assertUnprocessable()->assertJsonValidationErrors('video');
         $id = $this->start($token, Videos::CHUNK_BYTES * 2)->json('id');
         $this->piece($token, $id, 0, str_repeat('x', Videos::CHUNK_BYTES + 1))->assertUnprocessable();
+    }
+
+    public function test_playlists_and_avi_are_refused(): void
+    {
+        $token = $this->token();
+        // Playlists renamed to .mp4: ffprobe is limited to local files in phone containers, so it doesn't
+        // open what they name (ffmpeg 4.2's HLS reader already refused http from a local playlist).
+        $hls = "#EXTM3U\n#EXT-X-TARGETDURATION:1\n#EXTINF:1.0,\n".$this->clip('phone')."\n#EXT-X-ENDLIST\n";
+        $concat = "ffconcat version 1.0\nfile '".$this->clip('phone')."'\n";
+
+        foreach ([$hls, $concat, file_get_contents($this->clip('avi'))] as $bytes) {
+            $this->upload($token, $bytes, 1)->assertUnprocessable()->assertJsonValidationErrors('video');
+            $this->assertSame('not_video', Video::latest('id')->first()->error);
+        }
+        $this->assertNull(Videos::probe($this->clip('avi')), 'AVI is no longer read at all');
     }
 
     public function test_uploads_belong_to_their_member_and_need_an_account(): void

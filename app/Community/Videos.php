@@ -54,8 +54,13 @@ final class Videos
     /** Private disk folder for part files. */
     public const UPLOAD_DIR = 'video-uploads';
 
-    /** Containers phones and cameras record (ffprobe's format names). */
-    private const FORMATS = ['mov', 'mp4', 'm4a', '3gp', '3g2', 'mj2', 'matroska', 'webm', 'avi'];
+    /**
+     * Containers phones record (the names of ffmpeg's two demuxers for them). ffprobe and ffmpeg are only
+     * allowed these (`-format_whitelist`) and local files (`-protocol_whitelist`): an upload that is
+     * really a playlist (HLS, concat) would otherwise make them fetch URLs or read other files on the
+     * server. AVI (old cameras) was dropped on 2026-10-13 to keep the readers few.
+     */
+    private const FORMATS = ['mov', 'mp4', 'm4a', '3gp', '3g2', 'mj2', 'matroska', 'webm'];
 
     private const DISK = 'public';
 
@@ -211,11 +216,11 @@ final class Videos
      * What ffprobe sees: duration (s) and display size of the first real video stream, or null when the
      * file isn't a video in a container phones record (an image, audio, a renamed document…).
      *
-     * @return array{duration: float, width: int, height: int}|null
+     * @return array{duration: float, width: int, height: int, format: string}|null
      */
     public static function probe(string $file): ?array
     {
-        $result = Process::timeout(30)->run([self::binary('ffprobe'), '-v', 'error', '-print_format', 'json', '-show_format', '-show_streams', $file]);
+        $result = Process::timeout(30)->run([self::binary('ffprobe'), '-v', 'error', ...self::inputLimits(), '-print_format', 'json', '-show_format', '-show_streams', $file]);
         // 126/127: ffprobe itself couldn't be run, which says nothing about the file.
         if (in_array($result->exitCode(), [126, 127], true)) {
             throw new \RuntimeException('ffprobe could not be run: '.self::binary('ffprobe'));
@@ -236,7 +241,14 @@ final class Videos
             [$width, $height] = [$height, $width];
         }
 
-        return ['duration' => $duration, 'width' => $width, 'height' => $height];
+        // The demuxer's first name (`mov`, `matroska`), which the conversion names instead of guessing again.
+        return ['duration' => $duration, 'width' => $width, 'height' => $height, 'format' => $formats[0]];
+    }
+
+    /** What ffprobe and ffmpeg may open: local files, in the containers in FORMATS. */
+    private static function inputLimits(): array
+    {
+        return ['-protocol_whitelist', 'file', '-format_whitelist', implode(',', self::FORMATS)];
     }
 
     /** Degrees a stream is turned for display: the old `rotate` tag or a display-matrix side data entry. */
@@ -328,9 +340,11 @@ final class Videos
         $files = self::files($path);
 
         try {
+            // Checked again here, so ffmpeg reads it as the container ffprobe found, never another guess.
+            $in = self::probe($source) ?? throw new \RuntimeException('the upload no longer probes as a video');
             $mp4 = $disk->path($files[0]);
             self::run([
-                '-i', $source,
+                ...self::inputLimits(), '-f', $in['format'], '-i', $source,
                 '-map', '0:v:0', '-map', '0:a:0?', '-sn', '-dn',
                 // Nothing of the original's metadata (location, device, dates, chapters) is copied.
                 '-map_metadata', '-1', '-map_chapters', '-1',
@@ -348,7 +362,7 @@ final class Videos
                 throw new \RuntimeException('converted file does not probe');
             }
             // Poster: a frame a second in (or the middle of a very short clip).
-            self::run(['-ss', (string) min(1, $out['duration'] / 2), '-i', $mp4, '-frames:v', '1', '-q:v', '3', $disk->path($files[1])], 60);
+            self::run([...self::inputLimits(), '-f', $out['format'], '-ss', (string) min(1, $out['duration'] / 2), '-i', $mp4, '-frames:v', '1', '-q:v', '3', $disk->path($files[1])], 60);
             $image = @imagecreatefromjpeg($disk->path($files[1]));
             if (! $image || ! imagewebp($image, $disk->path($files[2]), 78)) {
                 throw new \RuntimeException('poster could not be written');
